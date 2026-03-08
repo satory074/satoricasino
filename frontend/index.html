@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SatoriCasino</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Auth Section -->
+  <div id="auth-section">
+    <div class="auth-container">
+      <h1>SatoriCasino</h1>
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-tab="login">Login</div>
+        <div class="auth-tab" data-tab="register">Register</div>
+      </div>
+      <form id="login-form" class="auth-form active">
+        <input type="text" id="login-name" placeholder="Display Name" required>
+        <input type="password" id="login-pass" placeholder="Passphrase" required>
+        <button type="submit">Login</button>
+      </form>
+      <form id="register-form" class="auth-form">
+        <input type="text" id="reg-name" placeholder="Display Name" required>
+        <input type="password" id="reg-pass" placeholder="Passphrase" required>
+        <button type="submit">Register</button>
+      </form>
+      <div id="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- Lobby Section -->
+  <div id="lobby-section">
+    <div class="header">
+      <h2>SatoriCasino</h2>
+      <div class="user-info">
+        <span id="user-name"></span>
+        <span class="coin-display"><span id="user-coins">0</span> coins</span>
+        <span id="user-stats"></span>
+      </div>
+    </div>
+
+    <div style="padding: 1rem;">
+      <div class="lobby-actions">
+        <input type="text" id="new-table-name" placeholder="Table name">
+        <input type="number" id="new-table-bet" placeholder="Min bet" value="10" min="1" style="width:100px">
+        <button id="create-table-btn">Create Table</button>
+        <button id="daily-bonus-btn" class="lobby-btn secondary">Daily Bonus</button>
+        <button id="bailout-btn" class="lobby-btn secondary">Bailout</button>
+        <button id="logout-btn" class="lobby-btn secondary">Logout</button>
+      </div>
+
+      <h3>Tables</h3>
+      <div id="table-list"></div>
+    </div>
+  </div>
+
+  <!-- Game Section -->
+  <div id="game-section">
+    <div class="game-header">
+      <button onclick="leaveTable()">Leave Table</button>
+      <div id="game-phase">WAITING</div>
+      <div id="connection-status" class="status-disconnected">Connecting...</div>
+    </div>
+
+    <div class="game-table">
+      <div class="dealer-area">
+        <h3>Dealer</h3>
+        <div id="dealer-cards"></div>
+      </div>
+
+      <div id="players-area"></div>
+
+      <div id="game-actions"></div>
+    </div>
+
+    <div class="game-log-area">
+      <h4>Log</h4>
+      <div id="game-log"></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/lobby.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>
