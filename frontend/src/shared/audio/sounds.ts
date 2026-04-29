@@ -80,10 +80,15 @@ function tone(opts: ToneOptions): void {
   const c = ensureCtx();
   if (!c || !masterGain) return;
 
-  const start = opts.startTime ?? c.currentTime;
+  // Never schedule in the past — fresh AudioContexts return currentTime ≈ 0,
+  // which combined with short clips and the default 0.1s release would push
+  // the sustain-end below 0 and throw RangeError on setValueAtTime.
+  const start = Math.max(c.currentTime, opts.startTime ?? c.currentTime);
   const attack = opts.attack ?? 0.005;
   const release = opts.release ?? 0.1;
   const peak = opts.peakGain ?? 0.18;
+  const sustainEnd = Math.max(start + attack, start + opts.duration - release);
+  const decayEnd = Math.max(sustainEnd + 0.001, start + opts.duration);
 
   const osc = c.createOscillator();
   osc.type = opts.type ?? "sine";
@@ -91,20 +96,20 @@ function tone(opts: ToneOptions): void {
   if (opts.freqEnd != null) {
     osc.frequency.exponentialRampToValueAtTime(
       Math.max(20, opts.freqEnd),
-      start + opts.duration,
+      decayEnd,
     );
   }
 
   const g = c.createGain();
   g.gain.setValueAtTime(0, start);
   g.gain.linearRampToValueAtTime(peak, start + attack);
-  g.gain.setValueAtTime(peak, start + opts.duration - release);
-  g.gain.exponentialRampToValueAtTime(0.0001, start + opts.duration);
+  g.gain.setValueAtTime(peak, sustainEnd);
+  g.gain.exponentialRampToValueAtTime(0.0001, decayEnd);
 
   osc.connect(g);
   g.connect(masterGain);
   osc.start(start);
-  osc.stop(start + opts.duration + 0.02);
+  osc.stop(decayEnd + 0.02);
 }
 
 function noiseBurst(duration: number, peakGain = 0.12, filterFreq = 4000): void {
