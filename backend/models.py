@@ -44,12 +44,6 @@ class TableInfo(BaseModel):
     game_type: str = "blackjack"
 
 
-class CreateTableRequest(BaseModel):
-    name: str
-    min_bet: int = 10
-    game_type: str = "blackjack"
-
-
 class GamePhase(str, Enum):
     WAITING = "waiting"
     BETTING = "betting"

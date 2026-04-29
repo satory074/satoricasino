@@ -54,12 +54,13 @@ backend/
 
 `backend/main.py` holds:
 - `SUPPORTED_GAMES` set (currently `{"blackjack", "chinchiro"}`)
+- `SEED_TABLES` list + `_seed_tables()` — fixed casino-owned tables (Low/Mid/High per game) populated at module load. Players join, never create.
 - `_make_game(game_type)` factory
 - `_broadcast_state(table_id)` that branches into `_broadcast_blackjack` / `_broadcast_chinchiro` (each handles its own payout + stats update)
 - WS `websocket_endpoint` dispatches to `_handle_blackjack_action` / `_handle_chinchiro_action`
 - Game-specific turn timers (`_bj_turn_timeout`, `_cc_turn_timeout`) and the chinchiro banker async sequence (`_chinchiro_banker_sequence` — rolls one die set at a time with sleeps for animation pacing)
 
-Tables are kept in an in-memory `tables: dict[str, dict]` keyed by table id (`{name, min_bet, game, game_type, creator_id}`). Cloud Run instance restarts wipe this — only persistent state lives in Firestore.
+Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e.g. `bj-low`, `cc-high`) with shape `{name, min_bet, game, game_type}`. When the last player leaves, the WS cleanup rebuilds a fresh `game` instance instead of removing the entry — fixed tables persist across the table being empty. Cloud Run instance restarts wipe in-memory state, but `_seed_tables()` re-creates the same six tables with the same IDs, so links/bookmarks remain stable. Only persistent state lives in Firestore.
 
 ### Frontend layout
 
@@ -67,7 +68,7 @@ Tables are kept in an in-memory `tables: dict[str, dict]` keyed by table id (`{n
 frontend/src/
 ├── App.tsx                # top-level routing (auth | lobby | game), header, audio toggles
 ├── auth/Auth.tsx
-├── lobby/Lobby.tsx        # SUPPORTED_GAMES dropdown, game_type pill on table cards
+├── lobby/Lobby.tsx        # 2-step lobby: clickable game cards → filtered table list per game
 ├── games/
 │   ├── GameRouter.tsx     # switch on gameType → render BlackjackGame / ChinchiroGame
 │   ├── blackjack/         # BlackjackGame, DealerArea, PlayerBox
@@ -106,11 +107,12 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 
 1. **Backend logic**: write `backend/game/roulette.py` with phases, action methods, `get_state()`, `calculate_payout_for(player_id)`. Mirror the existing class shape.
 2. **Backend wiring** (`backend/main.py`): add `"roulette"` to `SUPPORTED_GAMES`, extend `_make_game`, write `_broadcast_roulette`, write `_handle_roulette_action`, add a branch in `_broadcast_state` and the WS endpoint.
-3. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
-4. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
-5. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
-6. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx`.
-7. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
+3. **Seed tables** (`backend/main.py`): add Low/Mid/High roulette entries (e.g. `rl-low/mid/high`) to `SEED_TABLES` so they appear in the lobby on next restart.
+4. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
+5. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
+6. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
+7. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"...", icon:"...", tagline:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (a new game card will render automatically on the game-selection screen).
+8. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
 
 Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern.
 

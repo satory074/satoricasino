@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import uuid
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
@@ -24,7 +23,6 @@ from backend.game.chinchiro import (
     Phase as CCPhase,
 )
 from backend.models import (
-    CreateTableRequest,
     LoginRequest,
     RegisterRequest,
     TableInfo,
@@ -44,7 +42,7 @@ app.add_middleware(
 )
 
 # In-memory table storage
-# table_id -> { name, min_bet, game, game_type, creator_id }
+# table_id -> { name, min_bet, game, game_type }
 tables: dict[str, dict] = {}
 
 turn_timers: dict[str, asyncio.Task] = {}
@@ -52,6 +50,18 @@ banker_tasks: dict[str, asyncio.Task] = {}
 
 
 SUPPORTED_GAMES = {"blackjack", "chinchiro"}
+
+# Fixed tables, seeded once at module load. The casino owns these — players join, never create.
+# Stable IDs survive Cloud Run cold starts (the in-memory game state is rebuilt on restart, but the
+# table identity stays the same so the lobby URL/links don't break).
+SEED_TABLES: list[dict] = [
+    {"id": "bj-low",  "name": "Blackjack — Low Limit",   "game_type": "blackjack", "min_bet": 10},
+    {"id": "bj-mid",  "name": "Blackjack — Mid Stakes",  "game_type": "blackjack", "min_bet": 100},
+    {"id": "bj-high", "name": "Blackjack — High Roller", "game_type": "blackjack", "min_bet": 1000},
+    {"id": "cc-low",  "name": "チンチロ — Low Limit",   "game_type": "chinchiro", "min_bet": 10},
+    {"id": "cc-mid",  "name": "チンチロ — Mid Stakes",  "game_type": "chinchiro", "min_bet": 100},
+    {"id": "cc-high", "name": "チンチロ — High Roller", "game_type": "chinchiro", "min_bet": 1000},
+]
 
 
 def _get_current_user(token: str) -> dict:
@@ -71,6 +81,19 @@ def _make_game(game_type: str):
 
 def _game_phase_str(table: dict) -> str:
     return table["game"].phase.value
+
+
+def _seed_tables() -> None:
+    for spec in SEED_TABLES:
+        tables[spec["id"]] = {
+            "name": spec["name"],
+            "min_bet": spec["min_bet"],
+            "game": _make_game(spec["game_type"]),
+            "game_type": spec["game_type"],
+        }
+
+
+_seed_tables()
 
 
 # --- Auth Routes ---
@@ -169,31 +192,6 @@ async def list_tables(token: str = Query(...)):
             )
         )
     return result
-
-
-@app.post("/api/tables", response_model=TableInfo)
-async def create_table(req: CreateTableRequest, token: str = Query(...)):
-    payload = _get_current_user(token)
-    if req.game_type not in SUPPORTED_GAMES:
-        raise HTTPException(status_code=400, detail=f"Unsupported game: {req.game_type}")
-    table_id = str(uuid.uuid4())[:8]
-    game = _make_game(req.game_type)
-    tables[table_id] = {
-        "name": req.name,
-        "min_bet": req.min_bet,
-        "game": game,
-        "game_type": req.game_type,
-        "creator_id": payload["user_id"],
-    }
-    return TableInfo(
-        table_id=table_id,
-        name=req.name,
-        player_count=0,
-        max_players=TABLE_MAX_PLAYERS,
-        min_bet=req.min_bet,
-        status=game.phase.value,
-        game_type=req.game_type,
-    )
 
 
 # --- Turn timer (blackjack) ---
@@ -431,7 +429,8 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
         if not game.players:
             _cancel_turn_timer(table_id)
             _cancel_banker_task(table_id)
-            tables.pop(table_id, None)
+            # Fixed tables persist; just rebuild a fresh game instance.
+            table["game"] = _make_game(table["game_type"])
         else:
             await _broadcast_state(table_id)
 

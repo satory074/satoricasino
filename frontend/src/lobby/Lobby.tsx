@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { apiGet, apiPost, clearAuth, getDisplayName } from "../shared/api/api";
+import { apiGet, apiPost, clearAuth } from "../shared/api/api";
 import type { TableInfo, UserProfile } from "../shared/types/game";
 
 const SUPPORTED_GAMES = [
-  { value: "blackjack", label: "Blackjack" },
-  { value: "chinchiro", label: "チンチロ" },
+  {
+    value: "blackjack",
+    label: "Blackjack",
+    icon: "♠♥",
+    tagline: "21 を超えずにディーラーに勝つ古典",
+  },
+  {
+    value: "chinchiro",
+    label: "チンチロ",
+    icon: "🎲",
+    tagline: "茶碗にサイコロ3つ、出目で勝負の和風博打",
+  },
 ] as const;
 
 interface Props {
@@ -42,9 +52,7 @@ export function Lobby({
   play,
 }: Props) {
   const [tables, setTables] = useState<TableInfo[]>([]);
-  const [name, setName] = useState("");
-  const [minBet, setMinBet] = useState(10);
-  const [gameType, setGameType] = useState<string>("blackjack");
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusModal | null>(null);
 
   const refreshProfile = useCallback(async () => {
@@ -73,20 +81,14 @@ export function Lobby({
     return () => clearInterval(id);
   }, [refreshProfile, loadTables]);
 
-  const createTable = async () => {
-    if (!name.trim()) return;
+  const pickGame = (value: string) => {
     play("button_click");
-    try {
-      const t = await apiPost<TableInfo>("/api/tables", {
-        name: name.trim(),
-        min_bet: minBet,
-        game_type: gameType,
-      });
-      setName("");
-      onJoinTable(t.table_id, t.game_type ?? "blackjack");
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
-    }
+    setSelectedGame(value);
+  };
+
+  const backToGames = () => {
+    play("button_click");
+    setSelectedGame(null);
   };
 
   const claimDailyBonus = async () => {
@@ -143,36 +145,14 @@ export function Lobby({
     onLogout();
   };
 
+  const filteredTables = selectedGame
+    ? tables.filter((t) => (t.game_type ?? "blackjack") === selectedGame)
+    : [];
+  const selectedGameMeta = SUPPORTED_GAMES.find((g) => g.value === selectedGame);
+
   return (
     <div className="lobby-section">
       <div className="lobby-actions">
-        <select
-          className="game-select"
-          value={gameType}
-          onChange={(e) => setGameType(e.target.value)}
-          aria-label="Game type"
-        >
-          {SUPPORTED_GAMES.map((g) => (
-            <option key={g.value} value={g.value}>
-              {g.label}
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          placeholder="New table name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          type="number"
-          min={1}
-          value={minBet}
-          onChange={(e) => setMinBet(parseInt(e.target.value) || 10)}
-        />
-        <button className="btn-primary" onClick={createTable}>
-          Create Table
-        </button>
         <button className="btn-secondary" onClick={claimDailyBonus}>
           Daily Bonus
         </button>
@@ -184,38 +164,73 @@ export function Lobby({
         </button>
       </div>
 
-      <h3>Tables</h3>
-      {tables.length === 0 ? (
-        <div className="empty-msg">
-          No tables yet, {getDisplayName() ?? "stranger"}. Create one and start dealing.
-        </div>
-      ) : (
-        tables.map((t) => (
-          <div
-            key={t.table_id}
-            className="table-card"
-            onClick={() => {
-              play("button_click");
-              onJoinTable(t.table_id, t.game_type ?? "blackjack");
-            }}
-          >
-            <div>
-              <div className="table-name">{t.name}</div>
-              <div className="table-info">
-                <span className="pill pill-game">
-                  {GAME_LABEL[t.game_type ?? "blackjack"] ??
-                    (t.game_type ?? "blackjack")}
-                </span>
-                <span className="pill">
-                  {t.player_count}/{t.max_players} seats
-                </span>
-                <span className="pill">Min {t.min_bet}</span>
-                <span className="pill">{t.status}</span>
-              </div>
-            </div>
-            <button className="btn-primary">Join</button>
+      {selectedGame === null ? (
+        <>
+          <h3>Choose Your Game</h3>
+          <div className="game-grid">
+            {SUPPORTED_GAMES.map((g) => {
+              const tableCount = tables.filter(
+                (t) => (t.game_type ?? "blackjack") === g.value,
+              ).length;
+              return (
+                <button
+                  key={g.value}
+                  className="game-card"
+                  onClick={() => pickGame(g.value)}
+                  type="button"
+                >
+                  <div className="game-card-icon">{g.icon}</div>
+                  <div className="game-card-title">{g.label}</div>
+                  <div className="game-card-tagline">{g.tagline}</div>
+                  <div className="game-card-meta">{tableCount} tables open</div>
+                </button>
+              );
+            })}
           </div>
-        ))
+        </>
+      ) : (
+        <>
+          <button className="lobby-back" onClick={backToGames} type="button">
+            ← ゲーム選択に戻る
+          </button>
+          <h3>{selectedGameMeta?.label ?? selectedGame} のテーブル</h3>
+          {filteredTables.length === 0 ? (
+            <div className="empty-msg">テーブルを準備中…</div>
+          ) : (
+            filteredTables.map((t) => {
+              const isFull = t.player_count >= t.max_players;
+              return (
+                <div
+                  key={t.table_id}
+                  className={`table-card${isFull ? " is-full" : ""}`}
+                  onClick={() => {
+                    if (isFull) return;
+                    play("button_click");
+                    onJoinTable(t.table_id, t.game_type ?? "blackjack");
+                  }}
+                >
+                  <div>
+                    <div className="table-name">{t.name}</div>
+                    <div className="table-info">
+                      <span className="pill pill-game">
+                        {GAME_LABEL[t.game_type ?? "blackjack"] ??
+                          (t.game_type ?? "blackjack")}
+                      </span>
+                      <span className="pill">
+                        {t.player_count}/{t.max_players} seats
+                      </span>
+                      <span className="pill">Min {t.min_bet}</span>
+                      <span className="pill">{t.status}</span>
+                    </div>
+                  </div>
+                  <button className="btn-primary" disabled={isFull}>
+                    {isFull ? "Full" : "Join"}
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </>
       )}
 
       <AnimatePresence>
