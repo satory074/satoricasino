@@ -123,6 +123,7 @@ Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` 
 - **`firebase.json` cache headers** force `index.html` to `no-cache` while hashed asset bundles get a 1-year `immutable` cache. This was added because Firebase was serving a stale `index.html` after deploys. Don't remove without a replacement strategy.
 - **Cloud Run cold starts** wipe all in-memory tables. Don't put session-critical state outside Firestore.
 - **Firestore project mismatch** is the most common local-dev failure. The error looks like a Cloud-side 403 about Firestore API not enabled — actually it's that ADC points at a different GCP project.
+- **Audio scheduling on a fresh `AudioContext`**: a clip whose `duration < release` schedules `setValueAtTime` at a negative absolute time when `currentTime ≈ 0`, throws `RangeError`, and (because it's synchronous inside React onClick handlers) prevents subsequent `setState` from running. `tone()` clamps `start` to `currentTime` and derives `sustainEnd / decayEnd` defensively — keep that pattern when adding helpers; don't compute envelope timestamps from raw `start + duration - release`.
 
 ## Audio
 
