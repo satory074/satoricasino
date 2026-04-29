@@ -9,3 +9,13 @@ wheels/
 # Virtual environments
 .venv
 .firebase/
+
+# Firebase debug
+firebase-debug.log
+firestore-debug.log
+
+# Frontend artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/**/*.tsbuildinfo

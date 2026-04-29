@@ -358,5 +358,7 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
 
 # Mount static files for local development
 import os
-if os.path.exists("frontend"):
+if os.path.exists("frontend/dist"):
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
+elif os.path.exists("frontend"):
     app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

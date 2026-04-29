@@ -1,0 +1,245 @@
+import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import confetti from "canvas-confetti";
+import { apiGet, apiPost, clearAuth, getDisplayName } from "../api/api";
+import type { TableInfo, UserProfile } from "../types/game";
+
+interface Props {
+  onJoinTable: (tableId: string) => void;
+  onLogout: () => void;
+  onCoinsChanged: (coins: number, delta: number) => void;
+  profile: UserProfile | null;
+  setProfile: (p: UserProfile) => void;
+  play: (id:
+    | "button_click"
+    | "bonus"
+    | "near_miss"
+    | "count_up") => void;
+}
+
+interface BonusModal {
+  title: string;
+  amount: number;
+  msg: string;
+}
+
+export function Lobby({
+  onJoinTable,
+  onLogout,
+  onCoinsChanged,
+  profile,
+  setProfile,
+  play,
+}: Props) {
+  const [tables, setTables] = useState<TableInfo[]>([]);
+  const [name, setName] = useState("");
+  const [minBet, setMinBet] = useState(10);
+  const [bonus, setBonus] = useState<BonusModal | null>(null);
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      const p = await apiGet<UserProfile>("/api/me");
+      setProfile(p);
+    } catch {
+      clearAuth();
+      onLogout();
+    }
+  }, [setProfile, onLogout]);
+
+  const loadTables = useCallback(async () => {
+    try {
+      const t = await apiGet<TableInfo[]>("/api/tables");
+      setTables(t);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshProfile();
+    void loadTables();
+    const id = window.setInterval(loadTables, 3000);
+    return () => clearInterval(id);
+  }, [refreshProfile, loadTables]);
+
+  const createTable = async () => {
+    if (!name.trim()) return;
+    play("button_click");
+    try {
+      const t = await apiPost<TableInfo>("/api/tables", {
+        name: name.trim(),
+        min_bet: minBet,
+      });
+      setName("");
+      onJoinTable(t.table_id);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  const claimDailyBonus = async () => {
+    play("button_click");
+    try {
+      const result = await apiPost<{ coins: number; bonus: number }>(
+        "/api/daily-bonus",
+        {},
+      );
+      const prev = profile?.coins ?? 0;
+      onCoinsChanged(result.coins, result.coins - prev);
+      setBonus({
+        title: "Daily Bonus",
+        amount: result.bonus,
+        msg: "See you again tomorrow!",
+      });
+      play("bonus");
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.55 },
+        colors: ["#f4c430", "#ffd84a", "#c41e3a", "#ffffff"],
+      });
+      await refreshProfile();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  const claimBailout = async () => {
+    play("button_click");
+    try {
+      const result = await apiPost<{ coins: number; bailout: number }>(
+        "/api/bailout",
+        {},
+      );
+      const prev = profile?.coins ?? 0;
+      onCoinsChanged(result.coins, result.coins - prev);
+      setBonus({
+        title: "Emergency Rescue",
+        amount: result.bailout,
+        msg: "Try not to bust again.",
+      });
+      play("bonus");
+      await refreshProfile();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  const logout = () => {
+    play("button_click");
+    clearAuth();
+    onLogout();
+  };
+
+  return (
+    <div className="lobby-section">
+      <div className="lobby-actions">
+        <input
+          type="text"
+          placeholder="New table name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          type="number"
+          min={1}
+          value={minBet}
+          onChange={(e) => setMinBet(parseInt(e.target.value) || 10)}
+        />
+        <button className="btn-primary" onClick={createTable}>
+          Create Table
+        </button>
+        <button className="btn-secondary" onClick={claimDailyBonus}>
+          Daily Bonus
+        </button>
+        <button className="btn-secondary" onClick={claimBailout}>
+          Bailout
+        </button>
+        <button className="btn-danger" onClick={logout}>
+          Logout
+        </button>
+      </div>
+
+      <h3>Tables</h3>
+      {tables.length === 0 ? (
+        <div className="empty-msg">
+          No tables yet, {getDisplayName() ?? "stranger"}. Create one and start dealing.
+        </div>
+      ) : (
+        tables.map((t) => (
+          <div
+            key={t.table_id}
+            className="table-card"
+            onClick={() => {
+              play("button_click");
+              onJoinTable(t.table_id);
+            }}
+          >
+            <div>
+              <div className="table-name">{t.name}</div>
+              <div className="table-info">
+                <span className="pill">
+                  {t.player_count}/{t.max_players} seats
+                </span>
+                <span className="pill">Min {t.min_bet}</span>
+                <span className="pill">{t.status}</span>
+              </div>
+            </div>
+            <button className="btn-primary">Join</button>
+          </div>
+        ))
+      )}
+
+      <AnimatePresence>
+        {bonus && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setBonus(null)}
+          >
+            <motion.div
+              className="modal-card"
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-title">{bonus.title}</div>
+              <CountUp value={bonus.amount} prefix="+" />
+              <div className="modal-msg">{bonus.msg}</div>
+              <button className="btn-primary" onClick={() => setBonus(null)}>
+                Collect
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CountUp({ value, prefix = "" }: { value: number; prefix?: string }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const dur = 900;
+    let raf = 0;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setShown(Math.round(value * eased));
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return (
+    <div className="modal-amount">
+      {prefix}
+      {shown.toLocaleString()}
+    </div>
+  );
+}
