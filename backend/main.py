@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import random
+import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
@@ -31,7 +34,19 @@ from backend.models import (
 )
 from backend.websocket_manager import manager
 
-app = FastAPI(title="SatoriCasino")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Populate every empty seeded table with a single bot so the floor never
+    # looks dead. Bots step out as soon as a human connects (see WS endpoint).
+    for table_id in list(tables.keys()):
+        await _spawn_bot(table_id)
+    yield
+    for task in list(bot_drivers.values()):
+        task.cancel()
+
+
+app = FastAPI(title="SatoriCasino", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -94,6 +109,218 @@ def _seed_tables() -> None:
 
 
 _seed_tables()
+
+
+# --- AI bots ---
+# A bot fills a table when there are zero humans on it; it steps out as soon as
+# any human connects. Bots have synthetic IDs (no Firestore record) so payout
+# and stats writes skip them. Behaviour is intentionally simple and predictable
+# (Blackjack: hit < 17, stand otherwise; Chinchiro: roll until settled), bets
+# match the table's min_bet, and each action is paced ~1.5–2.5s for a human feel.
+
+BOT_ID_PREFIX = "bot-"
+BOT_NAMES = ["Alice", "Bob", "Carol", "Diego", "Emma", "Felix", "Gina", "Hugo"]
+bot_drivers: dict[str, asyncio.Task] = {}
+
+
+def _is_bot(pid: str) -> bool:
+    return pid.startswith(BOT_ID_PREFIX)
+
+
+def _human_count(game) -> int:
+    return sum(1 for pid in game.players if not _is_bot(pid))
+
+
+def _make_bot_id() -> str:
+    return f"{BOT_ID_PREFIX}{uuid.uuid4().hex[:6]}"
+
+
+async def _spawn_bot(table_id: str) -> None:
+    if table_id not in tables:
+        return
+    table = tables[table_id]
+    game = table["game"]
+    if any(_is_bot(pid) for pid in game.players):
+        return
+    if _human_count(game) > 0:
+        return
+    # Mid-round leftover state would block add_player; rebuild the game so the
+    # bot starts cleanly in WAITING.
+    if game.phase.value not in ("waiting", "betting"):
+        _cancel_turn_timer(table_id)
+        _cancel_banker_task(table_id)
+        table["game"] = _make_game(table["game_type"])
+        game = table["game"]
+    bot_id = _make_bot_id()
+    bot_name = f"🤖 Bot {random.choice(BOT_NAMES)}"
+    if not game.add_player(bot_id, bot_name):
+        return
+    await manager.broadcast(table_id, {
+        "type": "player_joined",
+        "player_id": bot_id,
+        "display_name": bot_name,
+    })
+    await _broadcast_state(table_id)
+    bot_drivers[table_id] = asyncio.create_task(_run_bot_driver(table_id, bot_id))
+
+
+async def _despawn_bots(table_id: str) -> None:
+    if table_id not in tables:
+        return
+    table = tables[table_id]
+
+    task = bot_drivers.pop(table_id, None)
+    if task and not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    game = table["game"]
+    bots_info = [(pid, p.display_name) for pid, p in game.players.items() if _is_bot(pid)]
+    if not bots_info:
+        return
+
+    # Throw out any partial round state so the human starts fresh.
+    _cancel_turn_timer(table_id)
+    _cancel_banker_task(table_id)
+    table["game"] = _make_game(table["game_type"])
+
+    for bot_id, display_name in bots_info:
+        await manager.broadcast(table_id, {
+            "type": "player_left",
+            "player_id": bot_id,
+            "display_name": display_name,
+        })
+    await _broadcast_state(table_id)
+
+
+async def _run_bot_driver(table_id: str, bot_id: str) -> None:
+    try:
+        while True:
+            await asyncio.sleep(1.0)
+            if table_id not in tables:
+                return
+            table = tables[table_id]
+            game = table["game"]
+            if bot_id not in game.players:
+                return
+            if _human_count(game) > 0:
+                # Despawn handler is responsible for cleanup; just exit.
+                return
+
+            if table["game_type"] == "blackjack":
+                await _bot_step_blackjack(table_id, bot_id)
+            elif table["game_type"] == "chinchiro":
+                await _bot_step_chinchiro(table_id, bot_id)
+    except asyncio.CancelledError:
+        return
+    except Exception as exc:  # pragma: no cover — defensive
+        print(f"[bot] driver crashed for table={table_id} bot={bot_id}: {exc!r}")
+
+
+async def _bot_step_blackjack(table_id: str, bot_id: str) -> None:
+    table = tables[table_id]
+    game: BlackjackGame = table["game"]
+
+    if game.phase == BJPhase.WAITING:
+        await asyncio.sleep(1.5)
+        if game.phase == BJPhase.WAITING and bot_id in game.players:
+            game.start_betting()
+            await _broadcast_state(table_id)
+        return
+
+    if game.phase == BJPhase.BETTING:
+        bot = game.players.get(bot_id)
+        if bot and bot.bet == 0:
+            await asyncio.sleep(1.5)
+            if game.phase != BJPhase.BETTING or bot_id not in game.players:
+                return
+            game.place_bet(bot_id, table["min_bet"])
+            await manager.broadcast(table_id, {
+                "type": "bet_placed",
+                "player_id": bot_id,
+                "amount": table["min_bet"],
+            })
+            if game.all_bets_placed():
+                game.deal()
+                await _broadcast_state(table_id)
+                _start_bj_turn_timer(table_id)
+            else:
+                await _broadcast_state(table_id)
+        return
+
+    if game.phase == BJPhase.PLAYER_TURNS and game.current_player_id == bot_id:
+        await asyncio.sleep(1.5)
+        if game.phase != BJPhase.PLAYER_TURNS or game.current_player_id != bot_id:
+            return
+        bot = game.players[bot_id]
+        if bot.value < 17:
+            game.hit(bot_id)
+        else:
+            game.stand(bot_id)
+        _cancel_turn_timer(table_id)
+        await _broadcast_state(table_id)
+        _start_bj_turn_timer(table_id)
+        return
+
+    if game.phase == BJPhase.RESOLUTION:
+        await asyncio.sleep(2.5)
+        if game.phase == BJPhase.RESOLUTION and bot_id in game.players:
+            game.reset_for_new_round()
+            await _broadcast_state(table_id)
+
+
+async def _bot_step_chinchiro(table_id: str, bot_id: str) -> None:
+    table = tables[table_id]
+    game: ChinchiroGame = table["game"]
+
+    if game.phase == CCPhase.WAITING:
+        await asyncio.sleep(1.5)
+        if game.phase == CCPhase.WAITING and bot_id in game.players:
+            game.start_betting()
+            await _broadcast_state(table_id)
+        return
+
+    if game.phase == CCPhase.BETTING:
+        bot = game.players.get(bot_id)
+        if bot and bot.bet == 0:
+            await asyncio.sleep(1.5)
+            if game.phase != CCPhase.BETTING or bot_id not in game.players:
+                return
+            game.place_bet(bot_id, table["min_bet"])
+            await manager.broadcast(table_id, {
+                "type": "bet_placed",
+                "player_id": bot_id,
+                "amount": table["min_bet"],
+            })
+            if game.all_bets_placed():
+                _cancel_banker_task(table_id)
+                banker_tasks[table_id] = asyncio.create_task(
+                    _chinchiro_banker_sequence(table_id)
+                )
+            else:
+                await _broadcast_state(table_id)
+        return
+
+    if game.phase == CCPhase.PLAYER_ROLLS and game.current_player_id == bot_id:
+        await asyncio.sleep(1.5)
+        if game.phase != CCPhase.PLAYER_ROLLS or game.current_player_id != bot_id:
+            return
+        game.roll_player(bot_id)
+        if game.phase != CCPhase.PLAYER_ROLLS:
+            _cancel_turn_timer(table_id)
+        await _broadcast_state(table_id)
+        if game.phase == CCPhase.PLAYER_ROLLS:
+            _start_cc_turn_timer(table_id)
+        return
+
+    if game.phase == CCPhase.RESOLUTION:
+        await asyncio.sleep(2.5)
+        if game.phase == CCPhase.RESOLUTION and bot_id in game.players:
+            game.reset_for_new_round()
+            await _broadcast_state(table_id)
 
 
 # --- Auth Routes ---
@@ -296,6 +523,8 @@ async def _broadcast_blackjack(table_id: str, table: dict):
     if game.phase == BJPhase.RESOLUTION:
         _cancel_turn_timer(table_id)
         for pid in game.players:
+            if _is_bot(pid):
+                continue
             payout = game.calculate_payout(pid)
             if payout != 0:
                 try:
@@ -326,6 +555,8 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
     if game.phase == CCPhase.RESOLUTION:
         _cancel_turn_timer(table_id)
         for pid in game.players:
+            if _is_bot(pid):
+                continue
             payout = game.calculate_payout_for(pid)
             if payout != 0:
                 try:
@@ -392,6 +623,10 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
 
     user_id = payload["user_id"]
     display_name = payload["display_name"]
+
+    # Bot leaves the moment a real human arrives — they never share a round.
+    await _despawn_bots(table_id)
+
     table = tables[table_id]
     game = table["game"]
 
@@ -426,11 +661,13 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
             "player_id": user_id,
             "display_name": display_name,
         })
-        if not game.players:
+        if _human_count(game) == 0:
             _cancel_turn_timer(table_id)
             _cancel_banker_task(table_id)
-            # Fixed tables persist; just rebuild a fresh game instance.
+            # Fixed tables persist; just rebuild a fresh game instance and
+            # invite a bot back so the table doesn't sit empty.
             table["game"] = _make_game(table["game_type"])
+            await _spawn_bot(table_id)
         else:
             await _broadcast_state(table_id)
 

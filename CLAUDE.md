@@ -60,7 +60,11 @@ backend/
 - WS `websocket_endpoint` dispatches to `_handle_blackjack_action` / `_handle_chinchiro_action`
 - Game-specific turn timers (`_bj_turn_timeout`, `_cc_turn_timeout`) and the chinchiro banker async sequence (`_chinchiro_banker_sequence` — rolls one die set at a time with sleeps for animation pacing)
 
-Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e.g. `bj-low`, `cc-high`) with shape `{name, min_bet, game, game_type}`. When the last player leaves, the WS cleanup rebuilds a fresh `game` instance instead of removing the entry — fixed tables persist across the table being empty. Cloud Run instance restarts wipe in-memory state, but `_seed_tables()` re-creates the same six tables with the same IDs, so links/bookmarks remain stable. Only persistent state lives in Firestore.
+Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e.g. `bj-low`, `cc-high`) with shape `{name, min_bet, game, game_type}`. When the last human leaves, the WS cleanup rebuilds a fresh `game` instance and respawns a bot — fixed tables persist across the table being empty. Cloud Run instance restarts wipe in-memory state, but `_seed_tables()` re-creates the same six tables with the same IDs and the FastAPI `lifespan` handler reseeds bots, so links/bookmarks remain stable. Only persistent state lives in Firestore.
+
+### AI bots
+
+A bot fills any table that has zero humans so the floor never looks dead. One bot per table at most; bots step out the moment a real human connects (`_despawn_bots` cancels the driver task and rebuilds the game). They share the live game state and broadcast as ordinary players, but are virtual: IDs prefixed `bot-`, no Firestore record, and `_broadcast_blackjack` / `_broadcast_chinchiro` skip them when writing payouts and stats. Behaviour lives in `_run_bot_driver` → `_bot_step_blackjack` / `_bot_step_chinchiro` (Blackjack: hit < 17, stand otherwise; Chinchiro: roll until settled), bets are always `min_bet`, and each action is paced 1.5–2.5 s for human-feeling tempo.
 
 ### Frontend layout
 
