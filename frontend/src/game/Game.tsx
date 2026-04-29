@@ -119,7 +119,7 @@ export function Game({ tableId, onLeave, myCoins, onResolve, play }: Props) {
       kind = "near_miss";
       delta = -bet;
     } else {
-      kind = "lose";
+      kind = isBusted ? "bust" : "lose";
       delta = -bet;
     }
 
@@ -158,11 +158,18 @@ export function Game({ tableId, onLeave, myCoins, onResolve, play }: Props) {
       playRef.current("near_miss");
     } else if (kind === "push") {
       playRef.current("push");
+    } else if (kind === "bust") {
+      playRef.current("bust");
     } else {
       playRef.current("lose");
     }
 
-    const dur = kind === "lose" ? 1100 : kind === "blackjack" ? 2400 : 1900;
+    const dur =
+      kind === "lose" || kind === "bust"
+        ? 1100
+        : kind === "blackjack"
+          ? 2400
+          : 1900;
     const t = window.setTimeout(() => setOverlay(null), dur);
     return () => clearTimeout(t);
   }, [gameState, myId, overlay]);

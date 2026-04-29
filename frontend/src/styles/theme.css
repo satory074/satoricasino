@@ -589,9 +589,17 @@ input:focus {
 }
 
 /* Cards */
-.card {
+.card-shell {
   width: 60px;
   height: 84px;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
   border-radius: var(--radius-card);
   display: flex;
   flex-direction: column;
@@ -601,10 +609,8 @@ input:focus {
   font-weight: 700;
   background: linear-gradient(180deg, var(--cream), #e6dfcc);
   border: 1px solid rgba(0, 0, 0, 0.15);
-  position: relative;
   padding: 0.35rem 0.45rem;
   box-shadow: var(--shadow-card);
-  transform-style: preserve-3d;
   font-family: "Georgia", serif;
 }
 
@@ -648,7 +654,36 @@ input:focus {
   background:
     repeating-linear-gradient(45deg, var(--crimson) 0 8px, var(--crimson-dark) 8px 16px);
   border-color: var(--gold);
-  position: relative;
+}
+
+@keyframes card-enter {
+  from {
+    transform: translate(160px, -110px) rotate(-12deg) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.card-enter {
+  animation: card-enter 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes card-face-enter {
+  from {
+    transform: rotateY(-90deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+.card-face-enter {
+  animation: card-face-enter 0.35s ease-out both;
 }
 
 .card-back::after {
@@ -1007,9 +1042,11 @@ input:focus {
     min-width: 165px;
     padding: 0.7rem 0.7rem 0.9rem;
   }
-  .card {
+  .card-shell {
     width: 50px;
     height: 70px;
+  }
+  .card {
     font-size: 0.95rem;
   }
   .card .center {

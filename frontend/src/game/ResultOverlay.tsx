@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { Result } from "../types/game";
 
-export type ResultKind = Result | "near_miss";
+export type ResultKind = Result | "near_miss" | "bust";
 
 interface Props {
   shown: ResultKind | null;
@@ -12,7 +12,8 @@ const TEXT_FOR: Record<ResultKind, string> = {
   blackjack: "BLACKJACK!!",
   win: "WIN!",
   push: "PUSH",
-  lose: "BUST",
+  lose: "LOSS",
+  bust: "BUST",
   near_miss: "SO CLOSE!",
 };
 
@@ -38,9 +39,11 @@ export function ResultOverlay({ shown, amount }: Props) {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className={`result-overlay-text ${shown === "lose" ? "lose" : ""} ${
-                shown === "push" ? "push" : ""
-              } ${shown === "near_miss" ? "near-miss" : ""}`}
+              className={`result-overlay-text ${
+                shown === "lose" || shown === "bust" ? "lose" : ""
+              } ${shown === "push" ? "push" : ""} ${
+                shown === "near_miss" ? "near-miss" : ""
+              }`}
               initial={{ scale: 0.4, rotate: -8 }}
               animate={{ scale: [0.4, 1.25, 1], rotate: 0 }}
               exit={{ scale: 0.6, opacity: 0 }}

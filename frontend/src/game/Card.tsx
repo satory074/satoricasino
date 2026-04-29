@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { memo, useEffect, useRef } from "react";
 import type { CardData } from "../types/game";
 
@@ -12,7 +11,6 @@ const isRed = (suit: string) => suit === "♥" || suit === "♦";
 
 export const Card = memo(function Card({ card, index, onFlip }: Props) {
   const isHidden = card.rank === "?";
-  const colorClass = isHidden ? "" : isRed(card.suit) ? "card-red" : "card-black";
   const wasHidden = useRef(isHidden);
   const mounted = useRef(false);
   const onFlipRef = useRef(onFlip);
@@ -21,14 +19,12 @@ export const Card = memo(function Card({ card, index, onFlip }: Props) {
   useEffect(() => {
     let timeout: number | undefined;
     if (!mounted.current) {
-      // freshly mounted card — entry animation completes ~300ms after delay
       mounted.current = true;
       if (!isHidden) {
-        timeout = window.setTimeout(() => onFlipRef.current?.(), 250 + index * 100);
+        timeout = window.setTimeout(() => onFlipRef.current?.(), 200 + index * 70);
       }
     } else if (wasHidden.current && !isHidden) {
-      // hole-card reveal: in-place flip
-      timeout = window.setTimeout(() => onFlipRef.current?.(), 350);
+      timeout = window.setTimeout(() => onFlipRef.current?.(), 250);
     }
     wasHidden.current = isHidden;
     return () => {
@@ -37,27 +33,17 @@ export const Card = memo(function Card({ card, index, onFlip }: Props) {
   }, [isHidden, card.rank, card.suit, index]);
 
   return (
-    <motion.div
-      className={`card ${colorClass} ${isHidden ? "card-back" : ""}`}
-      style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
-      initial={{ x: 320, y: -180, rotateZ: -25, rotateY: 180, opacity: 0 }}
-      animate={{
-        x: 0,
-        y: 0,
-        rotateZ: 0,
-        opacity: 1,
-        rotateY: isHidden ? 180 : 0,
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 240,
-        damping: 22,
-        delay: index * 0.05,
-        rotateY: { duration: 0.55, delay: 0.15 },
-      }}
+    <div
+      className="card-shell card-enter"
+      style={{ animationDelay: `${index * 60}ms` }}
     >
-      {!isHidden && (
-        <>
+      {isHidden ? (
+        <div className="card card-back card-face-enter" key="back" />
+      ) : (
+        <div
+          className={`card card-face-enter ${isRed(card.suit) ? "card-red" : "card-black"}`}
+          key={`${card.rank}-${card.suit}`}
+        >
           <span className="top">
             <span>{card.rank}</span>
             <span>{card.suit}</span>
@@ -67,8 +53,8 @@ export const Card = memo(function Card({ card, index, onFlip }: Props) {
             <span>{card.rank}</span>
             <span>{card.suit}</span>
           </span>
-        </>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 });
