@@ -30,6 +30,7 @@ export interface GameState {
   players: Record<string, PlayerStateData>;
   current_player_id: string | null;
   results: Record<string, Result> | null;
+  game_type?: string;
 }
 
 export type WSMessage =
@@ -58,6 +59,7 @@ export interface TableInfo {
   max_players: number;
   min_bet: number;
   status: string;
+  game_type: string;
 }
 
 export interface AuthData {

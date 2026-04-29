@@ -1,5 +1,5 @@
-import { Hand } from "./Hand";
-import type { CardData, Phase } from "../types/game";
+import { Hand } from "../../shared/components/Hand";
+import type { CardData, Phase } from "../../shared/types/game";
 
 interface Props {
   cards: CardData[];

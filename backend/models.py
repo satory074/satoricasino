@@ -41,11 +41,13 @@ class TableInfo(BaseModel):
     max_players: int
     min_bet: int
     status: str
+    game_type: str = "blackjack"
 
 
 class CreateTableRequest(BaseModel):
     name: str
     min_bet: int = 10
+    game_type: str = "blackjack"
 
 
 class GamePhase(str, Enum):

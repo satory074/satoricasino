@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { apiGet, apiPost, clearAuth, getDisplayName } from "../api/api";
-import type { TableInfo, UserProfile } from "../types/game";
+import { apiGet, apiPost, clearAuth, getDisplayName } from "../shared/api/api";
+import type { TableInfo, UserProfile } from "../shared/types/game";
+
+const SUPPORTED_GAMES = [
+  { value: "blackjack", label: "Blackjack" },
+] as const;
 
 interface Props {
-  onJoinTable: (tableId: string) => void;
+  onJoinTable: (tableId: string, gameType: string) => void;
   onLogout: () => void;
   onCoinsChanged: (coins: number, delta: number) => void;
   profile: UserProfile | null;
@@ -16,6 +20,11 @@ interface Props {
     | "near_miss"
     | "count_up") => void;
 }
+
+const GAME_LABEL: Record<string, string> = SUPPORTED_GAMES.reduce(
+  (acc, g) => ({ ...acc, [g.value]: g.label }),
+  {},
+);
 
 interface BonusModal {
   title: string;
@@ -34,6 +43,7 @@ export function Lobby({
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [name, setName] = useState("");
   const [minBet, setMinBet] = useState(10);
+  const [gameType, setGameType] = useState<string>("blackjack");
   const [bonus, setBonus] = useState<BonusModal | null>(null);
 
   const refreshProfile = useCallback(async () => {
@@ -69,9 +79,10 @@ export function Lobby({
       const t = await apiPost<TableInfo>("/api/tables", {
         name: name.trim(),
         min_bet: minBet,
+        game_type: gameType,
       });
       setName("");
-      onJoinTable(t.table_id);
+      onJoinTable(t.table_id, t.game_type ?? "blackjack");
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed");
     }
@@ -134,6 +145,18 @@ export function Lobby({
   return (
     <div className="lobby-section">
       <div className="lobby-actions">
+        <select
+          className="game-select"
+          value={gameType}
+          onChange={(e) => setGameType(e.target.value)}
+          aria-label="Game type"
+        >
+          {SUPPORTED_GAMES.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
+        </select>
         <input
           type="text"
           placeholder="New table name"
@@ -172,12 +195,16 @@ export function Lobby({
             className="table-card"
             onClick={() => {
               play("button_click");
-              onJoinTable(t.table_id);
+              onJoinTable(t.table_id, t.game_type ?? "blackjack");
             }}
           >
             <div>
               <div className="table-name">{t.name}</div>
               <div className="table-info">
+                <span className="pill pill-game">
+                  {GAME_LABEL[t.game_type ?? "blackjack"] ??
+                    (t.game_type ?? "blackjack")}
+                </span>
                 <span className="pill">
                   {t.player_count}/{t.max_players} seats
                 </span>

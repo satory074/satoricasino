@@ -385,6 +385,31 @@ input:focus {
   width: 100px;
 }
 
+.game-select {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(244, 196, 48, 0.25);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.65rem 0.7rem;
+  outline: none;
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.game-select:focus {
+  border-color: var(--gold);
+}
+
+.pill-game {
+  background: linear-gradient(180deg, rgba(244, 196, 48, 0.25), rgba(244, 196, 48, 0.1)) !important;
+  color: var(--gold-bright) !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .lobby-section h3 {
   font-size: 1.1rem;
   margin-bottom: 0.7rem;

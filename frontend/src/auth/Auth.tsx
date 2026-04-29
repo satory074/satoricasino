@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { apiPost, setAuth } from "../api/api";
-import type { AuthData } from "../types/game";
+import { apiPost, setAuth } from "../shared/api/api";
+import type { AuthData } from "../shared/types/game";
 import clsx from "clsx";
 
 interface Props {

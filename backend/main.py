@@ -131,6 +131,9 @@ async def claim_bailout(token: str = Query(...)):
 
 # --- Table Routes ---
 
+SUPPORTED_GAMES = {"blackjack"}
+
+
 @app.get("/api/tables", response_model=list[TableInfo])
 async def list_tables(token: str = Query(...)):
     _get_current_user(token)
@@ -145,6 +148,7 @@ async def list_tables(token: str = Query(...)):
                 max_players=TABLE_MAX_PLAYERS,
                 min_bet=t["min_bet"],
                 status=game.phase.value,
+                game_type=t.get("game_type", "blackjack"),
             )
         )
     return result
@@ -153,12 +157,15 @@ async def list_tables(token: str = Query(...)):
 @app.post("/api/tables", response_model=TableInfo)
 async def create_table(req: CreateTableRequest, token: str = Query(...)):
     payload = _get_current_user(token)
+    if req.game_type not in SUPPORTED_GAMES:
+        raise HTTPException(status_code=400, detail=f"Unsupported game: {req.game_type}")
     table_id = str(uuid.uuid4())[:8]
     game = BlackjackGame()
     tables[table_id] = {
         "name": req.name,
         "min_bet": req.min_bet,
         "game": game,
+        "game_type": req.game_type,
         "creator_id": payload["user_id"],
     }
     return TableInfo(
@@ -168,6 +175,7 @@ async def create_table(req: CreateTableRequest, token: str = Query(...)):
         max_players=TABLE_MAX_PLAYERS,
         min_bet=req.min_bet,
         status=game.phase.value,
+        game_type=req.game_type,
     )
 
 
@@ -207,9 +215,13 @@ def _cancel_turn_timer(table_id: str):
 async def _broadcast_state(table_id: str):
     if table_id not in tables:
         return
-    game: BlackjackGame = tables[table_id]["game"]
+    table = tables[table_id]
+    game: BlackjackGame = table["game"]
     state = game.get_state(hide_dealer_hole=(game.phase == Phase.PLAYER_TURNS))
-    await manager.broadcast(table_id, {"type": "game_state", **state})
+    await manager.broadcast(
+        table_id,
+        {"type": "game_state", "game_type": table.get("game_type", "blackjack"), **state},
+    )
 
     # If resolution, handle payouts
     if game.phase == Phase.RESOLUTION:

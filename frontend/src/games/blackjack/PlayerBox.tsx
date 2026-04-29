@@ -1,8 +1,8 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
-import { TurnTimer } from "./TurnTimer";
-import { Hand } from "./Hand";
-import type { PlayerStateData, Result } from "../types/game";
+import { TurnTimer } from "../../shared/components/TurnTimer";
+import { Hand } from "../../shared/components/Hand";
+import type { PlayerStateData, Result } from "../../shared/types/game";
 
 interface Props {
   playerId: string;

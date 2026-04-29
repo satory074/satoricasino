@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
-import { useGameSocket } from "../api/useGameSocket";
-import { getUserId } from "../api/api";
+import { useGameSocket } from "../../shared/api/useGameSocket";
+import { getUserId } from "../../shared/api/api";
+import { BetArea } from "../../shared/components/BetArea";
+import {
+  ResultOverlay,
+  type ResultKind,
+} from "../../shared/components/ResultOverlay";
+import type { GameState, Phase, Result } from "../../shared/types/game";
 import { DealerArea } from "./DealerArea";
 import { PlayerBox } from "./PlayerBox";
-import { BetArea } from "./BetArea";
-import { ResultOverlay, type ResultKind } from "./ResultOverlay";
-import type { GameState, Phase, Result } from "../types/game";
 
 const TURN_TOTAL_SEC = 30;
 
@@ -48,7 +51,7 @@ function detectNearMiss(
   return false;
 }
 
-export function Game({ tableId, onLeave, myCoins, onResolve, play }: Props) {
+export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Props) {
   const myId = getUserId();
   const { connected, gameState, log, send } = useGameSocket(tableId);
   const [overlay, setOverlay] = useState<{

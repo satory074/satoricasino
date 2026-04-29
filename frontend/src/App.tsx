@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Auth } from "./auth/Auth";
 import { Lobby } from "./lobby/Lobby";
-import { Game } from "./game/Game";
-import { useAudio } from "./audio/useAudio";
-import { clearAuth, getDisplayName, getToken } from "./api/api";
-import type { UserProfile } from "./types/game";
+import { GameRouter } from "./games/GameRouter";
+import { useAudio } from "./shared/audio/useAudio";
+import { clearAuth, getDisplayName, getToken } from "./shared/api/api";
+import type { UserProfile } from "./shared/types/game";
 import clsx from "clsx";
 
 type View = "auth" | "lobby" | "game";
@@ -12,6 +12,7 @@ type View = "auth" | "lobby" | "game";
 export default function App() {
   const [view, setView] = useState<View>(() => (getToken() ? "lobby" : "auth"));
   const [tableId, setTableId] = useState<string | null>(null);
+  const [tableGameType, setTableGameType] = useState<string>("blackjack");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [coinFlash, setCoinFlash] = useState<"up" | "down" | null>(null);
   const [shownCoins, setShownCoins] = useState<number>(0);
@@ -66,8 +67,9 @@ export default function App() {
     [profile, onCoinsChanged],
   );
 
-  const onJoinTable = useCallback((id: string) => {
+  const onJoinTable = useCallback((id: string, gameType: string) => {
     setTableId(id);
+    setTableGameType(gameType);
     setView("game");
   }, []);
 
@@ -141,7 +143,8 @@ export default function App() {
         />
       )}
       {view === "game" && tableId && (
-        <Game
+        <GameRouter
+          gameType={tableGameType}
           tableId={tableId}
           onLeave={onLeaveTable}
           myCoins={profile?.coins ?? 0}
