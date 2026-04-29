@@ -15,7 +15,15 @@ type SoundId =
   | "count_up"
   | "near_miss"
   | "tick"
-  | "bonus";
+  | "bonus"
+  | "dice_shake"
+  | "dice_land"
+  | "pinzoro"
+  | "arashi"
+  | "shigoro"
+  | "hifumi"
+  | "menashi"
+  | "heartbeat";
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -230,6 +238,87 @@ export function play(id: SoundId): void {
       tone({ freq: 523.25, duration: 0.12, type: "triangle", peakGain: 0.14, startTime: t });
       tone({ freq: 783.99, duration: 0.16, type: "triangle", peakGain: 0.14, startTime: t + 0.1 });
       tone({ freq: 1046.5, duration: 0.3, type: "triangle", peakGain: 0.16, startTime: t + 0.22 });
+      break;
+
+    case "dice_shake":
+      // Wooden rattle: filtered noise with quick frequency jitter
+      noiseBurst(0.5, 0.07, 2000);
+      tone({ freq: 320, freqEnd: 480, duration: 0.07, type: "square", peakGain: 0.05 });
+      tone({ freq: 440, freqEnd: 280, duration: 0.07, type: "square", peakGain: 0.05, startTime: t + 0.08 });
+      tone({ freq: 360, freqEnd: 520, duration: 0.07, type: "square", peakGain: 0.05, startTime: t + 0.16 });
+      tone({ freq: 480, freqEnd: 320, duration: 0.07, type: "square", peakGain: 0.05, startTime: t + 0.24 });
+      tone({ freq: 400, freqEnd: 240, duration: 0.07, type: "square", peakGain: 0.05, startTime: t + 0.32 });
+      break;
+
+    case "dice_land":
+      // Wood-on-wood clack
+      noiseBurst(0.06, 0.12, 1500);
+      tone({ freq: 220, freqEnd: 110, duration: 0.08, type: "triangle", peakGain: 0.14 });
+      tone({ freq: 90, duration: 0.12, type: "sine", peakGain: 0.1, startTime: t + 0.02 });
+      break;
+
+    case "pinzoro":
+      // Taiko-style boom + chord swell + golden chime — the jackpot moment
+      tone({ freq: 60, duration: 0.6, type: "sine", peakGain: 0.3, startTime: t });
+      tone({ freq: 80, duration: 0.5, type: "sine", peakGain: 0.2, startTime: t + 0.05 });
+      noiseBurst(0.2, 0.12, 200);
+      // Rising arpeggio
+      tone({ freq: 523.25, duration: 0.18, type: "triangle", peakGain: 0.16, startTime: t + 0.15 });
+      tone({ freq: 659.25, duration: 0.18, type: "triangle", peakGain: 0.16, startTime: t + 0.28 });
+      tone({ freq: 783.99, duration: 0.18, type: "triangle", peakGain: 0.16, startTime: t + 0.41 });
+      tone({ freq: 1046.5, duration: 0.22, type: "triangle", peakGain: 0.18, startTime: t + 0.54 });
+      tone({ freq: 1318.5, duration: 0.32, type: "triangle", peakGain: 0.2, startTime: t + 0.7 });
+      // Sustained gold chord
+      chord([523.25, 659.25, 783.99, 1046.5, 1318.5], {
+        duration: 1.5,
+        type: "sine",
+        peakGain: 0.22,
+        startTime: t + 0.85,
+      });
+      // Second taiko boom
+      tone({ freq: 60, duration: 0.5, type: "sine", peakGain: 0.25, startTime: t + 1.4 });
+      noiseBurst(0.15, 0.1, 200);
+      break;
+
+    case "arashi":
+      // Triumphant fanfare for X-X-X
+      tone({ freq: 392, duration: 0.18, type: "sawtooth", peakGain: 0.12, startTime: t });
+      tone({ freq: 523.25, duration: 0.18, type: "sawtooth", peakGain: 0.12, startTime: t + 0.12 });
+      tone({ freq: 659.25, duration: 0.22, type: "sawtooth", peakGain: 0.14, startTime: t + 0.24 });
+      tone({ freq: 783.99, duration: 0.4, type: "sawtooth", peakGain: 0.16, startTime: t + 0.36 });
+      chord([523.25, 659.25, 783.99], {
+        duration: 0.6,
+        type: "triangle",
+        peakGain: 0.18,
+        startTime: t + 0.5,
+      });
+      break;
+
+    case "shigoro":
+      // Clean ascending scale = perfect run vibe
+      tone({ freq: 523.25, duration: 0.12, type: "sine", peakGain: 0.14, startTime: t });
+      tone({ freq: 587.33, duration: 0.12, type: "sine", peakGain: 0.14, startTime: t + 0.1 });
+      tone({ freq: 659.25, duration: 0.12, type: "sine", peakGain: 0.14, startTime: t + 0.2 });
+      tone({ freq: 783.99, duration: 0.3, type: "sine", peakGain: 0.16, startTime: t + 0.3 });
+      break;
+
+    case "hifumi":
+      // Sad descending minor chord — banker disaster (or player oof)
+      tone({ freq: 440, freqEnd: 330, duration: 0.4, type: "sawtooth", peakGain: 0.12 });
+      tone({ freq: 330, freqEnd: 247, duration: 0.45, type: "sawtooth", peakGain: 0.1, startTime: t + 0.2 });
+      tone({ freq: 247, freqEnd: 165, duration: 0.5, type: "sawtooth", peakGain: 0.08, startTime: t + 0.4 });
+      break;
+
+    case "menashi":
+      // Disappointed muted thud
+      tone({ freq: 200, freqEnd: 100, duration: 0.4, type: "triangle", peakGain: 0.1 });
+      noiseBurst(0.15, 0.05, 600);
+      break;
+
+    case "heartbeat":
+      // Tense lub-dub for the suspenseful third roll moment
+      tone({ freq: 60, duration: 0.08, type: "sine", peakGain: 0.18, startTime: t });
+      tone({ freq: 50, duration: 0.1, type: "sine", peakGain: 0.14, startTime: t + 0.12 });
       break;
   }
 }

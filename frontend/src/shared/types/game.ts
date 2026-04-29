@@ -67,3 +67,35 @@ export interface AuthData {
   user_id: string;
   display_name: string;
 }
+
+// === Chinchiro types ===
+
+export type ChinchiroPhase =
+  | "waiting"
+  | "betting"
+  | "banker_roll"
+  | "player_rolls"
+  | "resolution";
+
+export interface ChinchiroHand {
+  name: string; // "pinzoro" | "arashi" | "shigoro" | "me" | "hifumi" | "menashi"
+  eye: number;
+}
+
+export interface ChinchiroPlayerState {
+  display_name: string;
+  bet: number;
+  rolls: [number, number, number][];
+  settled: boolean;
+  hand: ChinchiroHand | null;
+}
+
+export interface ChinchiroGameState {
+  phase: ChinchiroPhase;
+  banker_rolls: [number, number, number][];
+  banker_hand: ChinchiroHand | null;
+  players: Record<string, ChinchiroPlayerState>;
+  current_player_id: string | null;
+  payouts: Record<string, number> | null;
+  game_type: "chinchiro";
+}

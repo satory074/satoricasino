@@ -1,0 +1,26 @@
+import { Bowl } from "./Bowl";
+import { HandLabel } from "./HandLabel";
+
+interface Props {
+  rolls: [number, number, number][];
+  hand: { name: string; eye: number } | null;
+  showHand: boolean;
+}
+
+export function BankerArea({ rolls, hand, showHand }: Props) {
+  // Show the latest roll. During banker_roll phase the front-end animates each
+  // by remounting Bowl with a different rollKey.
+  const latest = rolls.length > 0 ? rolls[rolls.length - 1] : null;
+  return (
+    <div className="banker-area">
+      <h3>親 (Banker)</h3>
+      <Bowl
+        dice={latest}
+        rollKey={`banker-${rolls.length}`}
+        size="lg"
+      />
+      {showHand && <HandLabel hand={hand} size="lg" />}
+      <div className="roll-counter">{rolls.length}/3 投</div>
+    </div>
+  );
+}

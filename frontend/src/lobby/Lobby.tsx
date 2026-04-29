@@ -6,6 +6,7 @@ import type { TableInfo, UserProfile } from "../shared/types/game";
 
 const SUPPORTED_GAMES = [
   { value: "blackjack", label: "Blackjack" },
+  { value: "chinchiro", label: "チンチロ" },
 ] as const;
 
 interface Props {
