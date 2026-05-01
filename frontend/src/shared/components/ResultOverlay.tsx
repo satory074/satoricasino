@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { Result } from "../types/game";
+import { useTranslation } from "../i18n/useTranslation";
 
 export type ResultKind =
   | Result
@@ -17,21 +18,6 @@ interface Props {
   amount: number | null;
 }
 
-const TEXT_FOR: Record<ResultKind, string> = {
-  blackjack: "BLACKJACK!!",
-  win: "WIN!",
-  push: "PUSH",
-  lose: "LOSS",
-  bust: "BUST",
-  near_miss: "SO CLOSE!",
-  pinzoro: "ピンゾロ!!",
-  arashi: "アラシ!",
-  shigoro: "シゴロ!",
-  hifumi: "ヒフミ…",
-  menashi: "目なし",
-  wakare: "ワカレ",
-};
-
 const RIM_GLOW_KINDS: ResultKind[] = ["blackjack", "win", "pinzoro", "arashi", "shigoro"];
 const POSITIVE_AMOUNT_KINDS: ResultKind[] = [
   "win",
@@ -42,6 +28,7 @@ const POSITIVE_AMOUNT_KINDS: ResultKind[] = [
 ];
 
 export function ResultOverlay({ shown, amount }: Props) {
+  const { t } = useTranslation();
   return (
     <AnimatePresence>
       {shown && (
@@ -73,7 +60,7 @@ export function ResultOverlay({ shown, amount }: Props) {
               exit={{ scale: 0.6, opacity: 0 }}
               transition={{ duration: 0.55, ease: [0.2, 0.8, 0.2, 1] }}
             >
-              {TEXT_FOR[shown]}
+              {t(`results.${shown}`)}
               {amount != null && amount > 0 && POSITIVE_AMOUNT_KINDS.includes(shown) && (
                 <span className="result-amount">
                   +{amount.toLocaleString()}

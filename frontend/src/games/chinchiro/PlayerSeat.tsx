@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { Bowl } from "./Bowl";
 import { HandLabel } from "./HandLabel";
 import { TurnTimer } from "../../shared/components/TurnTimer";
+import { useTranslation } from "../../shared/i18n/useTranslation";
 
 interface Props {
   displayName: string;
@@ -28,6 +29,7 @@ export function PlayerSeat({
   turnTotalSec,
   turnTimerKey,
 }: Props) {
+  const { t } = useTranslation();
   const latest = rolls.length > 0 ? rolls[rolls.length - 1] : null;
   return (
     <div
@@ -45,7 +47,9 @@ export function PlayerSeat({
       <div className="player-bet">{bet > 0 ? `Bet ${bet}` : "—"}</div>
       <Bowl dice={latest} rollKey={`${displayName}-${rolls.length}`} size="sm" />
       {showHand && <HandLabel hand={hand} size="md" />}
-      <div className="roll-counter">{rolls.length}/3 投</div>
+      <div className="roll-counter">
+        {t("chinchiro.rollCount", { n: rolls.length })}
+      </div>
       {payout != null && (
         <div className={clsx("payout-pill", payout > 0 ? "win" : payout < 0 ? "lose" : "push")}>
           {payout > 0 ? `+${payout}` : payout < 0 ? `${payout}` : "PUSH"}

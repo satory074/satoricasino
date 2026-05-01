@@ -5,6 +5,8 @@ import { GameRouter } from "./games/GameRouter";
 import { useAudio } from "./shared/audio/useAudio";
 import { clearAuth, getDisplayName, getToken } from "./shared/api/api";
 import { StreakBadge } from "./shared/components/StreakBadge";
+import { LangToggle } from "./shared/components/LangToggle";
+import { useTranslation } from "./shared/i18n/useTranslation";
 import type { UserProfile } from "./shared/types/game";
 import clsx from "clsx";
 
@@ -21,6 +23,7 @@ export default function App() {
   const tableGameTypeRef = useRef(tableGameType);
   tableGameTypeRef.current = tableGameType;
   const { muted, bgmOn, toggleMute, toggleBgm, play } = useAudio();
+  const { t } = useTranslation();
 
   // Coin counter animation
   useEffect(() => {
@@ -128,19 +131,20 @@ export default function App() {
             <button
               className="mute-btn"
               onClick={toggleMute}
-              title={muted ? "Unmute" : "Mute"}
-              aria-label={muted ? "Unmute" : "Mute"}
+              title={muted ? t("header.unmute") : t("header.mute")}
+              aria-label={muted ? t("header.unmute") : t("header.mute")}
             >
               {muted ? "🔇" : "🔊"}
             </button>
             <button
               className="mute-btn"
               onClick={toggleBgm}
-              title={bgmOn ? "BGM off" : "BGM on"}
-              aria-label="Toggle BGM"
+              title={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
+              aria-label={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
             >
               {bgmOn ? "♪" : "♩"}
             </button>
+            <LangToggle />
           </div>
         </header>
       )}

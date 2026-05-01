@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useTranslation } from "../../shared/i18n/useTranslation";
 
 export type ChinchiroHandName =
   | "pinzoro"
@@ -13,19 +14,11 @@ interface Props {
   size?: "lg" | "md";
 }
 
-const HAND_LABEL: Record<string, string> = {
-  pinzoro: "ピンゾロ",
-  arashi: "アラシ",
-  shigoro: "シゴロ",
-  me: "目",
-  hifumi: "ヒフミ",
-  menashi: "目なし",
-};
-
 export function HandLabel({ hand, size = "md" }: Props) {
+  const { t } = useTranslation();
   if (!hand) return <div className={`hand-label ${size}`}>—</div>;
 
-  const baseLabel = HAND_LABEL[hand.name] ?? hand.name;
+  const baseLabel = t(`hands.${hand.name}`);
   let detail = "";
   if (hand.name === "arashi") detail = ` ${hand.eye}-${hand.eye}-${hand.eye}`;
   else if (hand.name === "me") detail = ` ${hand.eye}`;

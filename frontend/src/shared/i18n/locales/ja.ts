@@ -1,0 +1,87 @@
+export const ja = {
+  hands: {
+    pinzoro: "ピンゾロ",
+    arashi: "アラシ",
+    shigoro: "シゴロ",
+    me: "目",
+    hifumi: "ヒフミ",
+    menashi: "目なし",
+  },
+  results: {
+    blackjack: "BLACKJACK!!",
+    win: "WIN!",
+    push: "PUSH",
+    lose: "LOSS",
+    bust: "BUST",
+    near_miss: "SO CLOSE!",
+    pinzoro: "ピンゾロ!!",
+    arashi: "アラシ!",
+    shigoro: "シゴロ!",
+    hifumi: "ヒフミ…",
+    menashi: "目なし",
+    wakare: "ワカレ",
+  },
+  blackjack: {
+    reasons: {
+      otherTurn: "他のプレイヤーのターンです",
+      busted: "バーストしているため操作できません",
+      wrongPhase: "今は操作できないフェーズです",
+      doubleNeedsTwoCards: "ダブルダウンは初手2枚のときだけ可能",
+      notEnoughCoinsForDouble: "ダブル分のコインが足りません",
+    },
+    otherThinking: "他のプレイヤーが思考中…",
+  },
+  chinchiro: {
+    reasons: {
+      wrongPhase: "今は振れないフェーズです",
+      otherRolling: "他のプレイヤーが振っています",
+      fixed: "あなたの目は確定しています",
+    },
+    betDoneWaiting: "ベット {bet} 完了 — 他プレイヤー待機中…",
+    bankerRolling: "親が振っている…",
+    rollDice: "サイコロを振る",
+    rollNth: "サイコロを振る ({n}投目 / 3)",
+    bankerLabel: "親 (Banker)",
+    rollCount: "{n}/3 投",
+  },
+  lobby: {
+    backToGames: "← ゲーム選択に戻る",
+    tablesTitle: "{game} のテーブル",
+    loadingTables: "テーブルを準備中…",
+  },
+  games: {
+    blackjack: {
+      label: "Blackjack",
+      tagline: "21 を超えずにディーラーに勝つ古典",
+    },
+    chinchiro: {
+      label: "チンチロ",
+      tagline: "茶碗にサイコロ3つ、出目で勝負の和風博打",
+    },
+  },
+  tables: {
+    bj: {
+      low: "Blackjack — Low Limit",
+      mid: "Blackjack — Mid Stakes",
+      high: "Blackjack — High Roller",
+    },
+    cc: {
+      low: "チンチロ — Low Limit",
+      mid: "チンチロ — Mid Stakes",
+      high: "チンチロ — High Roller",
+    },
+  },
+  streak: {
+    count: "{n} 連勝",
+    tooltip: "{n} 連勝中",
+  },
+  header: {
+    lang: "言語",
+    mute: "ミュート",
+    unmute: "ミュート解除",
+    bgmOn: "BGM オン",
+    bgmOff: "BGM オフ",
+  },
+};
+
+export type Translation = typeof ja;

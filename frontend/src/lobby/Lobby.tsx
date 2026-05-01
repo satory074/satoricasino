@@ -2,22 +2,31 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { apiGet, apiPost, clearAuth } from "../shared/api/api";
+import { useTranslation } from "../shared/i18n/useTranslation";
 import type { TableInfo, UserProfile } from "../shared/types/game";
 
 const SUPPORTED_GAMES = [
-  {
-    value: "blackjack",
-    label: "Blackjack",
-    icon: "♠♥",
-    tagline: "21 を超えずにディーラーに勝つ古典",
-  },
-  {
-    value: "chinchiro",
-    label: "チンチロ",
-    icon: "🎲",
-    tagline: "茶碗にサイコロ3つ、出目で勝負の和風博打",
-  },
+  { value: "blackjack", icon: "♠♥" },
+  { value: "chinchiro", icon: "🎲" },
 ] as const;
+
+type TablePrefix = "bj" | "cc";
+type TableTier = "low" | "mid" | "high";
+
+function resolveTableName(
+  t: (key: string, params?: Record<string, string | number>) => string,
+  tableId: string,
+  fallback: string,
+): string {
+  const [prefix, tier] = tableId.split("-");
+  if (
+    (prefix === "bj" || prefix === "cc") &&
+    (tier === "low" || tier === "mid" || tier === "high")
+  ) {
+    return t(`tables.${prefix as TablePrefix}.${tier as TableTier}`);
+  }
+  return fallback;
+}
 
 interface Props {
   onJoinTable: (tableId: string, gameType: string) => void;
@@ -31,11 +40,6 @@ interface Props {
     | "near_miss"
     | "count_up") => void;
 }
-
-const GAME_LABEL: Record<string, string> = SUPPORTED_GAMES.reduce(
-  (acc, g) => ({ ...acc, [g.value]: g.label }),
-  {},
-);
 
 interface BonusModal {
   title: string;
@@ -51,6 +55,7 @@ export function Lobby({
   setProfile,
   play,
 }: Props) {
+  const { t } = useTranslation();
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusModal | null>(null);
@@ -67,8 +72,8 @@ export function Lobby({
 
   const loadTables = useCallback(async () => {
     try {
-      const t = await apiGet<TableInfo[]>("/api/tables");
-      setTables(t);
+      const tbls = await apiGet<TableInfo[]>("/api/tables");
+      setTables(tbls);
     } catch {
       /* ignore */
     }
@@ -146,9 +151,11 @@ export function Lobby({
   };
 
   const filteredTables = selectedGame
-    ? tables.filter((t) => (t.game_type ?? "blackjack") === selectedGame)
+    ? tables.filter((tbl) => (tbl.game_type ?? "blackjack") === selectedGame)
     : [];
-  const selectedGameMeta = SUPPORTED_GAMES.find((g) => g.value === selectedGame);
+  const selectedGameLabel = selectedGame
+    ? t(`games.${selectedGame}.label`)
+    : "";
 
   return (
     <div className="lobby-section">
@@ -170,7 +177,7 @@ export function Lobby({
           <div className="game-grid">
             {SUPPORTED_GAMES.map((g) => {
               const tableCount = tables.filter(
-                (t) => (t.game_type ?? "blackjack") === g.value,
+                (tbl) => (tbl.game_type ?? "blackjack") === g.value,
               ).length;
               return (
                 <button
@@ -180,8 +187,12 @@ export function Lobby({
                   type="button"
                 >
                   <div className="game-card-icon">{g.icon}</div>
-                  <div className="game-card-title">{g.label}</div>
-                  <div className="game-card-tagline">{g.tagline}</div>
+                  <div className="game-card-title">
+                    {t(`games.${g.value}.label`)}
+                  </div>
+                  <div className="game-card-tagline">
+                    {t(`games.${g.value}.tagline`)}
+                  </div>
                   <div className="game-card-meta">{tableCount} tables open</div>
                 </button>
               );
@@ -191,36 +202,38 @@ export function Lobby({
       ) : (
         <>
           <button className="lobby-back" onClick={backToGames} type="button">
-            ← ゲーム選択に戻る
+            {t("lobby.backToGames")}
           </button>
-          <h3>{selectedGameMeta?.label ?? selectedGame} のテーブル</h3>
+          <h3>{t("lobby.tablesTitle", { game: selectedGameLabel })}</h3>
           {filteredTables.length === 0 ? (
-            <div className="empty-msg">テーブルを準備中…</div>
+            <div className="empty-msg">{t("lobby.loadingTables")}</div>
           ) : (
-            filteredTables.map((t) => {
-              const isFull = t.player_count >= t.max_players;
+            filteredTables.map((tbl) => {
+              const isFull = tbl.player_count >= tbl.max_players;
+              const gameType = tbl.game_type ?? "blackjack";
               return (
                 <div
-                  key={t.table_id}
+                  key={tbl.table_id}
                   className={`table-card${isFull ? " is-full" : ""}`}
                   onClick={() => {
                     if (isFull) return;
                     play("button_click");
-                    onJoinTable(t.table_id, t.game_type ?? "blackjack");
+                    onJoinTable(tbl.table_id, gameType);
                   }}
                 >
                   <div>
-                    <div className="table-name">{t.name}</div>
+                    <div className="table-name">
+                      {resolveTableName(t, tbl.table_id, tbl.name)}
+                    </div>
                     <div className="table-info">
                       <span className="pill pill-game">
-                        {GAME_LABEL[t.game_type ?? "blackjack"] ??
-                          (t.game_type ?? "blackjack")}
+                        {t(`games.${gameType}.label`)}
                       </span>
                       <span className="pill">
-                        {t.player_count}/{t.max_players} seats
+                        {tbl.player_count}/{tbl.max_players} seats
                       </span>
-                      <span className="pill">Min {t.min_bet}</span>
-                      <span className="pill">{t.status}</span>
+                      <span className="pill">Min {tbl.min_bet}</span>
+                      <span className="pill">{tbl.status}</span>
                     </div>
                   </div>
                   <button className="btn-primary" disabled={isFull}>

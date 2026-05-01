@@ -1,0 +1,87 @@
+import type { Translation } from "./ja";
+
+export const en: Translation = {
+  hands: {
+    pinzoro: "Pinzoro",
+    arashi: "Arashi",
+    shigoro: "Shigoro",
+    me: "Pair",
+    hifumi: "Hifumi",
+    menashi: "No hand",
+  },
+  results: {
+    blackjack: "BLACKJACK!!",
+    win: "WIN!",
+    push: "PUSH",
+    lose: "LOSS",
+    bust: "BUST",
+    near_miss: "SO CLOSE!",
+    pinzoro: "PINZORO!!",
+    arashi: "ARASHI!",
+    shigoro: "SHIGORO!",
+    hifumi: "HIFUMI…",
+    menashi: "NO HAND",
+    wakare: "WAKARE",
+  },
+  blackjack: {
+    reasons: {
+      otherTurn: "It's another player's turn",
+      busted: "Busted — no further actions",
+      wrongPhase: "Not your move in this phase",
+      doubleNeedsTwoCards: "Double-down only works on your first two cards",
+      notEnoughCoinsForDouble: "Not enough coins to double",
+    },
+    otherThinking: "Another player is thinking…",
+  },
+  chinchiro: {
+    reasons: {
+      wrongPhase: "Can't roll in this phase",
+      otherRolling: "Another player is rolling",
+      fixed: "Your hand is already locked in",
+    },
+    betDoneWaiting: "Bet {bet} placed — waiting for other players…",
+    bankerRolling: "Banker is rolling…",
+    rollDice: "Roll dice",
+    rollNth: "Roll dice (throw {n} of 3)",
+    bankerLabel: "Banker",
+    rollCount: "{n}/3 rolls",
+  },
+  lobby: {
+    backToGames: "← Back to game select",
+    tablesTitle: "{game} tables",
+    loadingTables: "Preparing tables…",
+  },
+  games: {
+    blackjack: {
+      label: "Blackjack",
+      tagline: "Beat the dealer without going over 21",
+    },
+    chinchiro: {
+      label: "Chinchiro",
+      tagline: "Three dice in a bowl — Japanese-style dice gambling",
+    },
+  },
+  tables: {
+    bj: {
+      low: "Blackjack — Low Limit",
+      mid: "Blackjack — Mid Stakes",
+      high: "Blackjack — High Roller",
+    },
+    cc: {
+      low: "Chinchiro — Low Limit",
+      mid: "Chinchiro — Mid Stakes",
+      high: "Chinchiro — High Roller",
+    },
+  },
+  streak: {
+    count: "{n} streak",
+    tooltip: "On a {n}-win streak",
+  },
+  header: {
+    lang: "Language",
+    mute: "Mute",
+    unmute: "Unmute",
+    bgmOn: "BGM on",
+    bgmOff: "BGM off",
+  },
+};

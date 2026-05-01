@@ -81,10 +81,13 @@ frontend/src/
 │   ├── api/api.ts, useGameSocket.ts
 │   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM
 │   ├── components/        # Card, Hand, Chip, BetArea, TurnTimer, ResultOverlay,
-│   │                      # ActionButton, KeyHintBar, StreakBadge
+│   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle
+│   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts
 │   └── types/game.ts      # WS message types incl. ChinchiroGameState
 ├── styles/theme.css
 ```
+
+i18n is in-house (no library). `locales/ja.ts` is the source of truth — its `Translation` type forces `en.ts` to provide a matching English entry for every key. `t("path.to.key", { name: value })` does dot-path lookup with `{name}` interpolation; missing keys fall back to ja, then to the key itself. Initial language reads `localStorage["sc:lang"]`, then `navigator.language` on first visit. Server payloads use stable enum IDs (`HandName.value`, `Result.value`) and structured table_ids (`bj-low`, `cc-high`) — translation lives entirely on the client; do not return display strings from the server.
 
 `useGameSocket` is generic and returns `gameState: unknown`-shaped data; each game component narrows it (`as ChinchiroGameState`). `App.tsx` wires `GameRouter` with the table's `game_type` so the right component renders even before the first WS message arrives.
 
@@ -131,9 +134,10 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 5. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
 6. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
 7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components. Use `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and add the `has-current` class to `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above.
-8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"...", icon:"...", tagline:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (a new game card will render automatically on the game-selection screen). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
+8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", icon:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (label/tagline come from i18n — see step 11). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
 9. **Keyboard shortcuts + hint bar**: add a `useEffect` window-keydown handler inside the game component that calls the same action callbacks the buttons use, and feed a `KeyHint[]` into `<KeyHintBar />` so the dock reflects what's live in this phase.
 10. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
+11. **i18n**: extend `shared/i18n/locales/ja.ts` with `games.roulette.{label,tagline}`, `tables.rl.{low,mid,high}`, plus any reasons / phase banners / button labels you introduce. The `Translation` type then forces matching English entries in `en.ts`. Use `t(key, params)` everywhere — never hardcode display strings.
 
 Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern.
 

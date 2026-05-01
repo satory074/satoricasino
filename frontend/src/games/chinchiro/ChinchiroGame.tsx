@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { useGameSocket } from "../../shared/api/useGameSocket";
 import { getUserId } from "../../shared/api/api";
+import { useTranslation } from "../../shared/i18n/useTranslation";
 import { ActionButton } from "../../shared/components/ActionButton";
 import { BetArea } from "../../shared/components/BetArea";
 import { KeyHintBar, type KeyHint } from "../../shared/components/KeyHintBar";
@@ -66,6 +67,7 @@ export function ChinchiroGame({
   onResolve,
   play,
 }: Props) {
+  const { t } = useTranslation();
   const myId = getUserId();
   const { connected, gameState: rawState, log, send } = useGameSocket(tableId);
   const state = rawState as unknown as ChinchiroGameState | null;
@@ -248,11 +250,11 @@ export function ChinchiroGame({
 
   const rollReason: string | null = !canRoll
     ? phase !== "player_rolls"
-      ? "今は振れないフェーズです"
+      ? t("chinchiro.reasons.wrongPhase")
       : !isMyTurn
-        ? "他のプレイヤーが振っています"
+        ? t("chinchiro.reasons.otherRolling")
         : me?.settled
-          ? "あなたの目は確定しています"
+          ? t("chinchiro.reasons.fixed")
           : null
     : null;
 
@@ -377,7 +379,7 @@ export function ChinchiroGame({
           )}
           {phase === "betting" && me && me.bet > 0 && (
             <p className="action-hint">
-              ベット {me.bet} 完了 — 他プレイヤー待機中…
+              {t("chinchiro.betDoneWaiting", { bet: me.bet })}
             </p>
           )}
           {phase === "banker_roll" && (
@@ -388,7 +390,7 @@ export function ChinchiroGame({
                 letterSpacing: "0.2em",
               }}
             >
-              親が振っている…
+              {t("chinchiro.bankerRolling")}
             </p>
           )}
           {phase === "player_rolls" && (
@@ -401,8 +403,8 @@ export function ChinchiroGame({
               shortcut="R"
             >
               {canRoll && me
-                ? `サイコロを振る (${me.rolls.length + 1}投目 / 3)`
-                : "サイコロを振る"}
+                ? t("chinchiro.rollNth", { n: me.rolls.length + 1 })
+                : t("chinchiro.rollDice")}
             </ActionButton>
           )}
           {phase === "resolution" && (

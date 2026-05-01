@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { useGameSocket } from "../../shared/api/useGameSocket";
 import { getUserId } from "../../shared/api/api";
+import { useTranslation } from "../../shared/i18n/useTranslation";
 import { ActionButton } from "../../shared/components/ActionButton";
 import { BetArea } from "../../shared/components/BetArea";
 import { KeyHintBar, type KeyHint } from "../../shared/components/KeyHintBar";
@@ -233,23 +234,25 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
   const canStart = phase === "waiting";
   const canNewRound = phase === "resolution";
 
+  const { t } = useTranslation();
+
   // Reason strings for disabled buttons
   const turnReason = !isMyTurn
-    ? "他のプレイヤーのターンです"
+    ? t("blackjack.reasons.otherTurn")
     : me?.is_busted
-      ? "バーストしているため操作できません"
+      ? t("blackjack.reasons.busted")
       : phase !== "player_turns"
-        ? "今は操作できないフェーズです"
+        ? t("blackjack.reasons.wrongPhase")
         : null;
   const doubleReason = !canDouble
     ? !isMyTurn
-      ? "他のプレイヤーのターンです"
+      ? t("blackjack.reasons.otherTurn")
       : !me || me.cards.length !== 2
-        ? "ダブルダウンは初手2枚のときだけ可能"
+        ? t("blackjack.reasons.doubleNeedsTwoCards")
         : me.is_busted
-          ? "バーストしているため操作できません"
+          ? t("blackjack.reasons.busted")
           : myCoins < me.bet
-            ? "ダブル分のコインが足りません"
+            ? t("blackjack.reasons.notEnoughCoinsForDouble")
             : null
     : null;
 
@@ -470,6 +473,8 @@ function GameActions({
   onBet,
   play,
 }: ActionsProps) {
+  const { t } = useTranslation();
+  const otherThinkingText = t("blackjack.otherThinking");
   if (phase === "waiting") {
     return (
       <div className="game-actions">
@@ -524,7 +529,7 @@ function GameActions({
         >
           Double
         </ActionButton>
-        {!isMyTurn && <p className="action-hint">他のプレイヤーが思考中…</p>}
+        {!isMyTurn && <p className="action-hint">{otherThinkingText}</p>}
       </div>
     );
   }
