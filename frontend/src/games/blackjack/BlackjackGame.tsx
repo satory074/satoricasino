@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { useGameSocket } from "../../shared/api/useGameSocket";
 import { getUserId } from "../../shared/api/api";
+import { ActionButton } from "../../shared/components/ActionButton";
 import { BetArea } from "../../shared/components/BetArea";
+import { KeyHintBar, type KeyHint } from "../../shared/components/KeyHintBar";
 import {
   ResultOverlay,
   type ResultKind,
@@ -179,6 +181,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
 
   const phase: Phase = gameState?.phase ?? "waiting";
   const me = myId ? gameState?.players[myId] : null;
+  const isMyTurn = !!myId && gameState?.current_player_id === myId;
 
   const onHit = useCallback(() => {
     play("hit");
@@ -217,6 +220,81 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
     [phase, gameState?.current_player_id, me?.cards.length],
   );
 
+  // Action availability
+  const canHit = phase === "player_turns" && !!isMyTurn && !me?.is_busted;
+  const canStand = canHit;
+  const canDouble =
+    phase === "player_turns" &&
+    !!isMyTurn &&
+    !!me &&
+    me.cards.length === 2 &&
+    !me.is_busted &&
+    myCoins >= me.bet;
+  const canStart = phase === "waiting";
+  const canNewRound = phase === "resolution";
+
+  // Reason strings for disabled buttons
+  const turnReason = !isMyTurn
+    ? "他のプレイヤーのターンです"
+    : me?.is_busted
+      ? "バーストしているため操作できません"
+      : phase !== "player_turns"
+        ? "今は操作できないフェーズです"
+        : null;
+  const doubleReason = !canDouble
+    ? !isMyTurn
+      ? "他のプレイヤーのターンです"
+      : !me || me.cards.length !== 2
+        ? "ダブルダウンは初手2枚のときだけ可能"
+        : me.is_busted
+          ? "バーストしているため操作できません"
+          : myCoins < me.bet
+            ? "ダブル分のコインが足りません"
+            : null
+    : null;
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      const k = e.key.toLowerCase();
+      if (k === "h" && canHit) {
+        e.preventDefault();
+        onHit();
+      } else if (k === "s" && canStand) {
+        e.preventDefault();
+        onStand();
+      } else if (k === "d" && canDouble) {
+        e.preventDefault();
+        onDouble();
+      } else if ((k === "enter" || k === " ") && canNewRound) {
+        e.preventDefault();
+        onNewRound();
+      } else if ((k === "enter" || k === " ") && canStart) {
+        e.preventDefault();
+        onStart();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [canHit, canStand, canDouble, canNewRound, canStart, onHit, onStand, onDouble, onNewRound, onStart]);
+
+  // Hint bar rows depending on phase
+  const hints: KeyHint[] = useMemo(() => {
+    if (phase === "player_turns") {
+      return [
+        { key: "H", label: "Hit", disabled: !canHit },
+        { key: "S", label: "Stand", disabled: !canStand },
+        { key: "D", label: "Double", disabled: !canDouble },
+      ];
+    }
+    if (phase === "waiting") return [{ key: "Enter", label: "Start" }];
+    if (phase === "resolution") return [{ key: "Enter", label: "Next round" }];
+    return [];
+  }, [phase, canHit, canStand, canDouble]);
+
   return (
     <div className="game-section">
       <div className="game-topbar">
@@ -240,7 +318,11 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
               onCardEvent={onCardEvent}
             />
 
-            <div className="players-area">
+            <div
+              className={`players-area${
+                gameState.current_player_id ? " has-current" : ""
+              }`}
+            >
               {Object.entries(gameState.players).map(([pid, p]) => (
                 <PlayerBoxWithEvents
                   key={pid}
@@ -256,9 +338,17 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
             </div>
 
             <GameActions
-              gameState={gameState}
-              myId={myId}
+              phase={phase}
+              hasMe={!!me}
+              myBet={me?.bet ?? 0}
               myCoins={myCoins}
+              isMyTurn={!!isMyTurn}
+              canHit={canHit}
+              canStand={canStand}
+              canDouble={canDouble}
+              canNewRound={canNewRound}
+              turnReason={turnReason}
+              doubleReason={doubleReason}
               onStart={onStart}
               onHit={onHit}
               onStand={onStand}
@@ -272,6 +362,8 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
           <div style={{ padding: "3rem", color: "var(--text-mute)" }}>Connecting…</div>
         )}
       </div>
+
+      <KeyHintBar hints={hints} />
 
       <div className="game-log-area">
         <h4>Log</h4>
@@ -338,9 +430,17 @@ function PlayerBoxWithEvents({
 }
 
 interface ActionsProps {
-  gameState: GameState;
-  myId: string | null;
+  phase: Phase;
+  hasMe: boolean;
+  myBet: number;
   myCoins: number;
+  isMyTurn: boolean;
+  canHit: boolean;
+  canStand: boolean;
+  canDouble: boolean;
+  canNewRound: boolean;
+  turnReason: string | null;
+  doubleReason: string | null;
   onStart: () => void;
   onHit: () => void;
   onStand: () => void;
@@ -351,9 +451,17 @@ interface ActionsProps {
 }
 
 function GameActions({
-  gameState,
-  myId,
+  phase,
+  hasMe,
+  myBet,
   myCoins,
+  isMyTurn,
+  canHit,
+  canStand,
+  canDouble,
+  canNewRound,
+  turnReason,
+  doubleReason,
   onStart,
   onHit,
   onStand,
@@ -362,25 +470,21 @@ function GameActions({
   onBet,
   play,
 }: ActionsProps) {
-  const me = myId ? gameState.players[myId] : null;
-  const phase = gameState.phase;
-  const isMyTurn = !!myId && gameState.current_player_id === myId;
-
   if (phase === "waiting") {
     return (
       <div className="game-actions">
-        <button className="action-btn btn-deal" onClick={onStart}>
+        <ActionButton variant="deal" highlight onClick={onStart} shortcut="↵">
           Start Game
-        </button>
+        </ActionButton>
       </div>
     );
   }
 
   if (phase === "betting") {
-    if (!me || me.bet > 0) {
+    if (!hasMe || myBet > 0) {
       return (
         <div className="game-actions">
-          <p style={{ color: "var(--text-mute)" }}>Waiting for other bets…</p>
+          <p className="action-hint">Waiting for other bets…</p>
         </div>
       );
     }
@@ -389,29 +493,38 @@ function GameActions({
     );
   }
 
-  if (phase === "player_turns" && isMyTurn) {
-    const canDouble = me && me.cards.length === 2 && myCoins >= me.bet * 2;
-    return (
-      <div className="game-actions">
-        <button className="action-btn btn-hit" onClick={onHit}>
-          Hit
-        </button>
-        <button className="action-btn btn-stand" onClick={onStand}>
-          Stand
-        </button>
-        {canDouble && (
-          <button className="action-btn btn-double" onClick={onDouble}>
-            Double
-          </button>
-        )}
-      </div>
-    );
-  }
-
   if (phase === "player_turns") {
     return (
       <div className="game-actions">
-        <p style={{ color: "var(--text-mute)" }}>Waiting for other players…</p>
+        <ActionButton
+          variant="hit"
+          onClick={onHit}
+          disabled={!canHit}
+          reason={turnReason}
+          highlight={canHit}
+          shortcut="H"
+        >
+          Hit
+        </ActionButton>
+        <ActionButton
+          variant="stand"
+          onClick={onStand}
+          disabled={!canStand}
+          reason={turnReason}
+          shortcut="S"
+        >
+          Stand
+        </ActionButton>
+        <ActionButton
+          variant="double"
+          onClick={onDouble}
+          disabled={!canDouble}
+          reason={doubleReason}
+          shortcut="D"
+        >
+          Double
+        </ActionButton>
+        {!isMyTurn && <p className="action-hint">他のプレイヤーが思考中…</p>}
       </div>
     );
   }
@@ -419,12 +532,22 @@ function GameActions({
   if (phase === "resolution") {
     return (
       <div className="game-actions">
-        <button className="action-btn btn-deal" onClick={onNewRound}>
+        <ActionButton
+          variant="deal"
+          onClick={onNewRound}
+          highlight={canNewRound}
+          shortcut="↵"
+        >
           New Round
-        </button>
+        </ActionButton>
       </div>
     );
   }
 
-  return null;
+  // dealer_turn / dealing
+  return (
+    <div className="game-actions">
+      <p className="action-hint">…</p>
+    </div>
+  );
 }

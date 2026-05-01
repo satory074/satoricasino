@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { useGameSocket } from "../../shared/api/useGameSocket";
 import { getUserId } from "../../shared/api/api";
+import { ActionButton } from "../../shared/components/ActionButton";
 import { BetArea } from "../../shared/components/BetArea";
+import { KeyHintBar, type KeyHint } from "../../shared/components/KeyHintBar";
 import {
   ResultOverlay,
   type ResultKind,
@@ -75,6 +77,7 @@ export function ChinchiroGame({
   const prevBankerRollCountRef = useRef(0);
   const prevBankerHandRef = useRef<string | null>(null);
   const prevPlayerRollCountsRef = useRef<Record<string, number>>({});
+  const bankerNearMissFiredRef = useRef(false);
   const playRef = useRef(play);
   playRef.current = play;
   const onResolveRef = useRef(onResolve);
@@ -84,8 +87,26 @@ export function ChinchiroGame({
   useEffect(() => {
     if (!state) return;
 
+    if (state.phase === "betting") {
+      bankerNearMissFiredRef.current = false;
+    }
+
     if (state.banker_rolls.length > prevBankerRollCountRef.current) {
       playRef.current("dice_land");
+
+      // Banker near-miss reach: latest banker roll has 2 of the same value
+      // but the third differs → suspense heartbeat before result resolves.
+      const latest = state.banker_rolls[state.banker_rolls.length - 1];
+      if (latest && !bankerNearMissFiredRef.current) {
+        const [a, b, c] = latest;
+        const allSame = a === b && b === c;
+        const twoSame = !allSame && (a === b || b === c || a === c);
+        if (twoSame) {
+          bankerNearMissFiredRef.current = true;
+          window.setTimeout(() => playRef.current("heartbeat"), 220);
+          window.setTimeout(() => playRef.current("heartbeat"), 700);
+        }
+      }
     }
     prevBankerRollCountRef.current = state.banker_rolls.length;
 
@@ -215,6 +236,59 @@ export function ChinchiroGame({
     send("new_round");
   }, [send, play]);
 
+  const phase: ChinchiroPhase = state?.phase ?? "waiting";
+  const me = state && myId ? state.players[myId] : null;
+  const isMyTurn = !!state && !!myId && state.current_player_id === myId;
+  const maxBet = Math.max(10, Math.floor(myCoins / 5));
+
+  const canStart = !!state && phase === "waiting";
+  const canRoll =
+    !!state && phase === "player_rolls" && isMyTurn && !!me && !me.settled;
+  const canNewRound = !!state && phase === "resolution";
+
+  const rollReason: string | null = !canRoll
+    ? phase !== "player_rolls"
+      ? "今は振れないフェーズです"
+      : !isMyTurn
+        ? "他のプレイヤーが振っています"
+        : me?.settled
+          ? "あなたの目は確定しています"
+          : null
+    : null;
+
+  const hints: KeyHint[] = useMemo(() => {
+    if (!state) return [];
+    if (phase === "waiting") return [{ key: "Enter", label: "Start" }];
+    if (phase === "player_rolls") {
+      return [{ key: "R", label: "Roll", disabled: !canRoll }];
+    }
+    if (phase === "resolution") return [{ key: "Enter", label: "Next round" }];
+    return [];
+  }, [state, phase, canRoll]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA"))
+        return;
+      const k = e.key.toLowerCase();
+      if (k === "r" && canRoll) {
+        e.preventDefault();
+        onRoll();
+      } else if ((k === "enter" || k === " ") && canStart) {
+        e.preventDefault();
+        onStart();
+      } else if ((k === "enter" || k === " ") && canNewRound) {
+        e.preventDefault();
+        onNewRound();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [canRoll, canStart, canNewRound, onRoll, onStart, onNewRound]);
+
   if (!state) {
     return (
       <div className="game-section">
@@ -235,11 +309,6 @@ export function ChinchiroGame({
       </div>
     );
   }
-
-  const phase: ChinchiroPhase = state.phase;
-  const me = myId ? state.players[myId] : null;
-  const isMyTurn = !!myId && state.current_player_id === myId;
-  const maxBet = Math.max(10, Math.floor(myCoins / 5));
 
   return (
     <div className="game-section">
@@ -266,7 +335,11 @@ export function ChinchiroGame({
           }
         />
 
-        <div className="players-area">
+        <div
+          className={`players-area${
+            state.current_player_id ? " has-current" : ""
+          }`}
+        >
           {Object.entries(state.players).map(([pid, p]) => (
             <PlayerSeat
               key={pid}
@@ -290,40 +363,62 @@ export function ChinchiroGame({
 
         <div className="game-actions">
           {phase === "waiting" && (
-            <button className="action-btn btn-deal" onClick={onStart}>
+            <ActionButton
+              variant="deal"
+              onClick={onStart}
+              highlight
+              shortcut="↵"
+            >
               Start Game
-            </button>
+            </ActionButton>
           )}
           {phase === "betting" && me && me.bet === 0 && (
             <BetArea minBalance={maxBet} onPlace={onBet} play={play} />
           )}
           {phase === "betting" && me && me.bet > 0 && (
-            <p style={{ color: "var(--text-mute)" }}>
+            <p className="action-hint">
               ベット {me.bet} 完了 — 他プレイヤー待機中…
             </p>
           )}
           {phase === "banker_roll" && (
-            <p style={{ color: "var(--gold)", fontFamily: "var(--font-display)", letterSpacing: "0.2em" }}>
+            <p
+              style={{
+                color: "var(--gold)",
+                fontFamily: "var(--font-display)",
+                letterSpacing: "0.2em",
+              }}
+            >
               親が振っている…
             </p>
           )}
-          {phase === "player_rolls" && isMyTurn && me && !me.settled && (
-            <button className="action-btn btn-deal" onClick={onRoll}>
-              サイコロを振る ({me.rolls.length + 1}投目 / 3)
-            </button>
-          )}
-          {phase === "player_rolls" && !isMyTurn && (
-            <p style={{ color: "var(--text-mute)" }}>
-              他のプレイヤーが振っています…
-            </p>
+          {phase === "player_rolls" && (
+            <ActionButton
+              variant="deal"
+              onClick={onRoll}
+              disabled={!canRoll}
+              reason={rollReason}
+              highlight={canRoll}
+              shortcut="R"
+            >
+              {canRoll && me
+                ? `サイコロを振る (${me.rolls.length + 1}投目 / 3)`
+                : "サイコロを振る"}
+            </ActionButton>
           )}
           {phase === "resolution" && (
-            <button className="action-btn btn-deal" onClick={onNewRound}>
+            <ActionButton
+              variant="deal"
+              onClick={onNewRound}
+              highlight={canNewRound}
+              shortcut="↵"
+            >
               New Round
-            </button>
+            </ActionButton>
           )}
         </div>
       </div>
+
+      <KeyHintBar hints={hints} />
 
       <div className="game-log-area">
         <h4>Log</h4>

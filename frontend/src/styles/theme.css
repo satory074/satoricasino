@@ -616,11 +616,22 @@ input:focus {
 
 .player-box.is-me {
   border-color: var(--crimson);
+  box-shadow:
+    0 0 0 2px rgba(196, 30, 58, 0.35),
+    0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
 .player-box.is-current {
   border-color: var(--gold);
   animation: player-pulse 1.6s ease-in-out infinite;
+}
+
+.players-area.has-current .player-box:not(.is-current) {
+  filter: saturate(0.6) brightness(0.88);
+}
+
+.players-area.has-current .player-seat:not(.is-current) {
+  filter: saturate(0.6) brightness(0.88);
 }
 
 @keyframes player-pulse {
@@ -939,6 +950,70 @@ input:focus {
 .btn-deal {
   background: linear-gradient(180deg, var(--gold-bright), var(--gold-soft));
   color: var(--ink) !important;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.action-btn-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.65rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.action-btn.btn-deal .action-btn-shortcut {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ink);
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
+.action-btn.is-cta {
+  animation: cta-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cta-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.4),
+      0 0 0 0 rgba(244, 196, 48, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 6px 22px rgba(0, 0, 0, 0.45),
+      0 0 22px 6px rgba(244, 196, 48, 0.45);
+  }
+}
+
+.action-btn[disabled],
+.action-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  filter: saturate(0.6);
+  cursor: not-allowed;
+}
+
+.action-hint {
+  width: 100%;
+  text-align: center;
+  color: var(--text-mute);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  font-style: italic;
 }
 
 /* Turn timer ring */
@@ -1297,6 +1372,9 @@ input:focus {
 
 .player-seat.is-me {
   border-color: var(--crimson);
+  box-shadow:
+    0 0 0 2px rgba(196, 30, 58, 0.35),
+    0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
 .player-seat.is-current {
@@ -1395,6 +1473,108 @@ input:focus {
 .hand-menashi {
   background: rgba(60, 60, 60, 0.55);
   color: #aaa;
+}
+
+/* === Key hint bar === */
+
+.key-hint-bar {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.45rem 1rem;
+  background: rgba(0, 0, 0, 0.45);
+  border-top: 1px solid rgba(244, 196, 48, 0.12);
+  font-size: 0.78rem;
+  color: var(--text-mute);
+  letter-spacing: 0.04em;
+}
+
+.key-hint-bar .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.key-hint-bar .key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.35rem;
+  padding: 0 0.4rem;
+  border-radius: 5px;
+  background: rgba(244, 196, 48, 0.15);
+  border: 1px solid rgba(244, 196, 48, 0.4);
+  color: var(--gold-bright);
+  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.key-hint-bar .label {
+  color: var(--cream);
+}
+
+.key-hint-bar .hint.is-disabled {
+  opacity: 0.4;
+}
+
+/* === Streak badge === */
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid rgba(244, 196, 48, 0.4);
+  background: linear-gradient(180deg, rgba(244, 196, 48, 0.18), rgba(244, 196, 48, 0.05));
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.streak-badge.tier-1 {
+  background: linear-gradient(180deg, rgba(58, 169, 255, 0.35), rgba(25, 118, 210, 0.15));
+  color: #cfe7ff;
+  border-color: rgba(58, 169, 255, 0.55);
+  box-shadow: 0 0 12px rgba(58, 169, 255, 0.35);
+}
+
+.streak-badge.tier-2 {
+  background: linear-gradient(180deg, rgba(196, 30, 58, 0.55), rgba(138, 20, 42, 0.25));
+  color: #fff0f3;
+  border-color: rgba(196, 30, 58, 0.7);
+  box-shadow: 0 0 16px rgba(196, 30, 58, 0.45);
+  animation: streak-flicker 1.6s ease-in-out infinite;
+}
+
+.streak-badge.tier-3 {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-soft));
+  color: var(--ink);
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 0 18px rgba(244, 196, 48, 0.7),
+    0 0 32px rgba(244, 196, 48, 0.4);
+  animation: streak-flicker 1.2s ease-in-out infinite;
+}
+
+@keyframes streak-flicker {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
 }
 
 /* Pinzoro overlay extra */

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Auth } from "./auth/Auth";
 import { Lobby } from "./lobby/Lobby";
 import { GameRouter } from "./games/GameRouter";
 import { useAudio } from "./shared/audio/useAudio";
 import { clearAuth, getDisplayName, getToken } from "./shared/api/api";
+import { StreakBadge } from "./shared/components/StreakBadge";
 import type { UserProfile } from "./shared/types/game";
 import clsx from "clsx";
 
@@ -16,6 +17,9 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [coinFlash, setCoinFlash] = useState<"up" | "down" | null>(null);
   const [shownCoins, setShownCoins] = useState<number>(0);
+  const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const tableGameTypeRef = useRef(tableGameType);
+  tableGameTypeRef.current = tableGameType;
   const { muted, bgmOn, toggleMute, toggleBgm, play } = useAudio();
 
   // Coin counter animation
@@ -63,6 +67,13 @@ export default function App() {
             }
           : p,
       );
+      // Per-game win streak: increment on win, reset on loss, leave on push.
+      const game = tableGameTypeRef.current;
+      setStreaks((prev) => {
+        if (delta > 0) return { ...prev, [game]: (prev[game] ?? 0) + 1 };
+        if (delta < 0) return { ...prev, [game]: 0 };
+        return prev;
+      });
     },
     [profile, onCoinsChanged],
   );
@@ -110,6 +121,9 @@ export default function App() {
               <span className="user-stats">
                 {profile.wins}W / {profile.losses}L / {profile.draws}D
               </span>
+            )}
+            {view === "game" && (
+              <StreakBadge streak={streaks[tableGameType] ?? 0} />
             )}
             <button
               className="mute-btn"
