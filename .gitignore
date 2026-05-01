@@ -19,3 +19,6 @@ frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
 frontend/**/*.tsbuildinfo
+
+# Claude Code local config (user-specific permissions, runtime locks)
+.claude/
