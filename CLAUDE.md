@@ -112,11 +112,12 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 1. **Backend logic**: write `backend/game/roulette.py` with phases, action methods, `get_state()`, `calculate_payout_for(player_id)`. Mirror the existing class shape.
 2. **Backend wiring** (`backend/main.py`): add `"roulette"` to `SUPPORTED_GAMES`, extend `_make_game`, write `_broadcast_roulette`, write `_handle_roulette_action`, add a branch in `_broadcast_state` and the WS endpoint.
 3. **Seed tables** (`backend/main.py`): add Low/Mid/High roulette entries (e.g. `rl-low/mid/high`) to `SEED_TABLES` so they appear in the lobby on next restart.
-4. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
-5. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
-6. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
-7. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"...", icon:"...", tagline:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (a new game card will render automatically on the game-selection screen).
-8. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
+4. **Bot driver** (`backend/main.py`): write `_bot_step_roulette` and add a branch for `"roulette"` in `_run_bot_driver`. Without this the bot will spawn at the seeded table but never act, leaving the table stuck in WAITING.
+5. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
+6. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
+7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
+8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"...", icon:"...", tagline:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (a new game card will render automatically on the game-selection screen).
+9. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
 
 Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern.
 
