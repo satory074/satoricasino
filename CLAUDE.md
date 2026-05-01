@@ -26,8 +26,8 @@ uv run pytest -k "test_pinzoro"                # one test by name
 cd frontend
 npm install
 npm run dev                                    # Vite at :5173, proxies /api + /ws → :8000
-npm run build                                  # tsc -b && vite build → frontend/dist/
-npm run preview
+npm run build                                  # tsc -b && vite build → frontend/dist/ (also acts as type-check)
+npm run preview                                # No `lint` script — `build` is the type-check.
 
 # Production deploy
 firebase deploy --only hosting                 # frontend (~30s)
@@ -118,7 +118,11 @@ Endpoint: `/ws/table/{table_id}?token=...`. Single message envelope:
 {"type": "error", "message": "..."}
 
 // client → server
-{"action": "start" | "bet" | "hit" | "stand" | "double" | "roll" | "new_round", ...}
+{"action": "start"}                            // no payload
+{"action": "bet", "amount": 100}               // amount required
+{"action": "hit" | "stand" | "double"}         // blackjack, no payload
+{"action": "roll"}                             // chinchiro, no payload
+{"action": "new_round"}                        // no payload
 ```
 
 Action vocabulary is intentionally not namespaced — actions are unique per game today. Add a prefix (`{game}.{action}`) only if collisions appear.
@@ -133,7 +137,7 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 4. **Bot driver** (`backend/main.py`): write `_bot_step_roulette` and add a branch for `"roulette"` in `_run_bot_driver`. Without this the bot will spawn at the seeded table but never act, leaving the table stuck in WAITING.
 5. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
 6. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
-7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components. Use `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and add the `has-current` class to `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above.
+7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components. Use `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and add the `has-current` class to `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above. **If the game introduces bespoke result kinds** (e.g. chinchiro added `pinzoro`/`arashi`/`shigoro`/`hifumi`/`menashi`/`wakare`), extend `ResultKind` in `shared/components/ResultOverlay.tsx` and update `RIM_GLOW_KINDS` / `POSITIVE_AMOUNT_KINDS` so glow + amount-color rendering classifies the new kinds correctly.
 8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", icon:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (label/tagline come from i18n — see step 11). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
 9. **Keyboard shortcuts + hint bar**: add a `useEffect` window-keydown handler inside the game component that calls the same action callbacks the buttons use, and feed a `KeyHint[]` into `<KeyHintBar />` so the dock reflects what's live in this phase.
 10. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
