@@ -80,12 +80,27 @@ frontend/src/
 ├── shared/
 │   ├── api/api.ts, useGameSocket.ts
 │   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM
-│   ├── components/        # Card, Hand, Chip, BetArea, TurnTimer, ResultOverlay
+│   ├── components/        # Card, Hand, Chip, BetArea, TurnTimer, ResultOverlay,
+│   │                      # ActionButton, KeyHintBar, StreakBadge
 │   └── types/game.ts      # WS message types incl. ChinchiroGameState
 ├── styles/theme.css
 ```
 
 `useGameSocket` is generic and returns `gameState: unknown`-shaped data; each game component narrows it (`as ChinchiroGameState`). `App.tsx` wires `GameRouter` with the table's `game_type` so the right component renders even before the first WS message arrives.
+
+### UX clarity conventions
+
+Action affordance and "whose turn" cues are normalized across games — re-use the helpers, don't reinvent:
+
+- **`ActionButton` instead of raw `<button>` for game actions.** Always render the action even when it's not the player's turn, and pass `disabled` + a Japanese `reason` string. The button shows the reason as a `title` tooltip and grays out instead of disappearing — players don't get confused about where the buttons went.
+- **`highlight` prop = CTA pulse.** Set it on the single action that's "the next thing to do" (Hit during your BJ turn, Roll during your chinchiro turn, Start/New Round at the bookends). The `is-cta` gold pulse comes for free.
+- **`KeyHintBar` is the bottom dock for shortcuts.** Each game owns a `useEffect` that listens to `window.keydown` and dispatches the same callbacks the buttons use; the hint bar then mirrors which keys are live. Inputs/textareas are exempt inside the keydown handler — preserve that.
+- **`has-current` class on `.players-area`.** When `current_player_id` is set, attach this class so non-current seats dim via CSS (`filter: saturate(0.6) brightness(0.88)`). This is what makes "your turn" obvious at a glance.
+- **Per-game win streak.** `App.tsx` keeps `streaks: Record<string, number>` keyed by `game_type`, mutated in `onResolve` via a `tableGameTypeRef`. The header `StreakBadge` shows the active game's streak with tier-1/2/3 styling at 3/5/10. New games get this for free as long as `onResolve(delta)` is called from the game component on resolution.
+
+### Design notes
+
+`docs/design-notes/` holds the research that drove non-trivial UX decisions (excitement effects, "next action" clarity). When making another large UX change, drop a note there — it saves the next contributor from re-doing the literature review.
 
 ### WS protocol
 
@@ -115,9 +130,10 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 4. **Bot driver** (`backend/main.py`): write `_bot_step_roulette` and add a branch for `"roulette"` in `_run_bot_driver`. Without this the bot will spawn at the seeded table but never act, leaving the table stuck in WAITING.
 5. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
 6. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
-7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
-8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"...", icon:"...", tagline:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (a new game card will render automatically on the game-selection screen).
-9. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
+7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components. Use `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and add the `has-current` class to `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above.
+8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", label:"...", icon:"...", tagline:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (a new game card will render automatically on the game-selection screen). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
+9. **Keyboard shortcuts + hint bar**: add a `useEffect` window-keydown handler inside the game component that calls the same action callbacks the buttons use, and feed a `KeyHint[]` into `<KeyHintBar />` so the dock reflects what's live in this phase.
+10. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
 
 Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern.
 
