@@ -44,6 +44,7 @@ body {
     var(--felt-dark);
   background-attachment: fixed;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
 }
 
@@ -60,6 +61,7 @@ body::before {
   position: relative;
   z-index: 1;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -73,12 +75,18 @@ h4 {
   color: var(--cream);
 }
 
+html {
+  touch-action: manipulation;
+}
+
 button {
   font-family: var(--font-body);
   cursor: pointer;
   border: none;
   font-weight: 600;
   transition: transform 0.1s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button:active:not(:disabled) {
@@ -249,7 +257,12 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.5rem;
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+  padding-top: max(0.9rem, env(safe-area-inset-top));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+  padding-bottom: 0.9rem;
+  padding-left: max(1.5rem, env(safe-area-inset-left));
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25));
   border-bottom: 1px solid rgba(244, 196, 48, 0.15);
   backdrop-filter: blur(6px);
@@ -271,8 +284,10 @@ input:focus {
 
 .user-info {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   font-size: 0.9rem;
 }
 
@@ -292,7 +307,7 @@ input:focus {
   color: var(--gold-bright);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  min-width: 110px;
+  min-width: 0;
   justify-content: flex-end;
 }
 
@@ -365,7 +380,8 @@ input:focus {
   max-width: 900px;
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: clamp(0.85rem, 3vw, 1.5rem);
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
 
 .lobby-actions {
@@ -378,7 +394,7 @@ input:focus {
 
 .game-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -509,7 +525,9 @@ input:focus {
 
 .table-info {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
+  row-gap: 0.3rem;
   color: var(--text-mute);
   font-size: 0.8rem;
 }
@@ -557,8 +575,8 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem 1rem 2rem;
-  gap: 1.5rem;
+  padding: clamp(0.75rem, 3vw, 1.5rem) clamp(0.5rem, 2vw, 1rem) max(1.25rem, env(safe-area-inset-bottom));
+  gap: clamp(0.8rem, 2.5vw, 1.5rem);
   position: relative;
 }
 
@@ -609,7 +627,7 @@ input:focus {
   border: 2px solid rgba(244, 196, 48, 0.2);
   border-radius: 14px;
   padding: 1rem 1rem 1.25rem;
-  min-width: 200px;
+  min-width: min(200px, 100%);
   text-align: center;
   transition: all 0.3s;
 }
@@ -690,8 +708,8 @@ input:focus {
 
 /* Cards */
 .card-shell {
-  width: 60px;
-  height: 84px;
+  width: clamp(48px, 14vw, 60px);
+  height: clamp(67px, 19.6vw, 84px);
   position: relative;
   display: inline-block;
   flex-shrink: 0;
@@ -1221,14 +1239,14 @@ input:focus {
 }
 
 .bowl-lg {
-  width: 240px;
-  height: 240px;
+  width: clamp(180px, 52vw, 240px);
+  height: clamp(180px, 52vw, 240px);
   padding: 1rem;
 }
 
 .bowl-sm {
-  width: 170px;
-  height: 170px;
+  width: clamp(125px, 38vw, 170px);
+  height: clamp(125px, 38vw, 170px);
   padding: 0.75rem;
 }
 
@@ -1243,8 +1261,8 @@ input:focus {
 }
 
 .die {
-  width: 50px;
-  height: 50px;
+  width: clamp(38px, 11vw, 50px);
+  height: clamp(38px, 11vw, 50px);
   background: linear-gradient(180deg, #fdfaf2, #e0d5b8);
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 9px;
@@ -1261,8 +1279,8 @@ input:focus {
 }
 
 .bowl-sm .die {
-  width: 36px;
-  height: 36px;
+  width: clamp(28px, 8vw, 36px);
+  height: clamp(28px, 8vw, 36px);
   border-radius: 7px;
 }
 
@@ -1346,7 +1364,9 @@ input:focus {
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(196, 30, 58, 0.12), rgba(0, 0, 0, 0.3));
   border: 1px solid rgba(244, 196, 48, 0.3);
-  min-width: 280px;
+  min-width: min(280px, 100%);
+  width: 100%;
+  max-width: 360px;
 }
 
 .banker-area h3 {
@@ -1362,7 +1382,7 @@ input:focus {
   border: 2px solid rgba(244, 196, 48, 0.2);
   border-radius: 14px;
   padding: 1rem 0.85rem 1rem;
-  min-width: 200px;
+  min-width: min(200px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1595,12 +1615,7 @@ input:focus {
     padding: 1.75rem 1.25rem;
   }
   .player-box {
-    min-width: 165px;
     padding: 0.7rem 0.7rem 0.9rem;
-  }
-  .card-shell {
-    width: 50px;
-    height: 70px;
   }
   .card {
     font-size: 0.95rem;
@@ -1608,8 +1623,43 @@ input:focus {
   .card .center {
     font-size: 1.3rem;
   }
-  .bowl-lg { width: 200px; height: 200px; }
-  .bowl-sm { width: 140px; height: 140px; }
-  .die { width: 42px; height: 42px; }
-  .bowl-sm .die { width: 30px; height: 30px; }
+}
+
+@media (max-width: 480px) {
+  .app-logo {
+    font-size: 1.1rem;
+  }
+  .user-stats {
+    display: none;
+  }
+  .table-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .table-card > div:first-child {
+    min-width: 0;
+  }
+  .table-card .btn-primary {
+    width: 100%;
+  }
+  .player-box {
+    min-width: 0;
+    flex: 1 1 calc(50% - 0.5rem);
+    max-width: 100%;
+  }
+  .chip {
+    width: 48px;
+    height: 48px;
+    font-size: 0.78rem;
+  }
+  .chip-row {
+    gap: 0.4rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .key-hint-bar {
+    display: none;
+  }
 }
