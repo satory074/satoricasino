@@ -48,7 +48,8 @@ backend/
 ├── main.py                # FastAPI app, WS endpoint, action dispatch by game_type
 ├── game/
 │   ├── blackjack.py       # BlackjackGame class + Phase + Result
-│   └── chinchiro.py       # ChinchiroGame class + Phase + HandName + payout helpers
+│   ├── chinchiro.py       # ChinchiroGame class + Phase + HandName + payout helpers
+│   └── deck.py            # Card / hand_value / SUITS / RANKS — shared by any card game
 ├── auth.py, database.py, websocket_manager.py, models.py, config.py
 ```
 
@@ -131,13 +132,17 @@ Action vocabulary is intentionally not namespaced — actions are unique per gam
 
 This is the most useful contribution shape. To add e.g. roulette without touching blackjack or chinchiro:
 
-1. **Backend logic**: write `backend/game/roulette.py` with phases, action methods, `get_state()`, `calculate_payout_for(player_id)`. Mirror the existing class shape.
+1. **Backend logic**: write `backend/game/roulette.py` with phases, action methods, `get_state()`, `calculate_payout_for(player_id)`. Mirror the existing class shape. For card-based games, reuse `backend/game/deck.py` (`Card`, `hand_value`, `SUITS`, `RANKS`) instead of redefining.
 2. **Backend wiring** (`backend/main.py`): add `"roulette"` to `SUPPORTED_GAMES`, extend `_make_game`, write `_broadcast_roulette`, write `_handle_roulette_action`, add a branch in `_broadcast_state` and the WS endpoint.
 3. **Seed tables** (`backend/main.py`): add Low/Mid/High roulette entries (e.g. `rl-low/mid/high`) to `SEED_TABLES` so they appear in the lobby on next restart.
 4. **Bot driver** (`backend/main.py`): write `_bot_step_roulette` and add a branch for `"roulette"` in `_run_bot_driver`. Without this the bot will spawn at the seeded table but never act, leaving the table stuck in WAITING.
 5. **Backend tests**: `tests/test_roulette.py` following the `TestRouletteGame` class style in `test_blackjack.py` / `test_chinchiro.py`.
 6. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
-7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components. Use `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and add the `has-current` class to `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above. **If the game introduces bespoke result kinds** (e.g. chinchiro added `pinzoro`/`arashi`/`shigoro`/`hifumi`/`menashi`/`wakare`), extend `ResultKind` in `shared/components/ResultOverlay.tsx` and update `RIM_GLOW_KINDS` / `POSITIVE_AMOUNT_KINDS` so glow + amount-color rendering classifies the new kinds correctly. **Match the existing 3-row shell**: keep `<div className="game-section">` with this child order — `.game-topbar` (auto-height), `.game-table` (the scrollable stage; place dealer/board, players-area, and `.game-log-area` inside it), then `.game-actions` as a **sibling** of `.game-table` (NOT a child — it's the bottom action dock and must sit outside the scroll container), then `<KeyHintBar />`, then `<ResultOverlay />`. See blackjack/chinchiro for canonical structure. For visual elements that scale (boards/wheels/tokens), follow the mobile sizing rules in "Sharp edges" — `clamp()` for dimensions and `min(Npx, 100%)` for box widths.
+7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
+   - **Use shared helpers**: `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and the `has-current` class on `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above.
+   - **Match the 3-row shell**: keep `<div className="game-section">` with this child order — `.game-topbar` (auto-height), `.game-table` (the scrollable stage; place dealer/board, `.players-area`, and `.game-log-area` inside it), then `.game-actions` as a **sibling** of `.game-table` (NOT a child — it's the bottom action dock and must sit outside the scroll container), then `<KeyHintBar />`, then `<ResultOverlay />`. See blackjack/chinchiro for canonical structure.
+   - **Bespoke result kinds** (only if needed): if the game introduces names like chinchiro's `pinzoro`/`arashi`/`shigoro`/`hifumi`/`menashi`/`wakare`, extend `ResultKind` in `shared/components/ResultOverlay.tsx` and update `RIM_GLOW_KINDS` / `POSITIVE_AMOUNT_KINDS` so glow + amount-color rendering classifies the new kinds correctly.
+   - **Mobile sizing**: for visual elements that scale (boards, wheels, tokens), use `clamp()` for dimensions and `min(Npx, 100%)` for box widths — see "Sharp edges" Mobile entry.
 8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", icon:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (label/tagline come from i18n — see step 11). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
 9. **Keyboard shortcuts + hint bar**: add a `useEffect` window-keydown handler inside the game component that calls the same action callbacks the buttons use, and feed a `KeyHint[]` into `<KeyHintBar />` so the dock reflects what's live in this phase.
 10. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
