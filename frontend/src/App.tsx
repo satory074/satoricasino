@@ -129,7 +129,7 @@ export default function App() {
               <StreakBadge streak={streaks[tableGameType] ?? 0} />
             )}
             <button
-              className="mute-btn"
+              className="mute-btn audio-mute"
               onClick={toggleMute}
               title={muted ? t("header.unmute") : t("header.mute")}
               aria-label={muted ? t("header.unmute") : t("header.mute")}
@@ -137,14 +137,16 @@ export default function App() {
               {muted ? "🔇" : "🔊"}
             </button>
             <button
-              className="mute-btn"
+              className="mute-btn audio-bgm"
               onClick={toggleBgm}
               title={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
               aria-label={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
             >
               {bgmOn ? "♪" : "♩"}
             </button>
-            <LangToggle />
+            <span className="lang-toggle">
+              <LangToggle />
+            </span>
           </div>
         </header>
       )}

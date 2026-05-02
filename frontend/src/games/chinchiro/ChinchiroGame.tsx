@@ -363,76 +363,76 @@ export function ChinchiroGame({
           ))}
         </div>
 
-        <div className="game-actions">
-          {phase === "waiting" && (
-            <ActionButton
-              variant="deal"
-              onClick={onStart}
-              highlight
-              shortcut="↵"
-            >
-              Start Game
-            </ActionButton>
-          )}
-          {phase === "betting" && me && me.bet === 0 && (
-            <BetArea minBalance={maxBet} onPlace={onBet} play={play} />
-          )}
-          {phase === "betting" && me && me.bet > 0 && (
-            <p className="action-hint">
-              {t("chinchiro.betDoneWaiting", { bet: me.bet })}
-            </p>
-          )}
-          {phase === "banker_roll" && (
-            <p
-              style={{
-                color: "var(--gold)",
-                fontFamily: "var(--font-display)",
-                letterSpacing: "0.2em",
-              }}
-            >
-              {t("chinchiro.bankerRolling")}
-            </p>
-          )}
-          {phase === "player_rolls" && (
-            <ActionButton
-              variant="deal"
-              onClick={onRoll}
-              disabled={!canRoll}
-              reason={rollReason}
-              highlight={canRoll}
-              shortcut="R"
-            >
-              {canRoll && me
-                ? t("chinchiro.rollNth", { n: me.rolls.length + 1 })
-                : t("chinchiro.rollDice")}
-            </ActionButton>
-          )}
-          {phase === "resolution" && (
-            <ActionButton
-              variant="deal"
-              onClick={onNewRound}
-              highlight={canNewRound}
-              shortcut="↵"
-            >
-              New Round
-            </ActionButton>
-          )}
+        <div className="game-log-area">
+          <h4>Log</h4>
+          <div className="game-log">
+            {log.length === 0 && <div className="log-entry">…</div>}
+            {log.map((e) => (
+              <div key={e.id} className="log-entry">
+                {e.emoji} {e.text}
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
+
+      <div className="game-actions">
+        {phase === "waiting" && (
+          <ActionButton
+            variant="deal"
+            onClick={onStart}
+            highlight
+            shortcut="↵"
+          >
+            Start Game
+          </ActionButton>
+        )}
+        {phase === "betting" && me && me.bet === 0 && (
+          <BetArea minBalance={maxBet} onPlace={onBet} play={play} />
+        )}
+        {phase === "betting" && me && me.bet > 0 && (
+          <p className="action-hint">
+            {t("chinchiro.betDoneWaiting", { bet: me.bet })}
+          </p>
+        )}
+        {phase === "banker_roll" && (
+          <p
+            style={{
+              color: "var(--gold)",
+              fontFamily: "var(--font-display)",
+              letterSpacing: "0.2em",
+            }}
+          >
+            {t("chinchiro.bankerRolling")}
+          </p>
+        )}
+        {phase === "player_rolls" && (
+          <ActionButton
+            variant="deal"
+            onClick={onRoll}
+            disabled={!canRoll}
+            reason={rollReason}
+            highlight={canRoll}
+            shortcut="R"
+          >
+            {canRoll && me
+              ? t("chinchiro.rollNth", { n: me.rolls.length + 1 })
+              : t("chinchiro.rollDice")}
+          </ActionButton>
+        )}
+        {phase === "resolution" && (
+          <ActionButton
+            variant="deal"
+            onClick={onNewRound}
+            highlight={canNewRound}
+            shortcut="↵"
+          >
+            New Round
+          </ActionButton>
+        )}
       </div>
 
       <KeyHintBar hints={hints} />
-
-      <div className="game-log-area">
-        <h4>Log</h4>
-        <div className="game-log">
-          {log.length === 0 && <div className="log-entry">…</div>}
-          {log.map((e) => (
-            <div key={e.id} className="log-entry">
-              {e.emoji} {e.text}
-            </div>
-          ))}
-        </div>
-      </div>
 
       <ResultOverlay
         shown={overlay?.kind ?? null}

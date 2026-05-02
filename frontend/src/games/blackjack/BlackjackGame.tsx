@@ -340,45 +340,47 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
               ))}
             </div>
 
-            <GameActions
-              phase={phase}
-              hasMe={!!me}
-              myBet={me?.bet ?? 0}
-              myCoins={myCoins}
-              isMyTurn={!!isMyTurn}
-              canHit={canHit}
-              canStand={canStand}
-              canDouble={canDouble}
-              canNewRound={canNewRound}
-              turnReason={turnReason}
-              doubleReason={doubleReason}
-              onStart={onStart}
-              onHit={onHit}
-              onStand={onStand}
-              onDouble={onDouble}
-              onNewRound={onNewRound}
-              onBet={onBet}
-              play={play}
-            />
+            <div className="game-log-area">
+              <h4>Log</h4>
+              <div className="game-log">
+                {log.length === 0 && <div className="log-entry">…</div>}
+                {log.map((e) => (
+                  <div key={e.id} className="log-entry">
+                    {e.emoji} {e.text}
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         ) : (
           <div style={{ padding: "3rem", color: "var(--text-mute)" }}>Connecting…</div>
         )}
       </div>
 
-      <KeyHintBar hints={hints} />
+      {gameState && (
+        <GameActions
+          phase={phase}
+          hasMe={!!me}
+          myBet={me?.bet ?? 0}
+          myCoins={myCoins}
+          isMyTurn={!!isMyTurn}
+          canHit={canHit}
+          canStand={canStand}
+          canDouble={canDouble}
+          canNewRound={canNewRound}
+          turnReason={turnReason}
+          doubleReason={doubleReason}
+          onStart={onStart}
+          onHit={onHit}
+          onStand={onStand}
+          onDouble={onDouble}
+          onNewRound={onNewRound}
+          onBet={onBet}
+          play={play}
+        />
+      )}
 
-      <div className="game-log-area">
-        <h4>Log</h4>
-        <div className="game-log">
-          {log.length === 0 && <div className="log-entry">…</div>}
-          {log.map((e) => (
-            <div key={e.id} className="log-entry">
-              {e.emoji} {e.text}
-            </div>
-          ))}
-        </div>
-      </div>
+      <KeyHintBar hints={hints} />
 
       <ResultOverlay shown={overlay?.kind ?? null} amount={overlay?.amount ?? null} />
     </div>
