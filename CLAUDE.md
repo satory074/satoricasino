@@ -9,7 +9,7 @@ SatoriCasino — multi-game casino web app. Currently ships **Blackjack** and **
 ## Stack
 
 - **Backend**: FastAPI + WebSocket (Python 3.12). Firestore (Firebase Admin SDK) for users/coins/stats. JWT auth via `python-jose`.
-- **Frontend**: Vite + React 19 + TypeScript. Framer Motion + CSS keyframes for animation. Audio is synthesized at runtime with Web Audio API — there are no audio assets.
+- **Frontend**: Vite + React 19 + TypeScript. CSS keyframes for all gameplay animations (cards, dice, result overlays); Framer Motion only for layout/hover transitions. Audio is synthesized at runtime with Web Audio API — there are no audio assets.
 - **Hosting**: Backend on Cloud Run, frontend on Firebase Hosting. Both projects use `satoricasino` as the GCP/Firebase project ID.
 
 ## Common commands
@@ -102,6 +102,18 @@ Action affordance and "whose turn" cues are normalized across games — re-use t
 - **`has-current` class on `.players-area`.** When `current_player_id` is set, attach this class so non-current seats dim via CSS (`filter: saturate(0.6) brightness(0.88)`). This is what makes "your turn" obvious at a glance.
 - **Per-game win streak.** `App.tsx` keeps `streaks: Record<string, number>` keyed by `game_type`, mutated in `onResolve` via a `tableGameTypeRef`. The header `StreakBadge` shows the active game's streak with tier-1/2/3 styling at 3/5/10. New games get this for free as long as `onResolve(delta)` is called from the game component on resolution.
 
+### Result overlay: 3-phase reveal
+
+`ResultOverlay` drives a CSS-only phase state machine: **anticipation** (dark backdrop + pulsing color-coded orb) → **reveal** (explosive `scale(0.2→1.4→1)` text + rim glow) → **afterglow** (amount counts up from 0, text fades out). Timing scales by result significance via `getTiming(kind)` — pinzoro gets 3.4s total, losses get 1.15s, push/wakare skip anticipation entirely.
+
+Game components interact via two callbacks:
+- `onReveal`: fires when reveal phase starts — play result SFX, fire confetti, set `is-shaking` class on `.game-section` for jackpots (pinzoro/blackjack/arashi)
+- `onComplete`: fires when all phases finish — clear overlay state, remove shake class
+
+Anticipation SFX (`anticipation_jackpot` / `anticipation_win` / `anticipation_lose`) are played by the game component when setting the overlay, not by `ResultOverlay` itself. The `SoundId` types in `GameRouter.tsx`, `BlackjackGame.tsx`, and `ChinchiroGame.tsx` must stay in sync with `sounds.ts` — each is a local type alias.
+
+Screen shake uses a CSS `@keyframes screen-shake` animation on `.game-section.is-shaking`, disabled by `@media (prefers-reduced-motion: reduce)`.
+
 ### Design notes
 
 `docs/design-notes/` holds the research that drove non-trivial UX decisions (excitement effects, "next action" clarity). When making another large UX change, drop a note there — it saves the next contributor from re-doing the literature review.
@@ -141,7 +153,7 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
    - **Use shared helpers**: `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on the single "next thing to do" action, and the `has-current` class on `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above.
    - **Match the 3-row shell**: keep `<div className="game-section">` with this child order — `.game-topbar` (auto-height), `.game-table` (the scrollable stage; place dealer/board, `.players-area`, and `.game-log-area` inside it), then `.game-actions` as a **sibling** of `.game-table` (NOT a child — it's the bottom action dock and must sit outside the scroll container), then `<KeyHintBar />`, then `<ResultOverlay />`. See blackjack/chinchiro for canonical structure.
-   - **Bespoke result kinds** (only if needed): if the game introduces names like chinchiro's `pinzoro`/`arashi`/`shigoro`/`hifumi`/`menashi`/`wakare`, extend `ResultKind` in `shared/components/ResultOverlay.tsx` and update `RIM_GLOW_KINDS` / `POSITIVE_AMOUNT_KINDS` so glow + amount-color rendering classifies the new kinds correctly.
+   - **Bespoke result kinds** (only if needed): if the game introduces names like chinchiro's `pinzoro`/`arashi`/`shigoro`/`hifumi`/`menashi`/`wakare`, extend `ResultKind` in `shared/components/ResultOverlay.tsx` and update `RIM_GLOW_KINDS` / `POSITIVE_AMOUNT_KINDS` so glow + amount-color rendering classifies the new kinds correctly. Update `getTiming()` with appropriate anticipation/reveal/afterglow durations for new kinds.
    - **Mobile sizing**: for visual elements that scale (boards, wheels, tokens), use `clamp()` for dimensions and `min(Npx, 100%)` for box widths — see "Sharp edges" Mobile entry.
 8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", icon:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (label/tagline come from i18n — see step 11). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
 9. **Keyboard shortcuts + hint bar**: add a `useEffect` window-keydown handler inside the game component that calls the same action callbacks the buttons use, and feed a `KeyHint[]` into `<KeyHintBar />` so the dock reflects what's live in this phase.
@@ -152,7 +164,7 @@ Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` 
 
 ## Sharp edges to know
 
-- **Animations must work in hidden tabs.** Browsers pause `requestAnimationFrame` when a tab is in the background, freezing Framer Motion mid-animation. Cards and dice both use pure CSS `@keyframes` (which run on the compositor) for entry animations specifically because of this. Reserve Framer Motion for layout / hover / one-shot transitions where freezing is acceptable.
+- **Animations must work in hidden tabs.** Browsers pause `requestAnimationFrame` when a tab is in the background, freezing Framer Motion mid-animation. Cards, dice, and result overlays all use pure CSS `@keyframes` (which run on the compositor) for entry/phase animations specifically because of this. Reserve Framer Motion for layout / hover / one-shot transitions where freezing is acceptable.
 - **Chinchiro banker reserve**: server requires `coins >= bet * 5` to place a chinchiro bet (banker pinzoro can take 5x). The `BetArea` ceiling is `floor(coins/5)` accordingly. Don't loosen one without the other.
 - **`firebase.json` cache headers** force `index.html` to `no-cache` while hashed asset bundles get a 1-year `immutable` cache. This was added because Firebase was serving a stale `index.html` after deploys. Don't remove without a replacement strategy.
 - **Cloud Run cold starts** wipe all in-memory tables. Don't put session-critical state outside Firestore.
