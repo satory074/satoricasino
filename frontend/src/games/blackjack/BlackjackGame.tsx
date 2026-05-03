@@ -151,7 +151,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
     } else if (kind !== "push") {
       playRef.current("anticipation_lose");
     }
-  }, [gameState, myId, overlay]);
+  }, [gameState, myId]);
 
   // Reveal callback — result SFX + confetti + shake
   const onOverlayReveal = useCallback(() => {

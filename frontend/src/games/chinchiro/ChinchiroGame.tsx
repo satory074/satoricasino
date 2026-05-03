@@ -181,7 +181,7 @@ export function ChinchiroGame({
     } else if (kind !== "wakare") {
       playRef.current("anticipation_lose");
     }
-  }, [state, myId, overlay]);
+  }, [state, myId]);
 
   // Reveal callback — result SFX + confetti + shake
   const onOverlayReveal = useCallback(() => {
