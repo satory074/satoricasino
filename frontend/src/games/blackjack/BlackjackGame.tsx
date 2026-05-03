@@ -31,7 +31,10 @@ type SoundId =
   | "bust"
   | "push"
   | "near_miss"
-  | "tick";
+  | "tick"
+  | "anticipation_jackpot"
+  | "anticipation_win"
+  | "anticipation_lose";
 
 interface Props {
   tableId: string;
@@ -61,6 +64,9 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
     kind: ResultKind;
     amount: number | null;
   } | null>(null);
+  const [shaking, setShaking] = useState(false);
+  const overlayRef = useRef<{ kind: ResultKind; amount: number | null } | null>(null);
+  overlayRef.current = overlay;
   const prevPhaseRef = useRef<Phase | null>(null);
   const prevBustedRef = useRef<Record<string, boolean>>({});
   const playRef = useRef(play);
@@ -91,11 +97,14 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
     }
   }, [gameState]);
 
-  // Resolution → overlay + SFX + confetti
+  // Resolution → overlay + anticipation SFX
   useEffect(() => {
     if (!gameState || !myId) return;
     if (gameState.phase !== "resolution") {
-      if (overlay && gameState.phase === "betting") setOverlay(null);
+      if (overlay && gameState.phase === "betting") {
+        setOverlay(null);
+        setShaking(false);
+      }
       return;
     }
     const myResult = gameState.results?.[myId];
@@ -123,14 +132,32 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
       kind = "push";
     } else if (detectNearMiss(myValue, isBusted, dealerValue, myResult)) {
       kind = "near_miss";
+      amount = -bet;
       delta = -bet;
     } else {
       kind = isBusted ? "bust" : "lose";
+      amount = -bet;
       delta = -bet;
     }
 
     onResolveRef.current(delta);
     setOverlay({ kind, amount });
+
+    // Anticipation SFX
+    if (kind === "blackjack") {
+      playRef.current("anticipation_jackpot");
+    } else if (kind === "win" || kind === "near_miss") {
+      playRef.current("anticipation_win");
+    } else if (kind !== "push") {
+      playRef.current("anticipation_lose");
+    }
+  }, [gameState, myId, overlay]);
+
+  // Reveal callback — result SFX + confetti + shake
+  const onOverlayReveal = useCallback(() => {
+    const o = overlayRef.current;
+    if (!o) return;
+    const { kind } = o;
 
     if (kind === "blackjack") {
       playRef.current("blackjack");
@@ -151,6 +178,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
           }),
         300,
       );
+      setShaking(true);
     } else if (kind === "win") {
       playRef.current("win");
       playRef.current("chip_payout");
@@ -169,16 +197,12 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
     } else {
       playRef.current("lose");
     }
+  }, []);
 
-    const dur =
-      kind === "lose" || kind === "bust"
-        ? 1100
-        : kind === "blackjack"
-          ? 2400
-          : 1900;
-    const t = window.setTimeout(() => setOverlay(null), dur);
-    return () => clearTimeout(t);
-  }, [gameState, myId, overlay]);
+  const onOverlayComplete = useCallback(() => {
+    setOverlay(null);
+    setShaking(false);
+  }, []);
 
   const phase: Phase = gameState?.phase ?? "waiting";
   const me = myId ? gameState?.players[myId] : null;
@@ -299,7 +323,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
   }, [phase, canHit, canStand, canDouble]);
 
   return (
-    <div className="game-section">
+    <div className={`game-section${shaking ? " is-shaking" : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
           ← Lobby
@@ -382,7 +406,12 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
 
       <KeyHintBar hints={hints} />
 
-      <ResultOverlay shown={overlay?.kind ?? null} amount={overlay?.amount ?? null} />
+      <ResultOverlay
+        shown={overlay?.kind ?? null}
+        amount={overlay?.amount ?? null}
+        onReveal={onOverlayReveal}
+        onComplete={onOverlayComplete}
+      />
     </div>
   );
 }

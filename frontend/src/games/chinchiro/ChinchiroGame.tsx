@@ -42,7 +42,10 @@ type SoundId =
   | "shigoro"
   | "hifumi"
   | "menashi"
-  | "heartbeat";
+  | "heartbeat"
+  | "anticipation_jackpot"
+  | "anticipation_win"
+  | "anticipation_lose";
 
 interface Props {
   tableId: string;
@@ -75,6 +78,9 @@ export function ChinchiroGame({
   const [overlay, setOverlay] = useState<
     { kind: ResultKind; amount: number | null } | null
   >(null);
+  const [shaking, setShaking] = useState(false);
+  const overlayRef = useRef<{ kind: ResultKind; amount: number | null } | null>(null);
+  overlayRef.current = overlay;
 
   const prevBankerRollCountRef = useRef(0);
   const prevBankerHandRef = useRef<string | null>(null);
@@ -134,11 +140,14 @@ export function ChinchiroGame({
     }
   }, [state, myId]);
 
-  // Resolution → overlay + confetti + payout
+  // Resolution → overlay + anticipation SFX
   useEffect(() => {
     if (!state || !myId) return;
     if (state.phase !== "resolution") {
-      if (overlay && state.phase === "betting") setOverlay(null);
+      if (overlay && state.phase === "betting") {
+        setOverlay(null);
+        setShaking(false);
+      }
       return;
     }
     if (overlay) return;
@@ -164,7 +173,23 @@ export function ChinchiroGame({
     setOverlay({ kind, amount: payout });
     onResolveRef.current(payout);
 
-    if (payout > 0) {
+    // Anticipation SFX
+    if (kind === "pinzoro" || kind === "arashi") {
+      playRef.current("anticipation_jackpot");
+    } else if (kind === "win" || kind === "shigoro") {
+      playRef.current("anticipation_win");
+    } else if (kind !== "wakare") {
+      playRef.current("anticipation_lose");
+    }
+  }, [state, myId, overlay]);
+
+  // Reveal callback — result SFX + confetti + shake
+  const onOverlayReveal = useCallback(() => {
+    const o = overlayRef.current;
+    if (!o) return;
+    const { kind, amount: amt } = o;
+
+    if (amt != null && amt > 0) {
       const intensity =
         kind === "pinzoro" ? 220 : kind === "arashi" ? 140 : kind === "shigoro" ? 100 : 80;
       const colors =
@@ -204,19 +229,22 @@ export function ChinchiroGame({
           900,
         );
       }
-      // Player-side coin payout SFX
       playRef.current("chip_payout");
-    } else if (payout < 0) {
-      // For non-special losses, nudge with a "lose" sound
+    } else if (amt != null && amt < 0) {
       if (kind === "lose") playRef.current("lose");
     } else {
       playRef.current("push");
     }
 
-    const dur = kind === "pinzoro" ? 3200 : kind === "arashi" ? 2400 : 2000;
-    const t = window.setTimeout(() => setOverlay(null), dur);
-    return () => clearTimeout(t);
-  }, [state, myId, overlay]);
+    if (kind === "pinzoro" || kind === "arashi") {
+      setShaking(true);
+    }
+  }, []);
+
+  const onOverlayComplete = useCallback(() => {
+    setOverlay(null);
+    setShaking(false);
+  }, []);
 
   const onStart = useCallback(() => {
     play("button_click");
@@ -313,7 +341,7 @@ export function ChinchiroGame({
   }
 
   return (
-    <div className="game-section">
+    <div className={`game-section${shaking ? " is-shaking" : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
           ← Lobby
@@ -437,6 +465,8 @@ export function ChinchiroGame({
       <ResultOverlay
         shown={overlay?.kind ?? null}
         amount={overlay?.amount ?? null}
+        onReveal={onOverlayReveal}
+        onComplete={onOverlayComplete}
       />
     </div>
   );

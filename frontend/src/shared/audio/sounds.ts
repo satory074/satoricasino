@@ -23,7 +23,10 @@ type SoundId =
   | "shigoro"
   | "hifumi"
   | "menashi"
-  | "heartbeat";
+  | "heartbeat"
+  | "anticipation_jackpot"
+  | "anticipation_win"
+  | "anticipation_lose";
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -324,6 +327,24 @@ export function play(id: SoundId): void {
       // Tense lub-dub for the suspenseful third roll moment
       tone({ freq: 60, duration: 0.08, type: "sine", peakGain: 0.18, startTime: t });
       tone({ freq: 50, duration: 0.1, type: "sine", peakGain: 0.14, startTime: t + 0.12 });
+      break;
+
+    case "anticipation_jackpot":
+      // Cymbal swell: filtered noise rising in volume + rising tone
+      noiseBurst(0.8, 0.08, 3000);
+      tone({ freq: 200, freqEnd: 600, duration: 0.8, type: "sine", peakGain: 0.1, startTime: t });
+      tone({ freq: 300, freqEnd: 900, duration: 0.6, type: "triangle", peakGain: 0.06, startTime: t + 0.2 });
+      break;
+
+    case "anticipation_win":
+      // Drum roll: rapid filtered noise with rising pitch
+      noiseBurst(0.4, 0.06, 2000);
+      tone({ freq: 150, freqEnd: 300, duration: 0.4, type: "sine", peakGain: 0.08 });
+      break;
+
+    case "anticipation_lose":
+      // Short low suspense thud
+      tone({ freq: 100, freqEnd: 80, duration: 0.15, type: "sine", peakGain: 0.1 });
       break;
   }
 }

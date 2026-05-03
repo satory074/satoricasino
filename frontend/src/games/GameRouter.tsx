@@ -24,7 +24,10 @@ type SoundId =
   | "shigoro"
   | "hifumi"
   | "menashi"
-  | "heartbeat";
+  | "heartbeat"
+  | "anticipation_jackpot"
+  | "anticipation_win"
+  | "anticipation_lose";
 
 interface Props {
   gameType: string;
