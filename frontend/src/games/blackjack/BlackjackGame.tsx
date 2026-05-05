@@ -547,6 +547,7 @@ function GameActions({
           onClick={onStand}
           disabled={!canStand}
           reason={turnReason}
+          highlight={canStand}
           shortcut="S"
         >
           Stand
@@ -556,6 +557,7 @@ function GameActions({
           onClick={onDouble}
           disabled={!canDouble}
           reason={doubleReason}
+          highlight={canDouble}
           shortcut="D"
         >
           Double
