@@ -194,7 +194,11 @@ export function Lobby({
                   onClick={() => pickGame(g.value)}
                   type="button"
                 >
-                  <span className="notify-dot" />
+                  {tables.some(
+                    (tbl) =>
+                      (tbl.game_type ?? "blackjack") === g.value &&
+                      tbl.player_count > 0,
+                  ) && <span className="notify-dot" />}
                   <div className="game-card-icon">{g.icon}</div>
                   <div className="game-card-title">
                     {t(`games.${g.value}.label`)}
@@ -247,7 +251,7 @@ export function Lobby({
                   </div>
                   <button className="btn-primary" disabled={isFull} style={{ position: "relative" }}>
                     {isFull ? "Full" : "Join"}
-                    {!isFull && <span className="notify-dot" />}
+                    {!isFull && tbl.player_count > 0 && <span className="notify-dot" />}
                   </button>
                 </div>
               );
