@@ -160,11 +160,19 @@ export function Lobby({
   return (
     <div className="lobby-section">
       <div className="lobby-actions">
-        <button className="btn-secondary" onClick={claimDailyBonus}>
+        <button className="btn-secondary" style={{ position: "relative" }} onClick={claimDailyBonus}>
           Daily Bonus
+          {(() => {
+            const today = new Date().toISOString().slice(0, 10);
+            const last = profile?.last_daily_bonus?.slice(0, 10);
+            return last !== today ? <span className="notify-dot" /> : null;
+          })()}
         </button>
-        <button className="btn-secondary" onClick={claimBailout}>
+        <button className="btn-secondary" style={{ position: "relative" }} onClick={claimBailout}>
           Bailout
+          {profile?.coins !== undefined && profile.coins < 100 && (
+            <span className="notify-dot" />
+          )}
         </button>
         <button className="btn-danger" onClick={logout}>
           Logout
@@ -186,6 +194,7 @@ export function Lobby({
                   onClick={() => pickGame(g.value)}
                   type="button"
                 >
+                  <span className="notify-dot" />
                   <div className="game-card-icon">{g.icon}</div>
                   <div className="game-card-title">
                     {t(`games.${g.value}.label`)}
@@ -236,8 +245,9 @@ export function Lobby({
                       <span className="pill">{tbl.status}</span>
                     </div>
                   </div>
-                  <button className="btn-primary" disabled={isFull}>
+                  <button className="btn-primary" disabled={isFull} style={{ position: "relative" }}>
                     {isFull ? "Full" : "Join"}
+                    {!isFull && <span className="notify-dot" />}
                   </button>
                 </div>
               );

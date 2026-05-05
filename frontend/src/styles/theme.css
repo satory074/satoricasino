@@ -408,6 +408,7 @@ input:focus {
 }
 
 .game-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1281,6 +1282,9 @@ input:focus {
     animation: none;
     opacity: 0.7;
   }
+  .notify-dot {
+    animation: none;
+  }
 }
 
 /* Modal */
@@ -1797,10 +1801,34 @@ input:focus {
     margin-top: 0.5rem;
     max-height: 6rem;
   }
+  .notify-dot {
+    width: 8px;
+    height: 8px;
+    top: -2px;
+    right: -2px;
+  }
 }
 
 @media (hover: none) and (pointer: coarse) {
   .key-hint-bar {
     display: none;
   }
+}
+
+/* ── Notification dot ── */
+.notify-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  background: var(--danger);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: notify-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes notify-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
 }
