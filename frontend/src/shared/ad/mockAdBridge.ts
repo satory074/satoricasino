@@ -6,6 +6,7 @@ const SIZE_MAP: Record<BannerSize, { width: string; height: string; className: s
   standard: { width: "min(320px, 100%)", height: "50px", className: "ad-banner-mock" },
   mrec: { width: "min(300px, 100%)", height: "250px", className: "ad-banner-mock ad-banner-mock--mrec" },
   leaderboard: { width: "min(728px, 100%)", height: "90px", className: "ad-banner-mock ad-banner-mock--leaderboard" },
+  skyscraper: { width: "160px", height: "600px", className: "ad-banner-mock ad-banner-mock--skyscraper" },
 };
 
 export class MockAdBridge implements AdBridge {
@@ -51,7 +52,7 @@ export class MockAdBridge implements AdBridge {
     banner.style.height = config.height;
     const label = document.createElement("span");
     label.className = "ad-banner-mock-label";
-    label.textContent = size === "mrec" ? "AD 300x250" : size === "leaderboard" ? "AD 728x90" : "AD";
+    label.textContent = size === "mrec" ? "AD 300x250" : size === "leaderboard" ? "AD 728x90" : size === "skyscraper" ? "AD 160x600" : "AD";
     banner.appendChild(label);
     container.appendChild(banner);
   }

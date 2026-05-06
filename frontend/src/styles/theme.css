@@ -2561,6 +2561,45 @@ input:focus {
   max-width: min(728px, 100%);
 }
 
+.ad-banner-slot--skyscraper {
+  width: 160px;
+  min-height: 600px;
+  margin: 0;
+}
+
+/* Side ads layout — desktop only */
+.layout-with-sides {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100dvh;
+}
+
+.layout-main {
+  min-width: 0;
+}
+
+.ad-side {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .layout-with-sides {
+    grid-template-columns: 160px 1fr 160px;
+    gap: 0;
+  }
+
+  .ad-side {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    padding-top: 1rem;
+    z-index: 2;
+  }
+}
+
 /* Bottom anchor */
 .ad-anchor-bottom {
   position: sticky;
@@ -2590,6 +2629,11 @@ input:focus {
 .ad-banner-mock--leaderboard {
   width: min(728px, 100%);
   height: 90px;
+}
+
+.ad-banner-mock--skyscraper {
+  width: 160px;
+  height: 600px;
 }
 
 .ad-banner-mock-label {

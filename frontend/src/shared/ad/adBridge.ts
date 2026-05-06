@@ -3,7 +3,7 @@ export interface AdResult {
   durationMs: number;
 }
 
-export type BannerSize = "standard" | "mrec" | "leaderboard";
+export type BannerSize = "standard" | "mrec" | "leaderboard" | "skyscraper";
 
 export interface AdBridge {
   init(): Promise<void>;

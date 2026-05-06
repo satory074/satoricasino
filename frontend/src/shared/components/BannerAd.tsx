@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { getAdBridge } from "../ad";
 
-type BannerSize = "standard" | "mrec" | "leaderboard";
+type BannerSize = "standard" | "mrec" | "leaderboard" | "skyscraper";
 
 interface BannerAdProps {
   size?: BannerSize;
