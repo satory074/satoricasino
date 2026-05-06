@@ -4,6 +4,8 @@ import confetti from "canvas-confetti";
 import { apiGet, apiPost } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { CosmeticItem, EquippedCosmetics } from "../shared/types/game";
+import { Card } from "../shared/components/Card";
+import { Die } from "../games/chinchiro/Die";
 
 interface ShopResponse {
   items: (CosmeticItem & { owned: boolean; equipped: boolean })[];
@@ -128,14 +130,26 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
                 {filteredItems.map((item) => (
                   <div key={item.id} className={`shop-item ${item.css_class}`}>
                     <div className="shop-item-preview">
-                      <div className={`shop-preview-swatch ${item.css_class}`} />
+                      {item.category === "card_skin" ? (
+                        <Card card={{ suit: "\u2660", rank: "A" }} index={0} skinClass={item.css_class} />
+                      ) : item.category === "dice_skin" ? (
+                        <Die face={6} skinClass={item.css_class} />
+                      ) : (
+                        <div className={`shop-preview-swatch ${item.css_class}`} />
+                      )}
                     </div>
                     <div className="shop-item-name">
                       {t(`shop.items.${item.id}`)}
                     </div>
-                    <div className="shop-item-price">
-                      {item.price.toLocaleString()} coins
-                    </div>
+                    {item.price > 0 ? (
+                      <div className="shop-item-price">
+                        {item.price.toLocaleString()} coins
+                      </div>
+                    ) : (
+                      <div className="shop-item-price shop-item-achievement">
+                        {item.owned ? t("achievements.unlocked") : t("shop.achievementLock", { name: t(`achievements.${item.achievement ?? ""}`) })}
+                      </div>
+                    )}
                     {item.owned ? (
                       item.equipped ? (
                         <button
@@ -152,6 +166,10 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
                           {t("shop.equip")}
                         </button>
                       )
+                    ) : item.price === 0 ? (
+                      <button className="btn-secondary btn-sm" disabled>
+                        🔒
+                      </button>
                     ) : (
                       <button
                         className="btn-primary btn-sm"

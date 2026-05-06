@@ -188,7 +188,11 @@ export const ja = {
       table_crimson: "クリムゾン",
       table_midnight: "ミッドナイト",
       table_royal: "ロイヤル",
+      card_champion: "チャンピオン",
+      dice_streak: "ストリーク",
+      table_veteran: "ベテラン",
     },
+    achievementLock: "アチーブメント「{name}」で解除",
   },
   header: {
     lang: "言語",

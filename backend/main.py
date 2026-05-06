@@ -54,7 +54,7 @@ from backend.models import (
 )
 from backend.achievements import check_achievements, get_all_achievements_with_progress
 from backend.challenges import get_challenge_by_id, get_daily_challenges, init_daily_baselines
-from backend.cosmetics import COSMETICS, get_catalog, validate_equip, validate_purchase
+from backend.cosmetics import ACHIEVEMENT_COSMETICS, COSMETICS, get_catalog, validate_equip, validate_purchase
 from backend.websocket_manager import manager
 
 
@@ -662,9 +662,14 @@ async def get_shop(token: str = Query(...)):
         raise HTTPException(status_code=404)
     owned = user.get("owned_cosmetics", {})
     equipped = user.get("equipped", {})
+    unlocked = user.get("unlocked_achievements", {})
     catalog = get_catalog()
     for item in catalog:
-        item["owned"] = item["id"] in owned
+        ach = item.get("achievement")
+        if ach:
+            item["owned"] = ach in unlocked
+        else:
+            item["owned"] = item["id"] in owned
         item["equipped"] = equipped.get(item["category"]) == item["id"]
     return {"items": catalog, "equipped": equipped, "coins": user.get("coins", 0)}
 
@@ -847,6 +852,11 @@ async def _post_round_xp_and_achievements(
                         "type": "achievement_unlocked",
                         "achievement_id": aid,
                     })
+                    # Auto-grant achievement cosmetic if one is linked
+                    if aid in ACHIEVEMENT_COSMETICS:
+                        cos_id = ACHIEVEMENT_COSMETICS[aid]
+                        now_str = datetime.now(timezone.utc).isoformat()
+                        await update_user(player_id, {f"owned_cosmetics.{cos_id}": now_str})
     except Exception:
         pass
 

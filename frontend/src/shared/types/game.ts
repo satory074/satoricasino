@@ -24,6 +24,7 @@ export interface CosmeticItem {
   category: string;
   price: number;
   css_class: string;
+  achievement?: string;
 }
 
 export interface PlayerStateData {

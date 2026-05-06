@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { apiPost } from "../api/api";
 import { useTranslation } from "../i18n/useTranslation";
+import { getAdBridge } from "../ad";
 
 interface Props {
   open: boolean;
@@ -14,27 +15,47 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
   const { t } = useTranslation();
   const [countdown, setCountdown] = useState(5);
   const [completing, setCompleting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) {
       setCountdown(5);
       setCompleting(false);
+      clearTimer();
       return;
     }
-    intervalRef.current = window.setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          return 0;
-        }
-        return c - 1;
+
+    const bridge = getAdBridge();
+    const container = containerRef.current;
+
+    if (container && bridge.isAvailable()) {
+      // Start countdown timer for UI
+      intervalRef.current = window.setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            clearTimer();
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+
+      // Run the ad bridge (handles rendering into container)
+      bridge.show(container).catch(() => {
+        // Bridge failure — countdown still works as fallback
       });
-    }, 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [open]);
+    }
+
+    return clearTimer;
+  }, [open, clearTimer]);
 
   const handleComplete = async () => {
     if (!adSessionId || completing) return;
@@ -69,9 +90,11 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-title">{t("ads.watching")}</div>
-            <div className="ad-placeholder">
-              <div className="ad-placeholder-inner">
-                <span className="ad-placeholder-label">AD</span>
+            <div ref={containerRef} className="ad-container">
+              <div className="ad-placeholder">
+                <div className="ad-placeholder-inner">
+                  <span className="ad-placeholder-label">AD</span>
+                </div>
               </div>
             </div>
             {countdown > 0 ? (

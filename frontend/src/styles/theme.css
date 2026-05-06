@@ -2453,3 +2453,72 @@ input:focus {
   background: linear-gradient(145deg, #0a0a1a 0%, #2a1052 100%);
   border-color: #6030a0;
 }
+
+/* === Shop preview scaling === */
+.shop-item-preview .card-shell {
+  transform: scale(0.6);
+  transform-origin: center;
+}
+.shop-item-preview .die {
+  transform: scale(0.85);
+  transform-origin: center;
+}
+.shop-item-preview .card-enter,
+.shop-item-preview .die-faceup {
+  animation: none;
+}
+.shop-item-preview .card-face-enter {
+  animation: none;
+}
+
+.shop-item-achievement {
+  font-size: 0.7rem;
+  color: var(--text-mute);
+}
+
+/* === Achievement Reward Skins === */
+
+/* Champion card skin (gold) */
+.skin-card-champion {
+  --card-bg: linear-gradient(145deg, #3a2a0a 0%, #6b5a1a 50%, #3a2a0a 100%);
+  --card-border: #f4c430;
+}
+.skin-card-champion.card-back {
+  background: linear-gradient(145deg, #3a2a0a 0%, #6b5a1a 50%, #3a2a0a 100%) !important;
+  border-color: #f4c430 !important;
+}
+.skin-card-champion.card-red,
+.skin-card-champion.card-black {
+  background: linear-gradient(145deg, #3a2a0a 0%, #5a4a15 100%) !important;
+  border-color: #f4c430 !important;
+}
+
+/* Streak dice skin (fire red-orange) */
+.skin-dice-streak.die {
+  background: linear-gradient(145deg, #4a0a0a 0%, #6b2a0a 100%) !important;
+  border-color: #e05020 !important;
+}
+.skin-dice-streak .die-pip-on {
+  background: #ff8c00 !important;
+}
+
+/* Veteran table theme (dark gold) */
+.theme-veteran {
+  --felt-dark: #0a0a05;
+  --felt-mid: #1a1a0a;
+  --felt-light: #2a2a10;
+}
+
+/* Swatch previews for achievement skins */
+.shop-preview-swatch.skin-card-champion {
+  background: linear-gradient(145deg, #3a2a0a 0%, #6b5a1a 100%);
+  border-color: #f4c430;
+}
+.shop-preview-swatch.skin-dice-streak {
+  background: linear-gradient(145deg, #4a0a0a 0%, #6b2a0a 100%);
+  border-color: #e05020;
+}
+.shop-preview-swatch.theme-veteran {
+  background: linear-gradient(145deg, #0a0a05 0%, #2a2a10 100%);
+  border-color: #8a7a30;
+}

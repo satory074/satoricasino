@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from backend.cosmetics import COSMETICS, get_catalog, validate_equip, validate_purchase
+from backend.cosmetics import ACHIEVEMENT_COSMETICS, COSMETICS, get_catalog, validate_equip, validate_purchase
 
 
 class TestCatalog:
@@ -23,9 +23,14 @@ class TestCatalog:
         categories = {item["category"] for item in get_catalog()}
         assert categories == {"card_skin", "dice_skin", "table_theme"}
 
-    def test_all_prices_positive(self):
+    def test_all_prices_non_negative(self):
         for item in get_catalog():
-            assert item["price"] > 0
+            assert item["price"] >= 0
+
+    def test_purchasable_items_have_positive_price(self):
+        for item in get_catalog():
+            if "achievement" not in item:
+                assert item["price"] > 0
 
     def test_all_css_classes_non_empty(self):
         for item in get_catalog():
@@ -94,7 +99,11 @@ class TestValidateEquip:
 
     def test_equip_each_category(self):
         for item_id, item in COSMETICS.items():
-            user = self._user(owned={item_id: "2025-01-01"})
+            if "achievement" in item:
+                user = self._user()
+                user["unlocked_achievements"] = {item["achievement"]: "2025-01-01"}
+            else:
+                user = self._user(owned={item_id: "2025-01-01"})
             assert validate_equip(item_id, item["category"], user) is None
 
 
@@ -120,3 +129,48 @@ class TestCosmeticsIntegrity:
         catalog = get_catalog()
         ids = [item["id"] for item in catalog]
         assert len(ids) == len(set(ids))
+
+
+class TestAchievementCosmetics:
+    """Tests for achievement-gated cosmetics."""
+
+    def test_achievement_items_have_zero_price(self):
+        for item_id, item in COSMETICS.items():
+            if "achievement" in item:
+                assert item["price"] == 0, f"{item_id} should be free"
+
+    def test_purchase_rejected_for_achievement_items(self):
+        user = {"coins": 99999, "owned_cosmetics": {}}
+        assert validate_purchase("card_champion", user) == "Unlock via achievement"
+        assert validate_purchase("dice_streak", user) == "Unlock via achievement"
+        assert validate_purchase("table_veteran", user) == "Unlock via achievement"
+
+    def test_equip_achievement_item_with_unlocked_achievement(self):
+        user = {
+            "owned_cosmetics": {},
+            "unlocked_achievements": {"wins_100": "2025-01-01"},
+        }
+        assert validate_equip("card_champion", "card_skin", user) is None
+
+    def test_equip_achievement_item_without_achievement(self):
+        user = {
+            "owned_cosmetics": {},
+            "unlocked_achievements": {},
+        }
+        assert validate_equip("card_champion", "card_skin", user) == "Achievement not unlocked"
+
+    def test_equip_achievement_item_no_unlocked_field(self):
+        user = {"owned_cosmetics": {}}
+        assert validate_equip("card_champion", "card_skin", user) == "Achievement not unlocked"
+
+    def test_achievement_cosmetics_reverse_mapping(self):
+        assert ACHIEVEMENT_COSMETICS["wins_100"] == "card_champion"
+        assert ACHIEVEMENT_COSMETICS["streak_10"] == "dice_streak"
+        assert ACHIEVEMENT_COSMETICS["hands_1000"] == "table_veteran"
+
+    def test_regular_items_still_check_owned(self):
+        """Non-achievement items should still use owned_cosmetics."""
+        user = {"coins": 5000, "owned_cosmetics": {"card_midnight": "2025-01-01"}}
+        assert validate_equip("card_midnight", "card_skin", user) is None
+        user_no_own = {"coins": 5000, "owned_cosmetics": {}}
+        assert validate_equip("card_midnight", "card_skin", user_no_own) == "Item not owned"

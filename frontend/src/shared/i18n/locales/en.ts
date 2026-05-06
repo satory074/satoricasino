@@ -190,7 +190,11 @@ export const en: Translation = {
       table_crimson: "Crimson",
       table_midnight: "Midnight",
       table_royal: "Royal",
+      card_champion: "Champion",
+      dice_streak: "Streak",
+      table_veteran: "Veteran",
     },
+    achievementLock: "Unlock with: {name}",
   },
   header: {
     lang: "Language",
