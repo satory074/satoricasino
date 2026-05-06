@@ -126,7 +126,7 @@ export default function App() {
     <SideAds>
       {!isAuth && (
         <header className="app-header">
-          <div className="app-logo">SatoriCasino</div>
+          <div className="app-logo">SatoriArcade</div>
           <div className="user-info">
             {profile?.level && profile.level > 1 && (
               <span className="level-badge" title={`XP: ${profile.xp ?? 0}`}>

@@ -38,7 +38,7 @@ export function Auth({ onAuthed, playClick }: Props) {
   return (
     <div className="auth-section">
       <div className="auth-card">
-        <div className="auth-logo">SatoriCasino</div>
+        <div className="auth-logo">SatoriArcade</div>
         <div className="auth-tagline">Blackjack Lounge</div>
 
         <div className="auth-tabs">
