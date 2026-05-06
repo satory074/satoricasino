@@ -1,18 +1,30 @@
 import { useEffect, useRef } from "react";
 import { getAdBridge } from "../ad";
 
-export function BannerAd() {
+type BannerSize = "standard" | "mrec" | "leaderboard";
+
+interface BannerAdProps {
+  size?: BannerSize;
+  className?: string;
+}
+
+export function BannerAd({ size = "standard", className }: BannerAdProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const bridge = getAdBridge();
     if (ref.current) {
-      bridge.showBanner(ref.current);
+      bridge.showBanner(ref.current, size);
     }
     return () => {
       bridge.destroyBanner();
     };
-  }, []);
+  }, [size]);
 
-  return <div className="ad-banner-slot" ref={ref} />;
+  return (
+    <div
+      className={`ad-banner-slot ad-banner-slot--${size}${className ? ` ${className}` : ""}`}
+      ref={ref}
+    />
+  );
 }

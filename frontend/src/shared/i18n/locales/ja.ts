@@ -159,13 +159,15 @@ export const ja = {
     tooltip: "{n} 連勝中",
   },
   ads: {
-    watchToDouble: "広告を見て2倍",
+    watchToDouble: "広��を見て2倍",
     watchForMore: "広告を見て1000コインに",
     watchForCoins: "広告を見てコイン獲得",
     remaining: "残り{n}回",
     watching: "広告を視聴中...",
     complete: "報酬を受け取る",
     dailyCap: "本日の広告上限に達しました",
+    interstitial: "まもなくゲームに戻ります…",
+    skip: "スキップ",
   },
   shop: {
     title: "ショップ",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { apiGet, apiPost, clearAuth } from "../shared/api/api";
@@ -9,6 +9,8 @@ import { Challenges } from "./Challenges";
 import { Shop } from "./Shop";
 import { AdPlayer } from "../shared/components/AdPlayer";
 import { BannerAd } from "../shared/components/BannerAd";
+import { InterstitialAd } from "../shared/components/InterstitialAd";
+import { useInterstitial } from "../shared/hooks/useInterstitial";
 import type { GameStatsEntry, TableInfo, UserProfile } from "../shared/types/game";
 
 const AD_REWARD_DAILY_CAP = 5;
@@ -79,6 +81,8 @@ export function Lobby({
     purpose: "daily_bonus_double" | "bailout_upgrade" | "reward_ad";
     pendingBonus: BonusModal | null;
   }>({ open: false, sessionId: null, purpose: "daily_bonus_double", pendingBonus: null });
+  const interstitial = useInterstitial();
+  const prevSelectedGame = useRef<string | null>(null);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -108,6 +112,11 @@ export function Lobby({
 
   const pickGame = (value: string) => {
     play("button_click");
+    // Interstitial on game switch (not on first pick)
+    if (prevSelectedGame.current !== null && prevSelectedGame.current !== value && interstitial.checkTransition()) {
+      interstitial.show();
+    }
+    prevSelectedGame.current = value;
     setSelectedGame(value);
   };
 
@@ -228,6 +237,8 @@ export function Lobby({
 
   return (
     <div className="lobby-section">
+      <BannerAd size="standard" />
+
       <div className="lobby-actions">
         <button className="btn-secondary" style={{ position: "relative" }} onClick={claimDailyBonus}>
           Daily Bonus
@@ -350,6 +361,8 @@ export function Lobby({
             </div>
           )}
 
+          <BannerAd size="mrec" />
+
           <Challenges onCoinsChanged={onCoinsChanged} play={play} />
 
           <BannerAd />
@@ -384,6 +397,8 @@ export function Lobby({
               );
             })}
           </div>
+
+          <BannerAd size="mrec" />
         </>
       ) : (
         <>
@@ -444,8 +459,13 @@ export function Lobby({
               );
             })
           )}
+          <BannerAd size="mrec" />
         </>
       )}
+
+      <BannerAd size="standard" className="ad-anchor-bottom" />
+
+      <InterstitialAd open={interstitial.shouldShow} onClose={interstitial.onDismiss} />
 
       <Leaderboard
         open={showLeaderboard}

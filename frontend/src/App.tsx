@@ -6,6 +6,8 @@ import { useAudio } from "./shared/audio/useAudio";
 import { clearAuth, getDisplayName, getToken } from "./shared/api/api";
 import { StreakBadge } from "./shared/components/StreakBadge";
 import { LangToggle } from "./shared/components/LangToggle";
+import { InterstitialAd } from "./shared/components/InterstitialAd";
+import { useInterstitial } from "./shared/hooks/useInterstitial";
 import { useTranslation } from "./shared/i18n/useTranslation";
 import type { UserProfile } from "./shared/types/game";
 import { getTableThemeClass } from "./shared/cosmetics";
@@ -27,6 +29,7 @@ export default function App() {
   tableGameTypeRef.current = tableGameType;
   const { muted, bgmOn, toggleMute, toggleBgm, play } = useAudio();
   const { t } = useTranslation();
+  const leaveInterstitial = useInterstitial();
 
   // Initialize streaks from server profile on first load
   useEffect(() => {
@@ -100,10 +103,13 @@ export default function App() {
   }, []);
 
   const onLeaveTable = useCallback(() => {
+    if (leaveInterstitial.checkTransition()) {
+      leaveInterstitial.show();
+    }
     setTableId(null);
     setSpectateMode(false);
     setView("lobby");
-  }, []);
+  }, [leaveInterstitial]);
 
   const onLogout = useCallback(() => {
     clearAuth();
@@ -192,6 +198,8 @@ export default function App() {
           tableThemeClass={getTableThemeClass(profile?.equipped)}
         />
       )}
+
+      <InterstitialAd open={leaveInterstitial.shouldShow} onClose={leaveInterstitial.onDismiss} />
     </>
   );
 }

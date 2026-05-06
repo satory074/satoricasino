@@ -13,4 +13,4 @@ export function getAdBridge(): AdBridge {
   return bridge;
 }
 
-export type { AdBridge, AdResult } from "./adBridge";
+export type { AdBridge, AdResult, BannerSize } from "./adBridge";

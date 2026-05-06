@@ -168,6 +168,8 @@ export const en: Translation = {
     watching: "Watching ad...",
     complete: "Claim reward",
     dailyCap: "Daily ad limit reached",
+    interstitial: "Returning to game shortly...",
+    skip: "Skip",
   },
   shop: {
     title: "Shop",

@@ -13,6 +13,9 @@ import {
 import type { GameState, Phase, Result } from "../../shared/types/game";
 import { ReactionBar } from "../../shared/components/ReactionBar";
 import { ReactionFloat } from "../../shared/components/ReactionFloat";
+import { BannerAd } from "../../shared/components/BannerAd";
+import { InterstitialAd } from "../../shared/components/InterstitialAd";
+import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { DealerArea } from "./DealerArea";
 import { PlayerBox } from "./PlayerBox";
 
@@ -64,6 +67,7 @@ function detectNearMiss(
 export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate, tableThemeClass }: Props) {
   const myId = getUserId();
   const { connected, gameState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
+  const interstitial = useInterstitial();
   const [overlay, setOverlay] = useState<{
     kind: ResultKind;
     amount: number | null;
@@ -206,7 +210,10 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   const onOverlayComplete = useCallback(() => {
     setOverlay(null);
     setShaking(false);
-  }, []);
+    if (interstitial.checkRound()) {
+      interstitial.show();
+    }
+  }, [interstitial]);
 
   const phase: Phase = gameState?.phase ?? "waiting";
   const me = myId ? gameState?.players[myId] : null;
@@ -339,6 +346,8 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
         />
       </div>
 
+      <BannerAd size="standard" />
+
       <div className="game-table">
         {gameState ? (
           <>
@@ -378,7 +387,10 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
                   </div>
                 ))}
               </div>
+              <BannerAd size="mrec" />
             </div>
+
+            {phase === "resolution" && <BannerAd size="mrec" />}
           </>
         ) : (
           <div style={{ padding: "3rem", color: "var(--text-mute)" }}>Connecting…</div>
@@ -412,7 +424,11 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
 
       <KeyHintBar hints={hints} />
 
+      <BannerAd size="standard" className="ad-anchor-bottom" />
+
       <ReactionFloat notifications={notifications} dismissNotification={dismissNotification} />
+
+      <InterstitialAd open={interstitial.shouldShow} onClose={interstitial.onDismiss} />
 
       <ResultOverlay
         shown={overlay?.kind ?? null}

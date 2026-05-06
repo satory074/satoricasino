@@ -16,6 +16,9 @@ import type {
 } from "../../shared/types/game";
 import { ReactionBar } from "../../shared/components/ReactionBar";
 import { ReactionFloat } from "../../shared/components/ReactionFloat";
+import { BannerAd } from "../../shared/components/BannerAd";
+import { InterstitialAd } from "../../shared/components/InterstitialAd";
+import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { BankerArea } from "./BankerArea";
 import { PlayerSeat } from "./PlayerSeat";
 
@@ -80,6 +83,7 @@ export function ChinchiroGame({
   const myId = getUserId();
   const { connected, gameState: rawState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
   const state = rawState as unknown as ChinchiroGameState | null;
+  const interstitial = useInterstitial();
 
   const [overlay, setOverlay] = useState<
     { kind: ResultKind; amount: number | null } | null
@@ -250,7 +254,10 @@ export function ChinchiroGame({
   const onOverlayComplete = useCallback(() => {
     setOverlay(null);
     setShaking(false);
-  }, []);
+    if (interstitial.checkRound()) {
+      interstitial.show();
+    }
+  }, [interstitial]);
 
   const onStart = useCallback(() => {
     play("button_click");
@@ -359,6 +366,8 @@ export function ChinchiroGame({
         />
       </div>
 
+      <BannerAd size="standard" />
+
       <div className="game-table chinchiro-table">
         <BankerArea
           rolls={state.banker_rolls}
@@ -408,7 +417,10 @@ export function ChinchiroGame({
               </div>
             ))}
           </div>
+          <BannerAd size="mrec" />
         </div>
+
+        {phase === "resolution" && <BannerAd size="mrec" />}
       </div>
 
       <div className="game-actions">
@@ -471,7 +483,11 @@ export function ChinchiroGame({
 
       <KeyHintBar hints={hints} />
 
+      <BannerAd size="standard" className="ad-anchor-bottom" />
+
       <ReactionFloat notifications={notifications} dismissNotification={dismissNotification} />
+
+      <InterstitialAd open={interstitial.shouldShow} onClose={interstitial.onDismiss} />
 
       <ResultOverlay
         shown={overlay?.kind ?? null}
