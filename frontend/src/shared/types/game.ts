@@ -41,6 +41,16 @@ export type WSMessage =
   | { type: "auto_stand"; player_id: string }
   | { type: "error"; message: string };
 
+export interface GameStatsEntry {
+  wins: number;
+  losses: number;
+  draws: number;
+  total_wagered: number;
+  total_won: number;
+  biggest_win: number;
+  hands_played: number;
+}
+
 export interface UserProfile {
   user_id: string;
   display_name: string;
@@ -50,6 +60,22 @@ export interface UserProfile {
   draws: number;
   last_daily_bonus?: string | null;
   last_bailout?: string | null;
+  game_stats?: Record<string, GameStatsEntry>;
+  streaks?: Record<string, number>;
+  best_streaks?: Record<string, number>;
+  daily_streak?: number;
+}
+
+export interface LeaderboardEntry {
+  user_id: string;
+  display_name: string;
+  coins: number;
+  wins: number;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  my_rank: number | null;
 }
 
 export interface TableInfo {

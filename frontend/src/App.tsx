@@ -20,10 +20,19 @@ export default function App() {
   const [coinFlash, setCoinFlash] = useState<"up" | "down" | null>(null);
   const [shownCoins, setShownCoins] = useState<number>(0);
   const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const streaksInitialized = useRef(false);
   const tableGameTypeRef = useRef(tableGameType);
   tableGameTypeRef.current = tableGameType;
   const { muted, bgmOn, toggleMute, toggleBgm, play } = useAudio();
   const { t } = useTranslation();
+
+  // Initialize streaks from server profile on first load
+  useEffect(() => {
+    if (profile?.streaks && !streaksInitialized.current) {
+      streaksInitialized.current = true;
+      setStreaks(profile.streaks);
+    }
+  }, [profile?.streaks]);
 
   // Coin counter animation
   useEffect(() => {

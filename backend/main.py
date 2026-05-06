@@ -18,7 +18,17 @@ from backend.config import (
     TABLE_MAX_PLAYERS,
     TURN_TIMEOUT_SECONDS,
 )
-from backend.database import create_user, get_user, get_user_by_name, update_coins, update_user
+from backend.database import (
+    create_user,
+    get_leaderboard,
+    get_user,
+    get_user_by_name,
+    get_user_rank,
+    update_coins,
+    update_game_stats,
+    update_streaks,
+    update_user,
+)
 from backend.game.blackjack import BlackjackGame, Phase as BJPhase
 from backend.game.chinchiro import (
     ChinchiroGame,
@@ -376,9 +386,29 @@ async def claim_daily_bonus(token: str = Query(...)):
     if user.get("last_daily_bonus") == today:
         raise HTTPException(status_code=400, detail="Already claimed today")
 
-    new_coins = await update_coins(payload["user_id"], DAILY_BONUS)
-    await update_user(payload["user_id"], {"last_daily_bonus": today})
-    return {"coins": new_coins, "bonus": DAILY_BONUS}
+    # Login streak: consecutive days → escalating bonus
+    from datetime import timedelta
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    old_streak = user.get("daily_streak", 0)
+    if user.get("last_daily_bonus") == yesterday:
+        new_streak = min(old_streak + 1, 7)
+    else:
+        new_streak = 1
+
+    bonus = 100 + (new_streak - 1) * 50  # Day1=100, Day7=400 (next day wraps to 1)
+    if new_streak >= 7:
+        bonus = 500
+        # Reset after day 7 so next claim starts at day 1
+        new_streak_save = 0
+    else:
+        new_streak_save = new_streak
+
+    new_coins = await update_coins(payload["user_id"], bonus)
+    await update_user(payload["user_id"], {
+        "last_daily_bonus": today,
+        "daily_streak": new_streak_save,
+    })
+    return {"coins": new_coins, "bonus": bonus, "daily_streak": new_streak, "daily_streak_max": 7}
 
 
 @app.post("/api/bailout")
@@ -398,6 +428,22 @@ async def claim_bailout(token: str = Query(...)):
     new_coins = await update_coins(payload["user_id"], BAILOUT_COINS)
     await update_user(payload["user_id"], {"last_bailout": today})
     return {"coins": new_coins, "bailout": BAILOUT_COINS}
+
+
+# --- Leaderboard ---
+
+@app.get("/api/leaderboard")
+async def leaderboard(
+    token: str = Query(...),
+    metric: str = Query("coins"),
+    limit: int = Query(10, ge=1, le=50),
+):
+    payload = _get_current_user(token)
+    if metric not in ("coins", "wins"):
+        raise HTTPException(status_code=400, detail="metric must be coins or wins")
+    entries = await get_leaderboard(metric, limit)
+    rank = await get_user_rank(payload["user_id"], metric)
+    return {"entries": entries, "my_rank": rank}
 
 
 # --- Table Routes ---
@@ -526,6 +572,7 @@ async def _broadcast_blackjack(table_id: str, table: dict):
             if _is_bot(pid):
                 continue
             payout = game.calculate_payout(pid)
+            bet = game.players[pid].bet
             if payout != 0:
                 try:
                     await update_coins(pid, payout)
@@ -542,6 +589,11 @@ async def _broadcast_blackjack(table_id: str, table: dict):
                 user = await get_user(pid)
                 if user:
                     await update_user(pid, {stat_field: user.get(stat_field, 0) + 1})
+            try:
+                await update_game_stats(pid, "blackjack", payout, bet)
+                await update_streaks(pid, "blackjack", payout)
+            except Exception:
+                pass
 
 
 async def _broadcast_chinchiro(table_id: str, table: dict):
@@ -558,6 +610,7 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
             if _is_bot(pid):
                 continue
             payout = game.calculate_payout_for(pid)
+            bet = game.players[pid].bet
             if payout != 0:
                 try:
                     await update_coins(pid, payout)
@@ -569,6 +622,11 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
             user = await get_user(pid)
             if user:
                 await update_user(pid, {stat_field: user.get(stat_field, 0) + 1})
+            try:
+                await update_game_stats(pid, "chinchiro", payout, bet)
+                await update_streaks(pid, "chinchiro", payout)
+            except Exception:
+                pass
 
 
 # --- Chinchiro banker sequence ---

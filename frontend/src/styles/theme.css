@@ -555,6 +555,135 @@ input:focus {
   font-style: italic;
 }
 
+/* Stats section */
+.stats-section {
+  margin-bottom: 1.5rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 0.75rem;
+}
+
+.stats-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25));
+  border: 1px solid rgba(244, 196, 48, 0.15);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.stats-card-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  color: var(--gold);
+}
+
+.stats-card-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  color: var(--text-mute);
+}
+
+.stats-card-row span:last-child {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaderboard */
+.leaderboard-card {
+  max-width: 420px;
+  width: 90vw;
+}
+
+.leaderboard-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.lb-tab {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(244, 196, 48, 0.15);
+  border-radius: 8px;
+  color: var(--text-mute);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lb-tab.active {
+  background: rgba(244, 196, 48, 0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.leaderboard-list {
+  margin-bottom: 0.75rem;
+}
+
+.leaderboard-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-mute);
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.lb-row:nth-child(even) {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.lb-me {
+  background: rgba(244, 196, 48, 0.1) !important;
+  border: 1px solid rgba(244, 196, 48, 0.3);
+}
+
+.lb-rank {
+  width: 2rem;
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.lb-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-you {
+  font-size: 0.75rem;
+  color: var(--gold);
+}
+
+.lb-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--gold);
+  margin-left: 0.5rem;
+}
+
+.lb-my-rank {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-mute);
+  margin-bottom: 0.5rem;
+}
+
 /* Game */
 .game-section {
   flex: 1;

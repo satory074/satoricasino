@@ -23,6 +23,16 @@ class TokenResponse(BaseModel):
     display_name: str
 
 
+class GameStats(BaseModel):
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
+    total_wagered: int = 0
+    total_won: int = 0
+    biggest_win: int = 0
+    hands_played: int = 0
+
+
 class UserProfile(BaseModel):
     user_id: str
     display_name: str
@@ -32,6 +42,10 @@ class UserProfile(BaseModel):
     draws: int = 0
     last_daily_bonus: Optional[str] = None
     last_bailout: Optional[str] = None
+    game_stats: dict[str, GameStats] = {}
+    streaks: dict[str, int] = {}
+    best_streaks: dict[str, int] = {}
+    daily_streak: int = 0
 
 
 class TableInfo(BaseModel):

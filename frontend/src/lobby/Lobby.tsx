@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { apiGet, apiPost, clearAuth } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import type { TableInfo, UserProfile } from "../shared/types/game";
+import { Leaderboard } from "./Leaderboard";
+import type { GameStatsEntry, TableInfo, UserProfile } from "../shared/types/game";
 
 const SUPPORTED_GAMES = [
   { value: "blackjack", icon: "♠♥" },
@@ -59,6 +60,7 @@ export function Lobby({
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusModal | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -99,16 +101,20 @@ export function Lobby({
   const claimDailyBonus = async () => {
     play("button_click");
     try {
-      const result = await apiPost<{ coins: number; bonus: number }>(
-        "/api/daily-bonus",
-        {},
-      );
+      const result = await apiPost<{
+        coins: number;
+        bonus: number;
+        daily_streak: number;
+        daily_streak_max: number;
+      }>("/api/daily-bonus", {});
       const prev = profile?.coins ?? 0;
       onCoinsChanged(result.coins, result.coins - prev);
+      const nextDay = result.daily_streak >= result.daily_streak_max ? 1 : result.daily_streak + 1;
+      const nextBonus = nextDay >= 7 ? 500 : 100 + (nextDay - 1) * 50;
       setBonus({
-        title: "Daily Bonus",
+        title: t("dailyStreak.title"),
         amount: result.bonus,
-        msg: "See you again tomorrow!",
+        msg: `${t("dailyStreak.day", { n: result.daily_streak })} / ${result.daily_streak_max} — ${t("dailyStreak.next", { amount: nextBonus })}`,
       });
       play("bonus");
       confetti({
@@ -174,6 +180,15 @@ export function Lobby({
             <span className="notify-dot" />
           )}
         </button>
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            play("button_click");
+            setShowLeaderboard(true);
+          }}
+        >
+          {t("leaderboard.title")}
+        </button>
         <button className="btn-danger" onClick={logout}>
           Logout
         </button>
@@ -181,6 +196,56 @@ export function Lobby({
 
       {selectedGame === null ? (
         <>
+          {profile?.game_stats && Object.keys(profile.game_stats).length > 0 && (
+            <div className="stats-section">
+              <h3>{t("stats.title")}</h3>
+              <div className="stats-grid">
+                {SUPPORTED_GAMES.map((g) => {
+                  const gs: GameStatsEntry | undefined = profile.game_stats?.[g.value];
+                  if (!gs || gs.hands_played === 0) return null;
+                  const winRate = gs.hands_played > 0
+                    ? Math.round((gs.wins / gs.hands_played) * 100)
+                    : 0;
+                  return (
+                    <div key={g.value} className="stats-card">
+                      <div className="stats-card-title">
+                        {g.icon} {t(`games.${g.value}.label`)}
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.handsPlayed")}</span>
+                        <span>{gs.hands_played}</span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.winRate")}</span>
+                        <span>{winRate}% ({gs.wins}W / {gs.losses}L / {gs.draws}D)</span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.totalWagered")}</span>
+                        <span>{gs.total_wagered.toLocaleString()}</span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.netProfit")}</span>
+                        <span style={{ color: gs.total_won - gs.total_wagered >= 0 ? "var(--success)" : "var(--danger)" }}>
+                          {(gs.total_won - gs.total_wagered).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.biggestWin")}</span>
+                        <span style={{ color: "var(--gold)" }}>{gs.biggest_win.toLocaleString()}</span>
+                      </div>
+                      {(profile.best_streaks?.[g.value] ?? 0) > 0 && (
+                        <div className="stats-card-row">
+                          <span>{t("stats.bestStreak")}</span>
+                          <span>{profile.best_streaks![g.value]}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <h3>Choose Your Game</h3>
           <div className="game-grid">
             {SUPPORTED_GAMES.map((g) => {
@@ -259,6 +324,11 @@ export function Lobby({
           )}
         </>
       )}
+
+      <Leaderboard
+        open={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+      />
 
       <AnimatePresence>
         {bonus && (
