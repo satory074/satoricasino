@@ -2216,3 +2216,240 @@ input:focus {
   font-size: 0.7rem;
   color: var(--text-mute);
 }
+
+/* === Ad Player === */
+
+.ad-placeholder {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 16 / 9;
+  margin: 1rem auto;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ad-placeholder-inner {
+  text-align: center;
+}
+
+.ad-placeholder-label {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--text-mute);
+  letter-spacing: 0.2em;
+  opacity: 0.5;
+}
+
+.ad-countdown {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--gold);
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+/* === Shop === */
+
+.shop-card {
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.shop-coins {
+  text-align: center;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.shop-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-card);
+  padding: 0.75rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s;
+}
+
+.shop-item:hover {
+  border-color: var(--gold-soft);
+}
+
+.shop-item-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.shop-preview-swatch {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-card);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.shop-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.shop-item-price {
+  font-size: 0.75rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+/* === Card Skins === */
+
+.skin-card-midnight {
+  --card-bg: linear-gradient(145deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%);
+  --card-border: #2d4a7a;
+}
+
+.skin-card-midnight.card-back {
+  background: linear-gradient(145deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%) !important;
+  border-color: #2d4a7a !important;
+}
+
+.skin-card-midnight.card-red,
+.skin-card-midnight.card-black {
+  background: linear-gradient(145deg, #0d1b2a 0%, #1b2838 100%) !important;
+  border-color: #2d4a7a !important;
+}
+
+.skin-card-royal {
+  --card-bg: linear-gradient(145deg, #2d0a3e 0%, #4a1a6b 50%, #2d0a3e 100%);
+  --card-border: #7b3fa0;
+}
+
+.skin-card-royal.card-back {
+  background: linear-gradient(145deg, #2d0a3e 0%, #4a1a6b 50%, #2d0a3e 100%) !important;
+  border-color: #7b3fa0 !important;
+}
+
+.skin-card-royal.card-red,
+.skin-card-royal.card-black {
+  background: linear-gradient(145deg, #2d0a3e 0%, #3a1055 100%) !important;
+  border-color: #7b3fa0 !important;
+}
+
+.skin-card-sakura {
+  --card-bg: linear-gradient(145deg, #3a1028 0%, #5c1a3e 50%, #3a1028 100%);
+  --card-border: #e8a0c0;
+}
+
+.skin-card-sakura.card-back {
+  background: linear-gradient(145deg, #3a1028 0%, #5c1a3e 50%, #3a1028 100%) !important;
+  border-color: #e8a0c0 !important;
+}
+
+.skin-card-sakura.card-red,
+.skin-card-sakura.card-black {
+  background: linear-gradient(145deg, #3a1028 0%, #4a1232 100%) !important;
+  border-color: #e8a0c0 !important;
+}
+
+/* Swatch previews for shop */
+.shop-preview-swatch.skin-card-midnight {
+  background: linear-gradient(145deg, #0d1b2a 0%, #1b2838 100%);
+  border-color: #2d4a7a;
+}
+.shop-preview-swatch.skin-card-royal {
+  background: linear-gradient(145deg, #2d0a3e 0%, #4a1a6b 100%);
+  border-color: #7b3fa0;
+}
+.shop-preview-swatch.skin-card-sakura {
+  background: linear-gradient(145deg, #3a1028 0%, #5c1a3e 100%);
+  border-color: #e8a0c0;
+}
+
+/* === Dice Skins === */
+
+.skin-dice-jade.die {
+  background: linear-gradient(145deg, #1a4a3a 0%, #2d6b4a 100%) !important;
+  border-color: #4a9a6a !important;
+}
+
+.skin-dice-jade .die-pip-on {
+  background: #a0e8c0 !important;
+}
+
+.skin-dice-obsidian.die {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+  border-color: #555 !important;
+}
+
+.skin-dice-obsidian .die-pip-on {
+  background: #e0e0e0 !important;
+}
+
+.skin-dice-golden.die {
+  background: linear-gradient(145deg, #4a3a0a 0%, #6b5a1a 100%) !important;
+  border-color: #c4a030 !important;
+}
+
+.skin-dice-golden .die-pip-on {
+  background: #ffd84a !important;
+}
+
+.shop-preview-swatch.skin-dice-jade {
+  background: linear-gradient(145deg, #1a4a3a 0%, #2d6b4a 100%);
+  border-color: #4a9a6a;
+}
+.shop-preview-swatch.skin-dice-obsidian {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-color: #555;
+}
+.shop-preview-swatch.skin-dice-golden {
+  background: linear-gradient(145deg, #4a3a0a 0%, #6b5a1a 100%);
+  border-color: #c4a030;
+}
+
+/* === Table Themes === */
+
+.theme-crimson {
+  --felt-dark: #1a0a0a;
+  --felt-mid: #3d0b0b;
+  --felt-light: #52100e;
+}
+
+.theme-midnight {
+  --felt-dark: #05050f;
+  --felt-mid: #0b0b2d;
+  --felt-light: #10103d;
+}
+
+.theme-royal {
+  --felt-dark: #0a0a1a;
+  --felt-mid: #1a0a3d;
+  --felt-light: #2a1052;
+}
+
+.shop-preview-swatch.theme-crimson {
+  background: linear-gradient(145deg, #1a0a0a 0%, #52100e 100%);
+  border-color: #8a2020;
+}
+.shop-preview-swatch.theme-midnight {
+  background: linear-gradient(145deg, #05050f 0%, #10103d 100%);
+  border-color: #2020aa;
+}
+.shop-preview-swatch.theme-royal {
+  background: linear-gradient(145deg, #0a0a1a 0%, #2a1052 100%);
+  border-color: #6030a0;
+}

@@ -45,6 +45,7 @@ interface Props {
   onResolve: (delta: number) => void;
   play: (id: SoundId) => void;
   spectate?: boolean;
+  tableThemeClass?: string;
 }
 
 function detectNearMiss(
@@ -60,7 +61,7 @@ function detectNearMiss(
   return false;
 }
 
-export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate }: Props) {
+export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate, tableThemeClass }: Props) {
   const myId = getUserId();
   const { connected, gameState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
   const [overlay, setOverlay] = useState<{
@@ -326,7 +327,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   }, [phase, canHit, canStand, canDouble]);
 
   return (
-    <div className={`game-section${shaking ? " is-shaking" : ""}`}>
+    <div className={`game-section${shaking ? " is-shaking" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
           ← Lobby

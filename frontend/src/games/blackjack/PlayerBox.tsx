@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { TurnTimer } from "../../shared/components/TurnTimer";
 import { Hand } from "../../shared/components/Hand";
 import type { PlayerStateData, Result } from "../../shared/types/game";
+import { getCardSkinClass } from "../../shared/cosmetics";
 
 interface Props {
   playerId: string;
@@ -42,6 +43,7 @@ export function PlayerBox({
   onCardEvent,
 }: Props) {
   void playerId;
+  const skinClass = getCardSkinClass(player.equipped);
   return (
     <motion.div
       className={clsx("player-box", isMe && "is-me", isCurrent && "is-current")}
@@ -57,7 +59,7 @@ export function PlayerBox({
       </div>
       <div className="player-bet">{player.bet > 0 ? `Bet ${player.bet}` : "—"}</div>
       <div className="player-cards">
-        <Hand cards={player.cards} shake={shake} onCardEvent={onCardEvent} />
+        <Hand cards={player.cards} shake={shake} onCardEvent={onCardEvent} skinClass={skinClass} />
       </div>
       <div
         className={clsx(

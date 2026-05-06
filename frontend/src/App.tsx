@@ -8,6 +8,7 @@ import { StreakBadge } from "./shared/components/StreakBadge";
 import { LangToggle } from "./shared/components/LangToggle";
 import { useTranslation } from "./shared/i18n/useTranslation";
 import type { UserProfile } from "./shared/types/game";
+import { getTableThemeClass } from "./shared/cosmetics";
 import clsx from "clsx";
 
 type View = "auth" | "lobby" | "game";
@@ -188,6 +189,7 @@ export default function App() {
           onResolve={onResolve}
           play={play}
           spectate={spectateMode}
+          tableThemeClass={getTableThemeClass(profile?.equipped)}
         />
       )}
     </>

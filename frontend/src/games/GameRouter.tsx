@@ -37,14 +37,15 @@ interface Props {
   onResolve: (delta: number) => void;
   play: (id: SoundId) => void;
   spectate?: boolean;
+  tableThemeClass?: string;
 }
 
-export function GameRouter({ gameType, spectate, ...rest }: Props) {
+export function GameRouter({ gameType, spectate, tableThemeClass, ...rest }: Props) {
   switch (gameType) {
     case "blackjack":
-      return <BlackjackGame {...rest} spectate={spectate} />;
+      return <BlackjackGame {...rest} spectate={spectate} tableThemeClass={tableThemeClass} />;
     case "chinchiro":
-      return <ChinchiroGame {...rest} spectate={spectate} />;
+      return <ChinchiroGame {...rest} spectate={spectate} tableThemeClass={tableThemeClass} />;
     default:
       return (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-mute)" }}>

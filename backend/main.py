@@ -12,7 +12,10 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.auth import create_token, decode_token
 from backend.config import (
+    AD_REWARD_DAILY_CAP,
+    AD_WATCH_MIN_SECONDS,
     BAILOUT_COINS,
+    BAILOUT_COINS_AD,
     DAILY_BONUS,
     PASSPHRASE,
     TABLE_MAX_PLAYERS,
@@ -51,6 +54,7 @@ from backend.models import (
 )
 from backend.achievements import check_achievements, get_all_achievements_with_progress
 from backend.challenges import get_challenge_by_id, get_daily_challenges, init_daily_baselines
+from backend.cosmetics import COSMETICS, get_catalog, validate_equip, validate_purchase
 from backend.websocket_manager import manager
 
 
@@ -81,6 +85,11 @@ tables: dict[str, dict] = {}
 
 turn_timers: dict[str, asyncio.Task] = {}
 banker_tasks: dict[str, asyncio.Task] = {}
+
+# In-memory ad sessions (60s TTL, wiped on restart — fine for ephemeral data)
+import time as _time
+
+ad_sessions: dict[str, dict] = {}
 
 
 SUPPORTED_GAMES = {"blackjack", "chinchiro"}
@@ -421,7 +430,16 @@ async def claim_daily_bonus(token: str = Query(...)):
         await add_xp(payload["user_id"], XP_DAILY)
     except Exception:
         pass
-    return {"coins": new_coins, "bonus": bonus, "daily_streak": new_streak, "daily_streak_max": 7}
+    today_ad = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ad_watches = user.get("ad_watches_today", 0) if user.get("last_ad_date") == today_ad else 0
+    can_watch_ad = ad_watches < AD_REWARD_DAILY_CAP
+    return {
+        "coins": new_coins,
+        "bonus": bonus,
+        "daily_streak": new_streak,
+        "daily_streak_max": 7,
+        "can_watch_ad": can_watch_ad,
+    }
 
 
 @app.post("/api/bailout")
@@ -440,7 +458,89 @@ async def claim_bailout(token: str = Query(...)):
 
     new_coins = await update_coins(payload["user_id"], BAILOUT_COINS)
     await update_user(payload["user_id"], {"last_bailout": today})
-    return {"coins": new_coins, "bailout": BAILOUT_COINS}
+    ad_watches = user.get("ad_watches_today", 0) if user.get("last_ad_date") == today else 0
+    can_watch_ad = ad_watches < AD_REWARD_DAILY_CAP
+    return {"coins": new_coins, "bailout": BAILOUT_COINS, "can_watch_ad": can_watch_ad}
+
+
+# --- Reward Ads ---
+
+def _cleanup_expired_ad_sessions():
+    now = _time.time()
+    expired = [k for k, v in ad_sessions.items() if now - v["started_at"] > 60]
+    for k in expired:
+        del ad_sessions[k]
+
+
+@app.post("/api/ad/start")
+async def ad_start(token: str = Query(...), purpose: str = Query(...), bonus_amount: int = Query(0)):
+    payload = _get_current_user(token)
+    if purpose not in ("daily_bonus_double", "bailout_upgrade"):
+        raise HTTPException(status_code=400, detail="Invalid purpose")
+
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ad_watches = user.get("ad_watches_today", 0) if user.get("last_ad_date") == today else 0
+    if ad_watches >= AD_REWARD_DAILY_CAP:
+        raise HTTPException(status_code=400, detail="Daily ad limit reached")
+
+    _cleanup_expired_ad_sessions()
+    session_id = str(uuid.uuid4())
+    ad_sessions[session_id] = {
+        "user_id": payload["user_id"],
+        "started_at": _time.time(),
+        "purpose": purpose,
+        "bonus_amount": bonus_amount,
+    }
+    return {"ad_session_id": session_id}
+
+
+@app.post("/api/ad/complete")
+async def ad_complete(token: str = Query(...), ad_session_id: str = Query(...)):
+    payload = _get_current_user(token)
+
+    _cleanup_expired_ad_sessions()
+    session = ad_sessions.pop(ad_session_id, None)
+    if not session:
+        raise HTTPException(status_code=400, detail="Invalid or expired ad session")
+    if session["user_id"] != payload["user_id"]:
+        raise HTTPException(status_code=403, detail="Session mismatch")
+
+    elapsed = _time.time() - session["started_at"]
+    if elapsed < AD_WATCH_MIN_SECONDS:
+        raise HTTPException(status_code=400, detail="Ad not watched long enough")
+
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    ad_watches = user.get("ad_watches_today", 0) if user.get("last_ad_date") == today else 0
+    if ad_watches >= AD_REWARD_DAILY_CAP:
+        raise HTTPException(status_code=400, detail="Daily ad limit reached")
+
+    purpose = session["purpose"]
+    bonus_amount = session["bonus_amount"]
+    if purpose == "daily_bonus_double":
+        reward = bonus_amount
+    elif purpose == "bailout_upgrade":
+        reward = BAILOUT_COINS_AD - BAILOUT_COINS
+    else:
+        reward = 0
+
+    new_coins = await update_coins(payload["user_id"], reward)
+    await update_user(payload["user_id"], {
+        "ad_watches_today": ad_watches + 1,
+        "last_ad_date": today,
+    })
+    try:
+        await add_xp(payload["user_id"], XP_DAILY)
+    except Exception:
+        pass
+    return {"coins": new_coins, "reward": reward, "ad_watches_today": ad_watches + 1}
 
 
 # --- Leaderboard ---
@@ -546,6 +646,72 @@ async def claim_challenge(challenge_id: str, token: str = Query(...)):
     claimed.append(challenge_id)
     await update_user(payload["user_id"], {"challenges.daily.claimed": claimed})
     return {"coins": new_coins, "reward": ch["reward"]}
+
+
+# --- Cosmetics Shop ---
+
+# Module-level cache for player cosmetics (loaded on WS connect, updated on equip)
+player_cosmetics: dict[str, dict] = {}
+
+
+@app.get("/api/shop")
+async def get_shop(token: str = Query(...)):
+    payload = _get_current_user(token)
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+    owned = user.get("owned_cosmetics", {})
+    equipped = user.get("equipped", {})
+    catalog = get_catalog()
+    for item in catalog:
+        item["owned"] = item["id"] in owned
+        item["equipped"] = equipped.get(item["category"]) == item["id"]
+    return {"items": catalog, "equipped": equipped, "coins": user.get("coins", 0)}
+
+
+@app.post("/api/shop/buy")
+async def shop_buy(token: str = Query(...), item_id: str = Query(...)):
+    payload = _get_current_user(token)
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+
+    error = validate_purchase(item_id, user)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    price = COSMETICS[item_id]["price"]
+    new_coins = await update_coins(payload["user_id"], -price)
+    now_str = datetime.now(timezone.utc).isoformat()
+    await update_user(payload["user_id"], {f"owned_cosmetics.{item_id}": now_str})
+    return {"coins": new_coins, "item_id": item_id}
+
+
+@app.post("/api/shop/equip")
+async def shop_equip(token: str = Query(...), item_id: str | None = Query(None), category: str = Query(...)):
+    payload = _get_current_user(token)
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+
+    error = validate_equip(item_id, category, user)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    if item_id is None:
+        # Unequip
+        equipped = user.get("equipped", {})
+        equipped.pop(category, None)
+        await update_user(payload["user_id"], {"equipped": equipped})
+    else:
+        await update_user(payload["user_id"], {f"equipped.{category}": item_id})
+
+    # Update in-memory cosmetics cache
+    updated_user = await get_user(payload["user_id"])
+    if updated_user:
+        player_cosmetics[payload["user_id"]] = updated_user.get("equipped", {})
+
+    return {"equipped": (await get_user(payload["user_id"]) or {}).get("equipped", {})}
 
 
 # --- Table Routes ---
@@ -701,6 +867,11 @@ async def _broadcast_state(table_id: str):
 async def _broadcast_blackjack(table_id: str, table: dict):
     game: BlackjackGame = table["game"]
     state = game.get_state(hide_dealer_hole=(game.phase == BJPhase.PLAYER_TURNS))
+    # Inject equipped cosmetics per player
+    for pid in state.get("players", {}):
+        equipped = player_cosmetics.get(pid, {})
+        if equipped:
+            state["players"][pid]["equipped"] = equipped
     await manager.broadcast(
         table_id,
         {"type": "game_state", "game_type": "blackjack", **state},
@@ -741,6 +912,11 @@ async def _broadcast_blackjack(table_id: str, table: dict):
 async def _broadcast_chinchiro(table_id: str, table: dict):
     game: ChinchiroGame = table["game"]
     state = game.get_state()
+    # Inject equipped cosmetics per player
+    for pid in state.get("players", {}):
+        equipped = player_cosmetics.get(pid, {})
+        if equipped:
+            state["players"][pid]["equipped"] = equipped
     await manager.broadcast(
         table_id,
         {"type": "game_state", "game_type": "chinchiro", **state},
@@ -870,6 +1046,14 @@ async def websocket_endpoint(
 
     await manager.connect(table_id, user_id, display_name, websocket)
     game.add_player(user_id, display_name)
+
+    # Load cosmetics into cache for broadcast
+    try:
+        u = await get_user(user_id)
+        if u:
+            player_cosmetics[user_id] = u.get("equipped", {})
+    except Exception:
+        pass
 
     await manager.broadcast(table_id, {
         "type": "player_joined",

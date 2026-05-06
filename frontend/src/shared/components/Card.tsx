@@ -5,11 +5,12 @@ interface Props {
   card: CardData;
   index: number;
   onFlip?: () => void;
+  skinClass?: string;
 }
 
 const isRed = (suit: string) => suit === "♥" || suit === "♦";
 
-export const Card = memo(function Card({ card, index, onFlip }: Props) {
+export const Card = memo(function Card({ card, index, onFlip, skinClass }: Props) {
   const isHidden = card.rank === "?";
   const wasHidden = useRef(isHidden);
   const mounted = useRef(false);
@@ -38,10 +39,10 @@ export const Card = memo(function Card({ card, index, onFlip }: Props) {
       style={{ animationDelay: `${index * 60}ms` }}
     >
       {isHidden ? (
-        <div className="card card-back card-face-enter" key="back" />
+        <div className={`card card-back card-face-enter${skinClass ? ` ${skinClass}` : ""}`} key="back" />
       ) : (
         <div
-          className={`card card-face-enter ${isRed(card.suit) ? "card-red" : "card-black"}`}
+          className={`card card-face-enter ${isRed(card.suit) ? "card-red" : "card-black"}${skinClass ? ` ${skinClass}` : ""}`}
           key={`${card.rank}-${card.suit}`}
         >
           <span className="top">

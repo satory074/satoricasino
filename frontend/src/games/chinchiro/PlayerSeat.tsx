@@ -3,6 +3,8 @@ import { Bowl } from "./Bowl";
 import { HandLabel } from "./HandLabel";
 import { TurnTimer } from "../../shared/components/TurnTimer";
 import { useTranslation } from "../../shared/i18n/useTranslation";
+import type { EquippedCosmetics } from "../../shared/types/game";
+import { getDiceSkinClass } from "../../shared/cosmetics";
 
 interface Props {
   displayName: string;
@@ -15,6 +17,7 @@ interface Props {
   showHand: boolean;
   turnTotalSec: number;
   turnTimerKey: string;
+  equipped?: EquippedCosmetics;
 }
 
 export function PlayerSeat({
@@ -28,9 +31,11 @@ export function PlayerSeat({
   showHand,
   turnTotalSec,
   turnTimerKey,
+  equipped,
 }: Props) {
   const { t } = useTranslation();
   const latest = rolls.length > 0 ? rolls[rolls.length - 1] : null;
+  const skinClass = getDiceSkinClass(equipped);
   return (
     <div
       className={clsx(
@@ -45,7 +50,7 @@ export function PlayerSeat({
         {isMe && " (You)"}
       </div>
       <div className="player-bet">{bet > 0 ? `Bet ${bet}` : "—"}</div>
-      <Bowl dice={latest} rollKey={`${displayName}-${rolls.length}`} size="sm" />
+      <Bowl dice={latest} rollKey={`${displayName}-${rolls.length}`} size="sm" skinClass={skinClass} />
       {showHand && <HandLabel hand={hand} size="md" />}
       <div className="roll-counter">
         {t("chinchiro.rollCount", { n: rolls.length })}

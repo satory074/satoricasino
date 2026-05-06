@@ -56,6 +56,7 @@ interface Props {
   onResolve: (delta: number) => void;
   play: (id: SoundId) => void;
   spectate?: boolean;
+  tableThemeClass?: string;
 }
 
 const HAND_SOUNDS: Record<string, SoundId> = {
@@ -73,6 +74,7 @@ export function ChinchiroGame({
   onResolve,
   play,
   spectate,
+  tableThemeClass,
 }: Props) {
   const { t } = useTranslation();
   const myId = getUserId();
@@ -345,7 +347,7 @@ export function ChinchiroGame({
   }
 
   return (
-    <div className={`game-section${shaking ? " is-shaking" : ""}`}>
+    <div className={`game-section${shaking ? " is-shaking" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
           ← Lobby
@@ -391,6 +393,7 @@ export function ChinchiroGame({
               showHand={p.settled || phase === "resolution"}
               turnTotalSec={TURN_TOTAL_SEC}
               turnTimerKey={`${phase}-${state.current_player_id ?? ""}-${p.rolls.length}`}
+              equipped={p.equipped}
             />
           ))}
         </div>

@@ -4,6 +4,7 @@ import clsx from "clsx";
 interface Props {
   face: number | null; // null = hidden / rolling
   delay?: number;
+  skinClass?: string;
 }
 
 // Pip layout grid: 3x3, each pip is rendered at a fixed position by face value.
@@ -17,11 +18,11 @@ const FACE_PIPS: Record<number, number[]> = {
   6: [1, 3, 4, 6, 7, 9],
 };
 
-export const Die = memo(function Die({ face, delay = 0 }: Props) {
+export const Die = memo(function Die({ face, delay = 0, skinClass }: Props) {
   const pips = face ? FACE_PIPS[face] ?? [] : [];
   return (
     <div
-      className={clsx("die", face != null ? "die-faceup" : "die-rolling")}
+      className={clsx("die", face != null ? "die-faceup" : "die-rolling", skinClass)}
       style={{ animationDelay: `${delay}ms` }}
       key={face ?? "rolling"}
     >

@@ -13,6 +13,19 @@ export interface CardData {
   rank: string;
 }
 
+export interface EquippedCosmetics {
+  card_skin?: string;
+  dice_skin?: string;
+  table_theme?: string;
+}
+
+export interface CosmeticItem {
+  id: string;
+  category: string;
+  price: number;
+  css_class: string;
+}
+
 export interface PlayerStateData {
   display_name: string;
   cards: CardData[];
@@ -21,6 +34,7 @@ export interface PlayerStateData {
   is_busted: boolean;
   is_blackjack: boolean;
   is_standing: boolean;
+  equipped?: EquippedCosmetics;
 }
 
 export interface GameState {
@@ -70,6 +84,9 @@ export interface UserProfile {
   xp?: number;
   level?: number;
   unlocked_achievements?: Record<string, string>;
+  ad_watches_today?: number;
+  owned_cosmetics?: Record<string, string>;
+  equipped?: EquippedCosmetics;
 }
 
 export interface AchievementInfo {
@@ -129,6 +146,7 @@ export interface ChinchiroPlayerState {
   rolls: [number, number, number][];
   settled: boolean;
   hand: ChinchiroHand | null;
+  equipped?: EquippedCosmetics;
 }
 
 export interface ChinchiroGameState {

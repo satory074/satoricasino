@@ -18,7 +18,7 @@ SatoriCasino — multi-game casino web app. Currently ships **Blackjack** and **
 # Backend
 uv sync
 uv run uvicorn backend.main:app --reload --port 8000
-uv run pytest                                  # 67 tests
+uv run pytest                                  # 84 tests
 uv run pytest tests/test_chinchiro.py          # one test file
 uv run pytest -k "test_pinzoro"                # one test by name
 
@@ -52,6 +52,7 @@ backend/
 │   └── deck.py            # Card / hand_value / SUITS / RANKS — shared by any card game
 ├── achievements.py    # 27 achievement definitions + check_achievements() + progress query
 │── challenges.py      # Daily challenge pool, deterministic selection, baseline tracking
+├── cosmetics.py       # Hardcoded cosmetic catalog (9 items), purchase/equip validation
 ├── auth.py, database.py, websocket_manager.py, models.py, config.py
 ```
 
@@ -59,7 +60,7 @@ backend/
 - `SUPPORTED_GAMES` set (currently `{"blackjack", "chinchiro"}`)
 - `SEED_TABLES` list + `_seed_tables()` — fixed casino-owned tables (Low/Mid/High per game) populated at module load. Players join, never create.
 - `_make_game(game_type)` factory
-- `_broadcast_state(table_id)` that branches into `_broadcast_blackjack` / `_broadcast_chinchiro` (each handles its own payout + stats update)
+- `_broadcast_state(table_id)` that branches into `_broadcast_blackjack` / `_broadcast_chinchiro` (each handles payout, global stats, per-game stats, streaks, XP, and achievement checks via `_post_round_xp_and_achievements`)
 - WS `websocket_endpoint` dispatches to `_handle_blackjack_action` / `_handle_chinchiro_action`
 - Game-specific turn timers (`_bj_turn_timeout`, `_cc_turn_timeout`) and the chinchiro banker async sequence (`_chinchiro_banker_sequence` — rolls one die set at a time with sleeps for animation pacing)
 
@@ -83,6 +84,8 @@ Several systems drive retention and are wired through `_broadcast_blackjack` / `
 - **Reactions**: 6 presets (gg/nice/wow/ouch/lol/gl), WS `{"action":"react","emoji":"gg"}` → broadcast to table, 3s cooldown, no persistence. `ReactionBar` + `ReactionFloat` components.
 - **Spectator mode**: `?spectate=true` on WS connection — receives broadcasts, no game participation, can only react. `Watch` button in lobby on occupied tables.
 - **Player profile** (`GET /api/profile/{user_id}`): public stats (no coins), level, achievements, game stats.
+- **Reward ads** (`POST /api/ad/start`, `POST /api/ad/complete`): mock 5-second ad player for daily bonus 2x and bailout upgrade (500→1000 coins). In-memory session dict with 60s TTL. Daily cap (`AD_REWARD_DAILY_CAP=5`), min watch time (`AD_WATCH_MIN_SECONDS=5`). Firestore tracks `ad_watches_today` + `last_ad_date`. Frontend `AdPlayer` component shows countdown modal.
+- **Cosmetics shop** (`GET /api/shop`, `POST /api/shop/buy`, `POST /api/shop/equip`): 9 cosmetic items across 3 categories (card_skin, dice_skin, table_theme). Purchased with game coins (no real money). `backend/cosmetics.py` holds the hardcoded catalog. Firestore: `owned_cosmetics` map + `equipped` map. Card/dice skins broadcast to other players via `equipped` field in WS state. Table themes are personal display only (applied via CSS class on `.game-section`). `player_cosmetics` in-memory cache loaded on WS connect for broadcast injection.
 
 ### Frontend layout
 
@@ -94,6 +97,7 @@ frontend/src/
 │          Leaderboard.tsx # Top-10 modal (coins/wins), fetches GET /api/leaderboard
 │          AchievementList.tsx # Full achievement grid with progress bars
 │          Challenges.tsx  # Daily challenge cards with progress + claim buttons
+│          Shop.tsx        # Cosmetics shop modal (buy/equip card/dice/table skins)
 ├── games/
 │   ├── GameRouter.tsx     # switch on gameType → render BlackjackGame / ChinchiroGame
 │   ├── blackjack/         # BlackjackGame, DealerArea, PlayerBox
@@ -103,15 +107,16 @@ frontend/src/
 │   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM
 │   ├── components/        # Card, Hand, Chip, BetArea, TurnTimer, ResultOverlay,
 │   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle,
-│   │                      # AchievementToast, ReactionBar, ReactionFloat
+│   │                      # AchievementToast, ReactionBar, ReactionFloat, AdPlayer
+│   ├── cosmetics.ts       # CSS class resolver for equipped cosmetics
 │   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts
-│   └── types/game.ts      # WS message types incl. ChinchiroGameState
+│   └── types/game.ts      # WS message types incl. ChinchiroGameState, CosmeticItem, EquippedCosmetics
 ├── styles/theme.css
 ```
 
 i18n is in-house (no library). `locales/ja.ts` is the source of truth — its `Translation` type forces `en.ts` to provide a matching English entry for every key. `t("path.to.key", { name: value })` does dot-path lookup with `{name}` interpolation; missing keys fall back to ja, then to the key itself. Initial language reads `localStorage["sc:lang"]`, then `navigator.language` on first visit. Server payloads use stable enum IDs (`HandName.value`, `Result.value`) and structured table_ids (`bj-low`, `cc-high`) — translation lives entirely on the client; do not return display strings from the server.
 
-`useGameSocket` is generic and returns `gameState: unknown`-shaped data; each game component narrows it (`as ChinchiroGameState`). `App.tsx` wires `GameRouter` with the table's `game_type` so the right component renders even before the first WS message arrives.
+`useGameSocket(tableId, spectate?)` is generic and returns `gameState`, `notifications` (achievement/level/reaction events), `dismissNotification`, and `send`. Each game component narrows `gameState` (`as ChinchiroGameState`). `App.tsx` wires `GameRouter` with the table's `game_type` and `spectate` flag so the right component renders even before the first WS message arrives.
 
 ### UX clarity conventions
 
@@ -141,7 +146,7 @@ Screen shake uses a CSS `@keyframes screen-shake` animation on `.game-section.is
 
 ### WS protocol
 
-Endpoint: `/ws/table/{table_id}?token=...`. Single message envelope:
+Endpoint: `/ws/table/{table_id}?token=...&spectate=false`. Set `spectate=true` for watch-only mode (receives broadcasts, can only react). Single message envelope:
 
 ```jsonc
 // server → client
@@ -177,7 +182,7 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 6. **Frontend types** (`shared/types/game.ts`): add `RouletteGameState` interface.
 7. **Frontend components**: create `games/roulette/RouletteGame.tsx` and any sub-components.
    - **Use shared helpers**: `ActionButton` (not raw `<button>`) with `disabled` + `reason` for game actions, `highlight` on all available actions the player can take now, and the `has-current` class on `.players-area` whenever `current_player_id` is set. See "UX clarity conventions" above.
-   - **Match the 3-row shell**: keep `<div className="game-section">` with this child order — `.game-topbar` (auto-height), `.game-table` (the scrollable stage; place dealer/board, `.players-area`, and `.game-log-area` inside it), then `.game-actions` as a **sibling** of `.game-table` (NOT a child — it's the bottom action dock and must sit outside the scroll container), then `<KeyHintBar />`, then `<ResultOverlay />`. See blackjack/chinchiro for canonical structure.
+   - **Match the 3-row shell**: keep `<div className="game-section">` with this child order — `.game-topbar` (auto-height), `.game-table` (the scrollable stage; place dealer/board, `.players-area`, and `.game-log-area` inside it), then `.game-actions` as a **sibling** of `.game-table` (NOT a child — it's the bottom action dock and must sit outside the scroll container), then `<ReactionBar send={send} />`, then `<KeyHintBar />`, then `<ReactionFloat />`, then `<ResultOverlay />`. See blackjack/chinchiro for canonical structure.
    - **Bespoke result kinds** (only if needed): if the game introduces names like chinchiro's `pinzoro`/`arashi`/`shigoro`/`hifumi`/`menashi`/`wakare`, extend `ResultKind` in `shared/components/ResultOverlay.tsx` and update `RIM_GLOW_KINDS` / `POSITIVE_AMOUNT_KINDS` so glow + amount-color rendering classifies the new kinds correctly. Update `getTiming()` with appropriate anticipation/reveal/afterglow durations for new kinds.
    - **Mobile sizing**: for visual elements that scale (boards, wheels, tokens), use `clamp()` for dimensions and `min(Npx, 100%)` for box widths — see "Sharp edges" Mobile entry.
 8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", icon:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (label/tagline come from i18n — see step 11). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
@@ -185,7 +190,11 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 10. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
 11. **i18n**: extend `shared/i18n/locales/ja.ts` with `games.roulette.{label,tagline}`, `tables.rl.{low,mid,high}`, plus any reasons / phase banners / button labels you introduce. The `Translation` type then forces matching English entries in `en.ts`. Use `t(key, params)` everywhere — never hardcode display strings.
 
-Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern.
+Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern. Engagement systems wire in automatically:
+- `update_game_stats()` and `update_streaks()` must be called in the new `_broadcast_*` function for per-game career stats and streak tracking.
+- `_post_round_xp_and_achievements(table_id, pid, payout, is_jackpot)` must be called for each human player at resolution — this handles XP, achievement checks, and WS notifications. Set `is_jackpot=True` for the game's premium outcome (e.g. blackjack, pinzoro).
+- Challenges and leaderboard use aggregate fields (`wins`, `game_stats`, `coins`) so they pick up new games without code changes.
+- If the game introduces new achievement-worthy events, add check functions and entries to `ACHIEVEMENTS` in `backend/achievements.py`, then add i18n keys in `achievements.*`.
 
 ## Sharp edges to know
 
@@ -206,4 +215,4 @@ To add a sound: extend the `SoundId` union, add a `case` in the `play()` switch,
 
 ## Testing conventions
 
-`tests/test_<game>.py` uses pytest classes grouped by unit (`TestEvaluateDice`, `TestPayout`, `TestGameFlow`). Game-flow tests use `monkeypatch.setattr(game, "_roll", ...)` to inject deterministic dice / cards. Run with `uv run pytest`.
+`tests/test_<game>.py` uses pytest classes grouped by unit (`TestEvaluateDice`, `TestPayout`, `TestGameFlow`). Game-flow tests use `monkeypatch.setattr(game, "_roll", ...)` to inject deterministic dice / cards. `tests/test_achievements.py` covers achievement check logic and XP/level calculations (pure functions, no Firestore). Run with `uv run pytest`.

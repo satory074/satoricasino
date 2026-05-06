@@ -16,6 +16,11 @@ TURN_TIMEOUT_SECONDS = 30
 DECK_COUNT = 6
 RESHUFFLE_THRESHOLD = 60
 
+# Reward ads
+AD_REWARD_DAILY_CAP = 5
+AD_WATCH_MIN_SECONDS = 5
+BAILOUT_COINS_AD = 1000
+
 # XP system
 XP_ROUND = 10        # participation
 XP_WIN = 15          # extra for winning

@@ -6,9 +6,10 @@ interface Props {
   cards: CardData[];
   onCardEvent?: () => void;
   shake?: boolean;
+  skinClass?: string;
 }
 
-export function Hand({ cards, onCardEvent, shake }: Props) {
+export function Hand({ cards, onCardEvent, shake, skinClass }: Props) {
   const [shakeKey, setShakeKey] = useState(0);
   const prevShake = useRef(false);
 
@@ -29,7 +30,7 @@ export function Hand({ cards, onCardEvent, shake }: Props) {
       }}
     >
       {cards.map((c, i) => (
-        <Card key={i} card={c} index={i} onFlip={onCardEvent} />
+        <Card key={i} card={c} index={i} onFlip={onCardEvent} skinClass={skinClass} />
       ))}
     </div>
   );

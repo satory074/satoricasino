@@ -6,6 +6,8 @@ import { useTranslation } from "../shared/i18n/useTranslation";
 import { Leaderboard } from "./Leaderboard";
 import { AchievementList } from "./AchievementList";
 import { Challenges } from "./Challenges";
+import { Shop } from "./Shop";
+import { AdPlayer } from "../shared/components/AdPlayer";
 import type { GameStatsEntry, TableInfo, UserProfile } from "../shared/types/game";
 
 const SUPPORTED_GAMES = [
@@ -48,6 +50,9 @@ interface BonusModal {
   title: string;
   amount: number;
   msg: string;
+  canWatchAd?: boolean;
+  bonusAmount?: number;
+  isBailout?: boolean;
 }
 
 export function Lobby({
@@ -64,6 +69,13 @@ export function Lobby({
   const [bonus, setBonus] = useState<BonusModal | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showShop, setShowShop] = useState(false);
+  const [adState, setAdState] = useState<{
+    open: boolean;
+    sessionId: string | null;
+    purpose: "daily_bonus_double" | "bailout_upgrade";
+    pendingBonus: BonusModal | null;
+  }>({ open: false, sessionId: null, purpose: "daily_bonus_double", pendingBonus: null });
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -109,6 +121,7 @@ export function Lobby({
         bonus: number;
         daily_streak: number;
         daily_streak_max: number;
+        can_watch_ad?: boolean;
       }>("/api/daily-bonus", {});
       const prev = profile?.coins ?? 0;
       onCoinsChanged(result.coins, result.coins - prev);
@@ -118,6 +131,8 @@ export function Lobby({
         title: t("dailyStreak.title"),
         amount: result.bonus,
         msg: `${t("dailyStreak.day", { n: result.daily_streak })} / ${result.daily_streak_max} — ${t("dailyStreak.next", { amount: nextBonus })}`,
+        canWatchAd: result.can_watch_ad ?? false,
+        bonusAmount: result.bonus,
       });
       play("bonus");
       confetti({
@@ -135,7 +150,7 @@ export function Lobby({
   const claimBailout = async () => {
     play("button_click");
     try {
-      const result = await apiPost<{ coins: number; bailout: number }>(
+      const result = await apiPost<{ coins: number; bailout: number; can_watch_ad?: boolean }>(
         "/api/bailout",
         {},
       );
@@ -145,12 +160,54 @@ export function Lobby({
         title: "Emergency Rescue",
         amount: result.bailout,
         msg: "Try not to bust again.",
+        canWatchAd: result.can_watch_ad ?? false,
+        isBailout: true,
       });
       play("bonus");
       await refreshProfile();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed");
     }
+  };
+
+  const startAdSession = async (purpose: "daily_bonus_double" | "bailout_upgrade", bonusAmount: number) => {
+    play("button_click");
+    try {
+      const result = await apiPost<{ ad_session_id: string }>(
+        `/api/ad/start?purpose=${purpose}&bonus_amount=${bonusAmount}`,
+        {},
+      );
+      setAdState({
+        open: true,
+        sessionId: result.ad_session_id,
+        purpose,
+        pendingBonus: bonus,
+      });
+      setBonus(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed");
+    }
+  };
+
+  const onAdComplete = async (result: { coins: number; reward: number }) => {
+    const prev = profile?.coins ?? 0;
+    onCoinsChanged(result.coins, result.coins - prev);
+    setAdState({ open: false, sessionId: null, purpose: "daily_bonus_double", pendingBonus: null });
+    play("bonus");
+    confetti({
+      particleCount: 100,
+      spread: 80,
+      origin: { y: 0.55 },
+      colors: ["#f4c430", "#ffd84a", "#c41e3a", "#ffffff"],
+    });
+    await refreshProfile();
+  };
+
+  const onAdCancel = () => {
+    setAdState((prev) => {
+      if (prev.pendingBonus) setBonus(prev.pendingBonus);
+      return { open: false, sessionId: null, purpose: "daily_bonus_double", pendingBonus: null };
+    });
   };
 
   const logout = () => {
@@ -200,6 +257,15 @@ export function Lobby({
           }}
         >
           {t("achievements.title")}
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            play("button_click");
+            setShowShop(true);
+          }}
+        >
+          {t("shop.title")}
         </button>
         <button className="btn-danger" onClick={logout}>
           Logout
@@ -361,6 +427,18 @@ export function Lobby({
         open={showAchievements}
         onClose={() => setShowAchievements(false)}
       />
+      <Shop
+        open={showShop}
+        onClose={() => setShowShop(false)}
+        onCoinsChanged={onCoinsChanged}
+        play={play}
+      />
+      <AdPlayer
+        open={adState.open}
+        adSessionId={adState.sessionId}
+        onComplete={onAdComplete}
+        onCancel={onAdCancel}
+      />
 
       <AnimatePresence>
         {bonus && (
@@ -382,6 +460,20 @@ export function Lobby({
               <div className="modal-title">{bonus.title}</div>
               <CountUp value={bonus.amount} prefix="+" />
               <div className="modal-msg">{bonus.msg}</div>
+              {bonus.canWatchAd && (
+                <button
+                  className="btn-secondary"
+                  style={{ marginBottom: "0.5rem" }}
+                  onClick={() =>
+                    startAdSession(
+                      bonus.isBailout ? "bailout_upgrade" : "daily_bonus_double",
+                      bonus.bonusAmount ?? bonus.amount,
+                    )
+                  }
+                >
+                  {bonus.isBailout ? t("ads.watchForMore") : t("ads.watchToDouble")}
+                </button>
+              )}
               <button className="btn-primary" onClick={() => setBonus(null)}>
                 Collect
               </button>
