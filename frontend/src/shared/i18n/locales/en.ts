@@ -163,6 +163,8 @@ export const en: Translation = {
   ads: {
     watchToDouble: "Watch ad for 2x",
     watchForMore: "Watch ad for 1000 coins",
+    watchForCoins: "Watch Ad for Coins",
+    remaining: "{n} left",
     watching: "Watching ad...",
     complete: "Claim reward",
     dailyCap: "Daily ad limit reached",

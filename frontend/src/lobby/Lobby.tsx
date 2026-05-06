@@ -8,7 +8,10 @@ import { AchievementList } from "./AchievementList";
 import { Challenges } from "./Challenges";
 import { Shop } from "./Shop";
 import { AdPlayer } from "../shared/components/AdPlayer";
+import { BannerAd } from "../shared/components/BannerAd";
 import type { GameStatsEntry, TableInfo, UserProfile } from "../shared/types/game";
+
+const AD_REWARD_DAILY_CAP = 5;
 
 const SUPPORTED_GAMES = [
   { value: "blackjack", icon: "♠♥" },
@@ -73,7 +76,7 @@ export function Lobby({
   const [adState, setAdState] = useState<{
     open: boolean;
     sessionId: string | null;
-    purpose: "daily_bonus_double" | "bailout_upgrade";
+    purpose: "daily_bonus_double" | "bailout_upgrade" | "reward_ad";
     pendingBonus: BonusModal | null;
   }>({ open: false, sessionId: null, purpose: "daily_bonus_double", pendingBonus: null });
 
@@ -170,7 +173,7 @@ export function Lobby({
     }
   };
 
-  const startAdSession = async (purpose: "daily_bonus_double" | "bailout_upgrade", bonusAmount: number) => {
+  const startAdSession = async (purpose: "daily_bonus_double" | "bailout_upgrade" | "reward_ad", bonusAmount: number) => {
     play("button_click");
     try {
       const result = await apiPost<{ ad_session_id: string }>(
@@ -267,6 +270,29 @@ export function Lobby({
         >
           {t("shop.title")}
         </button>
+        {(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const watches = profile?.last_ad_date?.slice(0, 10) === today
+            ? (profile?.ad_watches_today ?? 0)
+            : 0;
+          const remaining = AD_REWARD_DAILY_CAP - watches;
+          return (
+            <button
+              className="btn-secondary"
+              style={{ position: "relative" }}
+              disabled={remaining <= 0}
+              onClick={() => startAdSession("reward_ad", 0)}
+            >
+              {t("ads.watchForCoins")}
+              {remaining > 0 && <span className="notify-dot" />}
+              <span style={{ display: "block", fontSize: "0.7rem", opacity: 0.7 }}>
+                {remaining > 0
+                  ? t("ads.remaining", { n: remaining })
+                  : t("ads.dailyCap")}
+              </span>
+            </button>
+          );
+        })()}
         <button className="btn-danger" onClick={logout}>
           Logout
         </button>
@@ -325,6 +351,8 @@ export function Lobby({
           )}
 
           <Challenges onCoinsChanged={onCoinsChanged} play={play} />
+
+          <BannerAd />
 
           <h3>Choose Your Game</h3>
           <div className="game-grid">

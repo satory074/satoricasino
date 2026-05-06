@@ -86,6 +86,7 @@ export interface UserProfile {
   level?: number;
   unlocked_achievements?: Record<string, string>;
   ad_watches_today?: number;
+  last_ad_date?: string | null;
   owned_cosmetics?: Record<string, string>;
   equipped?: EquippedCosmetics;
 }

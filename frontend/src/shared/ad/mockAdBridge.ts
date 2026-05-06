@@ -3,6 +3,8 @@ import type { AdBridge, AdResult } from "./adBridge";
 const AD_DURATION_MS = 5000;
 
 export class MockAdBridge implements AdBridge {
+  private bannerContainer: HTMLElement | null = null;
+
   async init(): Promise<void> {
     // No-op for mock
   }
@@ -30,5 +32,25 @@ export class MockAdBridge implements AdBridge {
         resolve({ watched: true, durationMs: AD_DURATION_MS });
       }, AD_DURATION_MS);
     });
+  }
+
+  showBanner(container: HTMLElement): void {
+    this.bannerContainer = container;
+    container.innerHTML = "";
+
+    const banner = document.createElement("div");
+    banner.className = "ad-banner-mock";
+    const label = document.createElement("span");
+    label.className = "ad-banner-mock-label";
+    label.textContent = "AD";
+    banner.appendChild(label);
+    container.appendChild(banner);
+  }
+
+  destroyBanner(): void {
+    if (this.bannerContainer) {
+      this.bannerContainer.innerHTML = "";
+      this.bannerContainer = null;
+    }
   }
 }

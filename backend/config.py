@@ -20,6 +20,7 @@ RESHUFFLE_THRESHOLD = 60
 AD_REWARD_DAILY_CAP = 5
 AD_WATCH_MIN_SECONDS = 5
 BAILOUT_COINS_AD = 1000
+AD_REWARD_COINS = 50  # standalone reward ad payout
 
 # XP system
 XP_ROUND = 10        # participation

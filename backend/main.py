@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.auth import create_token, decode_token
 from backend.config import (
+    AD_REWARD_COINS,
     AD_REWARD_DAILY_CAP,
     AD_WATCH_MIN_SECONDS,
     BAILOUT_COINS,
@@ -475,7 +476,7 @@ def _cleanup_expired_ad_sessions():
 @app.post("/api/ad/start")
 async def ad_start(token: str = Query(...), purpose: str = Query(...), bonus_amount: int = Query(0)):
     payload = _get_current_user(token)
-    if purpose not in ("daily_bonus_double", "bailout_upgrade"):
+    if purpose not in ("daily_bonus_double", "bailout_upgrade", "reward_ad"):
         raise HTTPException(status_code=400, detail="Invalid purpose")
 
     user = await get_user(payload["user_id"])
@@ -528,6 +529,8 @@ async def ad_complete(token: str = Query(...), ad_session_id: str = Query(...)):
         reward = bonus_amount
     elif purpose == "bailout_upgrade":
         reward = BAILOUT_COINS_AD - BAILOUT_COINS
+    elif purpose == "reward_ad":
+        reward = AD_REWARD_COINS
     else:
         reward = 0
 

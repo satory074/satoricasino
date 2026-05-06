@@ -49,6 +49,8 @@ class UserProfile(BaseModel):
     xp: int = 0
     level: int = 1
     unlocked_achievements: dict[str, str] = {}
+    ad_watches_today: int = 0
+    last_ad_date: Optional[str] = None
 
 
 class TableInfo(BaseModel):
