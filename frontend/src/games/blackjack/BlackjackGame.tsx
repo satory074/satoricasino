@@ -346,8 +346,6 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
         />
       </div>
 
-      <BannerAd size="standard" />
-
       <div className="game-table">
         {gameState ? (
           <>
@@ -387,7 +385,6 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
                   </div>
                 ))}
               </div>
-              <BannerAd size="mrec" />
             </div>
 
             {phase === "resolution" && <BannerAd size="mrec" />}

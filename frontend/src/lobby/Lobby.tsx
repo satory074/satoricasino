@@ -237,8 +237,6 @@ export function Lobby({
 
   return (
     <div className="lobby-section">
-      <BannerAd size="standard" />
-
       <div className="lobby-actions">
         <button className="btn-secondary" style={{ position: "relative" }} onClick={claimDailyBonus}>
           Daily Bonus
@@ -361,11 +359,7 @@ export function Lobby({
             </div>
           )}
 
-          <BannerAd size="mrec" />
-
           <Challenges onCoinsChanged={onCoinsChanged} play={play} />
-
-          <BannerAd />
 
           <h3>Choose Your Game</h3>
           <div className="game-grid">
@@ -459,7 +453,6 @@ export function Lobby({
               );
             })
           )}
-          <BannerAd size="mrec" />
         </>
       )}
 

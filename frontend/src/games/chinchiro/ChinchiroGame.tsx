@@ -366,8 +366,6 @@ export function ChinchiroGame({
         />
       </div>
 
-      <BannerAd size="standard" />
-
       <div className="game-table chinchiro-table">
         <BankerArea
           rolls={state.banker_rolls}
@@ -417,7 +415,6 @@ export function ChinchiroGame({
               </div>
             ))}
           </div>
-          <BannerAd size="mrec" />
         </div>
 
         {phase === "resolution" && <BannerAd size="mrec" />}
