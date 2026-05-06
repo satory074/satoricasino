@@ -14,6 +14,8 @@ import type {
   ChinchiroGameState,
   ChinchiroPhase,
 } from "../../shared/types/game";
+import { ReactionBar } from "../../shared/components/ReactionBar";
+import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { BankerArea } from "./BankerArea";
 import { PlayerSeat } from "./PlayerSeat";
 
@@ -53,6 +55,7 @@ interface Props {
   myCoins: number;
   onResolve: (delta: number) => void;
   play: (id: SoundId) => void;
+  spectate?: boolean;
 }
 
 const HAND_SOUNDS: Record<string, SoundId> = {
@@ -69,10 +72,11 @@ export function ChinchiroGame({
   myCoins,
   onResolve,
   play,
+  spectate,
 }: Props) {
   const { t } = useTranslation();
   const myId = getUserId();
-  const { connected, gameState: rawState, log, send } = useGameSocket(tableId);
+  const { connected, gameState: rawState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
   const state = rawState as unknown as ChinchiroGameState | null;
 
   const [overlay, setOverlay] = useState<
@@ -460,7 +464,11 @@ export function ChinchiroGame({
         )}
       </div>
 
+      <ReactionBar send={send} />
+
       <KeyHintBar hints={hints} />
+
+      <ReactionFloat notifications={notifications} dismissNotification={dismissNotification} />
 
       <ResultOverlay
         shown={overlay?.kind ?? null}

@@ -12,7 +12,7 @@ export interface LogEntry {
 
 export interface Notification {
   id: number;
-  kind: "achievement_unlocked" | "level_up";
+  kind: "achievement_unlocked" | "level_up" | "reaction";
   data: Record<string, unknown>;
 }
 
@@ -115,13 +115,25 @@ function reducer(s: SocketState, a: Action): SocketState {
             ],
             log: [newLog("⬆️", `Level up! Lv.${msg.level}`), ...s.log].slice(0, 50),
           };
+        case "reaction":
+          return {
+            ...s,
+            notifications: [
+              ...s.notifications,
+              {
+                id: ++notifCounter,
+                kind: "reaction",
+                data: { player_id: msg.player_id, display_name: msg.display_name, emoji: msg.emoji },
+              },
+            ],
+          };
       }
       return s;
     }
   }
 }
 
-export function useGameSocket(tableId: string | null) {
+export function useGameSocket(tableId: string | null, spectate = false) {
   const [state, dispatch] = useReducer(reducer, {
     connected: false,
     state: null,
@@ -145,7 +157,7 @@ export function useGameSocket(tableId: string | null) {
 
     const connect = () => {
       if (cancelled) return;
-      const ws = new WebSocket(wsUrl(tableId));
+      const ws = new WebSocket(wsUrl(tableId, spectate));
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -188,7 +200,7 @@ export function useGameSocket(tableId: string | null) {
         wsRef.current = null;
       }
     };
-  }, [tableId]);
+  }, [tableId, spectate]);
 
   const send = useCallback((action: string, data: Record<string, unknown> = {}) => {
     const ws = wsRef.current;

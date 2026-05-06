@@ -36,14 +36,15 @@ interface Props {
   myCoins: number;
   onResolve: (delta: number) => void;
   play: (id: SoundId) => void;
+  spectate?: boolean;
 }
 
-export function GameRouter({ gameType, ...rest }: Props) {
+export function GameRouter({ gameType, spectate, ...rest }: Props) {
   switch (gameType) {
     case "blackjack":
-      return <BlackjackGame {...rest} />;
+      return <BlackjackGame {...rest} spectate={spectate} />;
     case "chinchiro":
-      return <ChinchiroGame {...rest} />;
+      return <ChinchiroGame {...rest} spectate={spectate} />;
     default:
       return (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-mute)" }}>

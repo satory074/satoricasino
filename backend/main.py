@@ -459,6 +459,29 @@ async def leaderboard(
     return {"entries": entries, "my_rank": rank}
 
 
+# --- Player profile (public) ---
+
+@app.get("/api/profile/{user_id}")
+async def get_profile(user_id: str, token: str = Query(...)):
+    _get_current_user(token)
+    user = await get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Public info only — no coins
+    return {
+        "user_id": user.get("user_id"),
+        "display_name": user.get("display_name"),
+        "wins": user.get("wins", 0),
+        "losses": user.get("losses", 0),
+        "draws": user.get("draws", 0),
+        "level": user.get("level", 1),
+        "xp": user.get("xp", 0),
+        "game_stats": user.get("game_stats", {}),
+        "best_streaks": user.get("best_streaks", {}),
+        "unlocked_achievements": list(user.get("unlocked_achievements", {}).keys()),
+    }
+
+
 # --- Achievements ---
 
 @app.get("/api/achievements")
@@ -795,8 +818,19 @@ async def _chinchiro_banker_sequence(table_id: str):
 
 # --- WebSocket dispatch ---
 
+VALID_REACTIONS = {"gg", "nice", "wow", "ouch", "lol", "gl"}
+# Rate limit: one reaction per user per N seconds
+_reaction_cooldowns: dict[str, float] = {}
+REACTION_COOLDOWN = 3.0
+
+
 @app.websocket("/ws/table/{table_id}")
-async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Query(...)):
+async def websocket_endpoint(
+    websocket: WebSocket,
+    table_id: str,
+    token: str = Query(...),
+    spectate: bool = Query(False),
+):
     payload = decode_token(token)
     if not payload:
         await websocket.close(code=4001)
@@ -808,6 +842,21 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
 
     user_id = payload["user_id"]
     display_name = payload["display_name"]
+
+    if spectate:
+        # Spectator mode: receive broadcasts only, no game participation
+        await manager.connect(table_id, user_id, display_name, websocket)
+        await _broadcast_state(table_id)
+        try:
+            while True:
+                data = await websocket.receive_json()
+                action = data.get("action")
+                # Spectators can only react
+                if action == "react":
+                    await _handle_reaction(table_id, user_id, display_name, data)
+        except WebSocketDisconnect:
+            manager.disconnect(table_id, user_id)
+        return
 
     # Bot leaves the moment a real human arrives — they never share a round.
     await _despawn_bots(table_id)
@@ -833,6 +882,11 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
         while True:
             data = await websocket.receive_json()
             action = data.get("action")
+
+            if action == "react":
+                await _handle_reaction(table_id, user_id, display_name, data)
+                continue
+
             if table["game_type"] == "blackjack":
                 await _handle_blackjack_action(table_id, user_id, action, data)
             elif table["game_type"] == "chinchiro":
@@ -855,6 +909,24 @@ async def websocket_endpoint(websocket: WebSocket, table_id: str, token: str = Q
             await _spawn_bot(table_id)
         else:
             await _broadcast_state(table_id)
+
+
+async def _handle_reaction(table_id: str, user_id: str, display_name: str, data: dict):
+    emoji = data.get("emoji", "")
+    if emoji not in VALID_REACTIONS:
+        return
+    import time
+    now = time.monotonic()
+    last = _reaction_cooldowns.get(user_id, 0)
+    if now - last < REACTION_COOLDOWN:
+        return
+    _reaction_cooldowns[user_id] = now
+    await manager.broadcast(table_id, {
+        "type": "reaction",
+        "player_id": user_id,
+        "display_name": display_name,
+        "emoji": emoji,
+    })
 
 
 # --- Action handlers ---

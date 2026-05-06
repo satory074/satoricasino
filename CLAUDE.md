@@ -50,6 +50,8 @@ backend/
 │   ├── blackjack.py       # BlackjackGame class + Phase + Result
 │   ├── chinchiro.py       # ChinchiroGame class + Phase + HandName + payout helpers
 │   └── deck.py            # Card / hand_value / SUITS / RANKS — shared by any card game
+├── achievements.py    # 27 achievement definitions + check_achievements() + progress query
+│── challenges.py      # Daily challenge pool, deterministic selection, baseline tracking
 ├── auth.py, database.py, websocket_manager.py, models.py, config.py
 ```
 
@@ -67,6 +69,21 @@ Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e
 
 A bot fills any table that has zero humans so the floor never looks dead. One bot per table at most; bots step out the moment a real human connects (`_despawn_bots` cancels the driver task and rebuilds the game). They share the live game state and broadcast as ordinary players, but are virtual: IDs prefixed `bot-`, no Firestore record, and `_broadcast_blackjack` / `_broadcast_chinchiro` skip them when writing payouts and stats. Behaviour lives in `_run_bot_driver` → `_bot_step_blackjack` / `_bot_step_chinchiro` (Blackjack: hit < 17, stand otherwise; Chinchiro: roll until settled), bets are always `min_bet`, and each action is paced 1.5–2.5 s for human-feeling tempo.
 
+### Engagement systems
+
+Several systems drive retention and are wired through `_broadcast_blackjack` / `_broadcast_chinchiro`:
+
+- **Per-game career stats** (`game_stats` map on each user doc): wins/losses/draws/total_wagered/total_won/biggest_win/hands_played per game type. Updated via `update_game_stats()` on each round resolution.
+- **Win streaks** (`streaks` + `best_streaks` maps): persisted server-side, `update_streaks()` increments on win, resets on loss, draws unchanged. Frontend initializes from profile on load.
+- **XP & Levels** (`xp`, `level`): XP_ROUND(10) + XP_WIN(15) + XP_JACKPOT(30) per round, XP_DAILY(5) on bonus claim, XP_ACHIEVEMENT(50) per unlock. `level = floor(sqrt(xp/100)) + 1`. WS `level_up` message sent on level change.
+- **Achievements** (`backend/achievements.py`): 27 definitions checked via `check_achievements(user_data)` after each round. Newly unlocked IDs stored in `unlocked_achievements` map. WS `achievement_unlocked` sent per unlock. `GET /api/achievements` returns all definitions with progress.
+- **Daily challenges** (`backend/challenges.py`): 12-challenge pool, 3 picked deterministically per user per day via `hash(user_id + date)`. Baselines snapshotted on first daily access. `GET /api/challenges`, `POST /api/challenges/{id}/claim`.
+- **Login streaks** (daily bonus): Day1=100 → Day7=500 coins, resets after day 7. `daily_streak` on user doc.
+- **Leaderboard** (`GET /api/leaderboard?metric=coins|wins`): queries Firestore directly, returns top 10 + user's rank.
+- **Reactions**: 6 presets (gg/nice/wow/ouch/lol/gl), WS `{"action":"react","emoji":"gg"}` → broadcast to table, 3s cooldown, no persistence. `ReactionBar` + `ReactionFloat` components.
+- **Spectator mode**: `?spectate=true` on WS connection — receives broadcasts, no game participation, can only react. `Watch` button in lobby on occupied tables.
+- **Player profile** (`GET /api/profile/{user_id}`): public stats (no coins), level, achievements, game stats.
+
 ### Frontend layout
 
 ```
@@ -74,6 +91,9 @@ frontend/src/
 ├── App.tsx                # top-level routing (auth | lobby | game), header, audio toggles
 ├── auth/Auth.tsx
 ├── lobby/Lobby.tsx        # 2-step lobby: clickable game cards → filtered table list per game
+│          Leaderboard.tsx # Top-10 modal (coins/wins), fetches GET /api/leaderboard
+│          AchievementList.tsx # Full achievement grid with progress bars
+│          Challenges.tsx  # Daily challenge cards with progress + claim buttons
 ├── games/
 │   ├── GameRouter.tsx     # switch on gameType → render BlackjackGame / ChinchiroGame
 │   ├── blackjack/         # BlackjackGame, DealerArea, PlayerBox
@@ -82,7 +102,8 @@ frontend/src/
 │   ├── api/api.ts, useGameSocket.ts
 │   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM
 │   ├── components/        # Card, Hand, Chip, BetArea, TurnTimer, ResultOverlay,
-│   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle
+│   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle,
+│   │                      # AchievementToast, ReactionBar, ReactionFloat
 │   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts
 │   └── types/game.ts      # WS message types incl. ChinchiroGameState
 ├── styles/theme.css
@@ -129,6 +150,9 @@ Endpoint: `/ws/table/{table_id}?token=...`. Single message envelope:
 {"type": "bet_placed", "player_id": "...", "amount": 100}
 {"type": "auto_stand", "player_id": "..."}
 {"type": "error", "message": "..."}
+{"type": "achievement_unlocked", "achievement_id": "first_win"}
+{"type": "level_up", "level": 5, "xp": 1600}
+{"type": "reaction", "player_id": "...", "display_name": "...", "emoji": "gg"}
 
 // client → server
 {"action": "start"}                            // no payload
@@ -136,6 +160,7 @@ Endpoint: `/ws/table/{table_id}?token=...`. Single message envelope:
 {"action": "hit" | "stand" | "double"}         // blackjack, no payload
 {"action": "roll"}                             // chinchiro, no payload
 {"action": "new_round"}                        // no payload
+{"action": "react", "emoji": "gg"}             // broadcast to table, 3s cooldown
 ```
 
 Action vocabulary is intentionally not namespaced — actions are unique per game today. Add a prefix (`{game}.{action}`) only if collisions appear.

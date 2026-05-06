@@ -61,15 +61,16 @@ export async function apiGet<T>(path: string): Promise<T> {
   return unwrap<T>(res);
 }
 
-export function wsUrl(tableId: string): string {
+export function wsUrl(tableId: string, spectate = false): string {
   const token = getToken();
+  const spectateParam = spectate ? "&spectate=true" : "";
   if (isLocal) {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     return `${proto}//${window.location.host}/ws/table/${tableId}?token=${encodeURIComponent(
       token ?? "",
-    )}`;
+    )}${spectateParam}`;
   }
   return `wss://satoricasino-874739310695.asia-northeast1.run.app/ws/table/${tableId}?token=${encodeURIComponent(
     token ?? "",
-  )}`;
+  )}${spectateParam}`;
 }

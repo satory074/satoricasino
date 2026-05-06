@@ -48,6 +48,7 @@ export const ja = {
     backToGames: "← ゲーム選択に戻る",
     tablesTitle: "{game} のテーブル",
     loadingTables: "テーブルを準備中…",
+    watch: "観戦",
   },
   games: {
     blackjack: {

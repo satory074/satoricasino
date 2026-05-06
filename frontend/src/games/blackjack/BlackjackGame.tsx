@@ -11,6 +11,8 @@ import {
   type ResultKind,
 } from "../../shared/components/ResultOverlay";
 import type { GameState, Phase, Result } from "../../shared/types/game";
+import { ReactionBar } from "../../shared/components/ReactionBar";
+import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { DealerArea } from "./DealerArea";
 import { PlayerBox } from "./PlayerBox";
 
@@ -42,6 +44,7 @@ interface Props {
   myCoins: number;
   onResolve: (delta: number) => void;
   play: (id: SoundId) => void;
+  spectate?: boolean;
 }
 
 function detectNearMiss(
@@ -57,9 +60,9 @@ function detectNearMiss(
   return false;
 }
 
-export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Props) {
+export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate }: Props) {
   const myId = getUserId();
-  const { connected, gameState, log, send } = useGameSocket(tableId);
+  const { connected, gameState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
   const [overlay, setOverlay] = useState<{
     kind: ResultKind;
     amount: number | null;
@@ -404,7 +407,11 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play }: Pr
         />
       )}
 
+      <ReactionBar send={send} />
+
       <KeyHintBar hints={hints} />
+
+      <ReactionFloat notifications={notifications} dismissNotification={dismissNotification} />
 
       <ResultOverlay
         shown={overlay?.kind ?? null}

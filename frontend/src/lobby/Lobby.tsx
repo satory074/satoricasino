@@ -32,7 +32,7 @@ function resolveTableName(
 }
 
 interface Props {
-  onJoinTable: (tableId: string, gameType: string) => void;
+  onJoinTable: (tableId: string, gameType: string, spectate?: boolean) => void;
   onLogout: () => void;
   onCoinsChanged: (coins: number, delta: number) => void;
   profile: UserProfile | null;
@@ -328,10 +328,24 @@ export function Lobby({
                       <span className="pill">{tbl.status}</span>
                     </div>
                   </div>
-                  <button className="btn-primary" disabled={isFull} style={{ position: "relative" }}>
-                    {isFull ? "Full" : "Join"}
-                    {!isFull && tbl.player_count > 0 && <span className="notify-dot" />}
-                  </button>
+                  <div className="table-buttons">
+                    {tbl.player_count > 0 && (
+                      <button
+                        className="btn-secondary btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          play("button_click");
+                          onJoinTable(tbl.table_id, gameType, true);
+                        }}
+                      >
+                        {t("lobby.watch")}
+                      </button>
+                    )}
+                    <button className="btn-primary" disabled={isFull} style={{ position: "relative" }}>
+                      {isFull ? "Full" : "Join"}
+                      {!isFull && tbl.player_count > 0 && <span className="notify-dot" />}
+                    </button>
+                  </div>
                 </div>
               );
             })

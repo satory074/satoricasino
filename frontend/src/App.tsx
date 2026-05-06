@@ -16,6 +16,7 @@ export default function App() {
   const [view, setView] = useState<View>(() => (getToken() ? "lobby" : "auth"));
   const [tableId, setTableId] = useState<string | null>(null);
   const [tableGameType, setTableGameType] = useState<string>("blackjack");
+  const [spectateMode, setSpectateMode] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [coinFlash, setCoinFlash] = useState<"up" | "down" | null>(null);
   const [shownCoins, setShownCoins] = useState<number>(0);
@@ -90,14 +91,16 @@ export default function App() {
     [profile, onCoinsChanged],
   );
 
-  const onJoinTable = useCallback((id: string, gameType: string) => {
+  const onJoinTable = useCallback((id: string, gameType: string, spectate = false) => {
     setTableId(id);
     setTableGameType(gameType);
+    setSpectateMode(spectate);
     setView("game");
   }, []);
 
   const onLeaveTable = useCallback(() => {
     setTableId(null);
+    setSpectateMode(false);
     setView("lobby");
   }, []);
 
@@ -184,6 +187,7 @@ export default function App() {
           myCoins={profile?.coins ?? 0}
           onResolve={onResolve}
           play={play}
+          spectate={spectateMode}
         />
       )}
     </>

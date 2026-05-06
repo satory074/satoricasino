@@ -41,7 +41,8 @@ export type WSMessage =
   | { type: "auto_stand"; player_id: string }
   | { type: "error"; message: string }
   | { type: "achievement_unlocked"; achievement_id: string }
-  | { type: "level_up"; level: number; xp: number };
+  | { type: "level_up"; level: number; xp: number }
+  | { type: "reaction"; player_id: string; display_name: string; emoji: string };
 
 export interface GameStatsEntry {
   wins: number;

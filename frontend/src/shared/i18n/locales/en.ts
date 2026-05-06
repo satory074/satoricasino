@@ -50,6 +50,7 @@ export const en: Translation = {
     backToGames: "← Back to game select",
     tablesTitle: "{game} tables",
     loadingTables: "Preparing tables…",
+    watch: "Watch",
   },
   games: {
     blackjack: {
