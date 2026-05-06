@@ -39,7 +39,9 @@ export type WSMessage =
   | { type: "player_left"; player_id: string; display_name: string }
   | { type: "bet_placed"; player_id: string; amount: number }
   | { type: "auto_stand"; player_id: string }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "achievement_unlocked"; achievement_id: string }
+  | { type: "level_up"; level: number; xp: number };
 
 export interface GameStatsEntry {
   wins: number;
@@ -64,6 +66,18 @@ export interface UserProfile {
   streaks?: Record<string, number>;
   best_streaks?: Record<string, number>;
   daily_streak?: number;
+  xp?: number;
+  level?: number;
+  unlocked_achievements?: Record<string, string>;
+}
+
+export interface AchievementInfo {
+  id: string;
+  category: string;
+  threshold: number;
+  progress: number;
+  unlocked: boolean;
+  unlocked_at: string | null;
 }
 
 export interface LeaderboardEntry {

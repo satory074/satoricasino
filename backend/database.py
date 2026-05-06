@@ -174,6 +174,54 @@ async def get_user_rank(user_id: str, metric: str = "coins") -> int | None:
     return len(higher) + 1
 
 
+import math
+
+
+def calculate_level(xp: int) -> int:
+    """level = floor(sqrt(xp / 100)) + 1"""
+    if xp <= 0:
+        return 1
+    return int(math.floor(math.sqrt(xp / 100))) + 1
+
+
+def xp_for_level(level: int) -> int:
+    """XP needed to reach a given level."""
+    return (level - 1) ** 2 * 100
+
+
+async def add_xp(user_id: str, amount: int) -> dict:
+    """Add XP and return {xp, level, leveled_up}."""
+    db = get_db()
+    user_ref = db.collection("users").document(user_id)
+
+    @firestore.transactional
+    def _update(transaction):
+        snapshot = user_ref.get(transaction=transaction)
+        if not snapshot.exists:
+            return {"xp": 0, "level": 1, "leveled_up": False}
+        data = snapshot.to_dict()
+        old_xp = data.get("xp", 0)
+        old_level = calculate_level(old_xp)
+        new_xp = old_xp + amount
+        new_level = calculate_level(new_xp)
+        transaction.update(user_ref, {"xp": new_xp, "level": new_level})
+        return {"xp": new_xp, "level": new_level, "leveled_up": new_level > old_level}
+
+    transaction = db.transaction()
+    return _update(transaction)
+
+
+async def unlock_achievements(user_id: str, achievement_ids: list[str]) -> None:
+    """Mark achievements as unlocked with timestamp."""
+    if not achievement_ids:
+        return
+    db = get_db()
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    updates = {f"unlocked_achievements.{aid}": now for aid in achievement_ids}
+    db.collection("users").document(user_id).update(updates)
+
+
 async def update_coins(user_id: str, delta: int) -> int:
     db = get_db()
     user_ref = db.collection("users").document(user_id)

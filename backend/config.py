@@ -15,3 +15,10 @@ TURN_TIMEOUT_SECONDS = 30
 
 DECK_COUNT = 6
 RESHUFFLE_THRESHOLD = 60
+
+# XP system
+XP_ROUND = 10        # participation
+XP_WIN = 15          # extra for winning
+XP_JACKPOT = 30      # BJ / pinzoro
+XP_DAILY = 5         # daily bonus
+XP_ACHIEVEMENT = 50  # per achievement unlock

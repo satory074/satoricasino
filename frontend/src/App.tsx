@@ -117,6 +117,11 @@ export default function App() {
         <header className="app-header">
           <div className="app-logo">SatoriCasino</div>
           <div className="user-info">
+            {profile?.level && profile.level > 1 && (
+              <span className="level-badge" title={`XP: ${profile.xp ?? 0}`}>
+                Lv.{profile.level}
+              </span>
+            )}
             <span className="user-name">{getDisplayName() ?? "—"}</span>
             <span
               className={clsx(

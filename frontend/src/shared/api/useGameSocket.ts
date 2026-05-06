@@ -10,12 +10,21 @@ export interface LogEntry {
   emoji: string;
 }
 
+export interface Notification {
+  id: number;
+  kind: "achievement_unlocked" | "level_up";
+  data: Record<string, unknown>;
+}
+
+let notifCounter = 0;
+
 interface SocketState {
   connected: boolean;
   state: GameState | null;
   log: LogEntry[];
   error: string | null;
   errorVersion: number;
+  notifications: Notification[];
 }
 
 type Action =
@@ -23,7 +32,8 @@ type Action =
   | { type: "ws_close" }
   | { type: "msg"; msg: WSMessage }
   | { type: "log"; emoji: string; text: string }
-  | { type: "reset" };
+  | { type: "reset" }
+  | { type: "dismiss_notification"; id: number };
 
 let logCounter = 0;
 const newLog = (emoji: string, text: string): LogEntry => ({
@@ -41,7 +51,9 @@ function reducer(s: SocketState, a: Action): SocketState {
     case "log":
       return { ...s, log: [newLog(a.emoji, a.text), ...s.log].slice(0, 50) };
     case "reset":
-      return { connected: false, state: null, log: [], error: null, errorVersion: 0 };
+      return { connected: false, state: null, log: [], error: null, errorVersion: 0, notifications: [] };
+    case "dismiss_notification":
+      return { ...s, notifications: s.notifications.filter((n) => n.id !== a.id) };
     case "msg": {
       const msg = a.msg;
       switch (msg.type) {
@@ -77,6 +89,32 @@ function reducer(s: SocketState, a: Action): SocketState {
             errorVersion: s.errorVersion + 1,
             log: [newLog("⚠️", msg.message), ...s.log].slice(0, 50),
           };
+        case "achievement_unlocked":
+          return {
+            ...s,
+            notifications: [
+              ...s.notifications,
+              {
+                id: ++notifCounter,
+                kind: "achievement_unlocked",
+                data: { achievement_id: msg.achievement_id },
+              },
+            ],
+            log: [newLog("🏆", `Achievement unlocked!`), ...s.log].slice(0, 50),
+          };
+        case "level_up":
+          return {
+            ...s,
+            notifications: [
+              ...s.notifications,
+              {
+                id: ++notifCounter,
+                kind: "level_up",
+                data: { level: msg.level, xp: msg.xp },
+              },
+            ],
+            log: [newLog("⬆️", `Level up! Lv.${msg.level}`), ...s.log].slice(0, 50),
+          };
       }
       return s;
     }
@@ -90,6 +128,7 @@ export function useGameSocket(tableId: string | null) {
     log: [],
     error: null,
     errorVersion: 0,
+    notifications: [],
   });
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef(0);
@@ -158,12 +197,18 @@ export function useGameSocket(tableId: string | null) {
     }
   }, []);
 
+  const dismissNotification = useCallback((id: number) => {
+    dispatch({ type: "dismiss_notification", id });
+  }, []);
+
   return {
     connected: state.connected,
     gameState: state.state,
     log: state.log,
     error: state.error,
     errorVersion: state.errorVersion,
+    notifications: state.notifications,
+    dismissNotification,
     send,
   };
 }

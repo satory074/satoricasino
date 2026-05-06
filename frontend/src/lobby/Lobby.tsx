@@ -4,6 +4,8 @@ import confetti from "canvas-confetti";
 import { apiGet, apiPost, clearAuth } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Leaderboard } from "./Leaderboard";
+import { AchievementList } from "./AchievementList";
+import { Challenges } from "./Challenges";
 import type { GameStatsEntry, TableInfo, UserProfile } from "../shared/types/game";
 
 const SUPPORTED_GAMES = [
@@ -61,6 +63,7 @@ export function Lobby({
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusModal | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -189,6 +192,15 @@ export function Lobby({
         >
           {t("leaderboard.title")}
         </button>
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            play("button_click");
+            setShowAchievements(true);
+          }}
+        >
+          {t("achievements.title")}
+        </button>
         <button className="btn-danger" onClick={logout}>
           Logout
         </button>
@@ -245,6 +257,8 @@ export function Lobby({
               </div>
             </div>
           )}
+
+          <Challenges onCoinsChanged={onCoinsChanged} play={play} />
 
           <h3>Choose Your Game</h3>
           <div className="game-grid">
@@ -328,6 +342,10 @@ export function Lobby({
       <Leaderboard
         open={showLeaderboard}
         onClose={() => setShowLeaderboard(false)}
+      />
+      <AchievementList
+        open={showAchievements}
+        onClose={() => setShowAchievements(false)}
       />
 
       <AnimatePresence>

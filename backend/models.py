@@ -46,6 +46,9 @@ class UserProfile(BaseModel):
     streaks: dict[str, int] = {}
     best_streaks: dict[str, int] = {}
     daily_streak: int = 0
+    xp: int = 0
+    level: int = 1
+    unlocked_achievements: dict[str, str] = {}
 
 
 class TableInfo(BaseModel):

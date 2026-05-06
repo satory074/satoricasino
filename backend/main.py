@@ -17,13 +17,20 @@ from backend.config import (
     PASSPHRASE,
     TABLE_MAX_PLAYERS,
     TURN_TIMEOUT_SECONDS,
+    XP_ACHIEVEMENT,
+    XP_DAILY,
+    XP_JACKPOT,
+    XP_ROUND,
+    XP_WIN,
 )
 from backend.database import (
+    add_xp,
     create_user,
     get_leaderboard,
     get_user,
     get_user_by_name,
     get_user_rank,
+    unlock_achievements,
     update_coins,
     update_game_stats,
     update_streaks,
@@ -42,6 +49,8 @@ from backend.models import (
     TokenResponse,
     UserProfile,
 )
+from backend.achievements import check_achievements, get_all_achievements_with_progress
+from backend.challenges import get_challenge_by_id, get_daily_challenges, init_daily_baselines
 from backend.websocket_manager import manager
 
 
@@ -408,6 +417,10 @@ async def claim_daily_bonus(token: str = Query(...)):
         "last_daily_bonus": today,
         "daily_streak": new_streak_save,
     })
+    try:
+        await add_xp(payload["user_id"], XP_DAILY)
+    except Exception:
+        pass
     return {"coins": new_coins, "bonus": bonus, "daily_streak": new_streak, "daily_streak_max": 7}
 
 
@@ -444,6 +457,72 @@ async def leaderboard(
     entries = await get_leaderboard(metric, limit)
     rank = await get_user_rank(payload["user_id"], metric)
     return {"entries": entries, "my_rank": rank}
+
+
+# --- Achievements ---
+
+@app.get("/api/achievements")
+async def get_achievements(token: str = Query(...)):
+    payload = _get_current_user(token)
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+    return get_all_achievements_with_progress(user)
+
+
+# --- Challenges ---
+
+@app.get("/api/challenges")
+async def get_challenges(token: str = Query(...)):
+    payload = _get_current_user(token)
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+
+    # Initialize baselines for today if not set
+    ch_data = user.get("challenges", {}).get("daily", {})
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if ch_data.get("date") != today:
+        baselines = init_daily_baselines(payload["user_id"], user)
+        await update_user(payload["user_id"], {"challenges.daily": baselines})
+        user = await get_user(payload["user_id"])
+
+    return get_daily_challenges(payload["user_id"], user or {})
+
+
+@app.post("/api/challenges/{challenge_id}/claim")
+async def claim_challenge(challenge_id: str, token: str = Query(...)):
+    payload = _get_current_user(token)
+    user = await get_user(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=404)
+
+    ch = get_challenge_by_id(payload["user_id"], challenge_id)
+    if not ch:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+
+    # Check completion
+    ch_data = user.get("challenges", {}).get("daily", {})
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if ch_data.get("date") != today:
+        raise HTTPException(status_code=400, detail="Challenges not initialized")
+
+    baselines = ch_data.get("baselines", {})
+    claimed = ch_data.get("claimed", [])
+    if challenge_id in claimed:
+        raise HTTPException(status_code=400, detail="Already claimed")
+
+    current = ch["check"](user)
+    baseline = baselines.get(challenge_id, current)
+    progress = current - baseline
+    if progress < ch["target"]:
+        raise HTTPException(status_code=400, detail="Not completed yet")
+
+    # Award and mark claimed
+    new_coins = await update_coins(payload["user_id"], ch["reward"])
+    claimed.append(challenge_id)
+    await update_user(payload["user_id"], {"challenges.daily.claimed": claimed})
+    return {"coins": new_coins, "reward": ch["reward"]}
 
 
 # --- Table Routes ---
@@ -545,6 +624,44 @@ def _cancel_banker_task(table_id: str):
         task.cancel()
 
 
+async def _post_round_xp_and_achievements(
+    table_id: str, player_id: str, payout: int, is_jackpot: bool
+) -> None:
+    """Award XP and check achievements after a round resolves."""
+    xp = XP_ROUND
+    if payout > 0:
+        xp += XP_WIN
+    if is_jackpot:
+        xp += XP_JACKPOT
+
+    try:
+        xp_result = await add_xp(player_id, xp)
+        if xp_result["leveled_up"]:
+            await manager.send_to(table_id, player_id, {
+                "type": "level_up",
+                "level": xp_result["level"],
+                "xp": xp_result["xp"],
+            })
+    except Exception:
+        pass
+
+    try:
+        user = await get_user(player_id)
+        if user:
+            newly = check_achievements(user)
+            if newly:
+                await unlock_achievements(player_id, newly)
+                ach_xp = XP_ACHIEVEMENT * len(newly)
+                await add_xp(player_id, ach_xp)
+                for aid in newly:
+                    await manager.send_to(table_id, player_id, {
+                        "type": "achievement_unlocked",
+                        "achievement_id": aid,
+                    })
+    except Exception:
+        pass
+
+
 # --- Broadcast ---
 
 async def _broadcast_state(table_id: str):
@@ -594,6 +711,8 @@ async def _broadcast_blackjack(table_id: str, table: dict):
                 await update_streaks(pid, "blackjack", payout)
             except Exception:
                 pass
+            is_jackpot = result is not None and result.value == "blackjack"
+            await _post_round_xp_and_achievements(table_id, pid, payout, is_jackpot)
 
 
 async def _broadcast_chinchiro(table_id: str, table: dict):
@@ -627,6 +746,14 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
                 await update_streaks(pid, "chinchiro", payout)
             except Exception:
                 pass
+            # Pinzoro on player side is a jackpot
+            player = game.players.get(pid)
+            is_jackpot = (
+                player is not None
+                and player.hand is not None
+                and player.hand.name == CCHandName.PINZORO.value
+            )
+            await _post_round_xp_and_achievements(table_id, pid, payout, is_jackpot)
 
 
 # --- Chinchiro banker sequence ---
