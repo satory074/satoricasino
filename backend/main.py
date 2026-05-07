@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import collections
 import random
+import time as _time_mod
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -134,10 +136,37 @@ def _seed_tables() -> None:
             "min_bet": spec["min_bet"],
             "game": _make_game(spec["game_type"]),
             "game_type": spec["game_type"],
+            # Jackpot timestamps (monotonic seconds) for "hot table" social signal.
+            # Bounded so even a busy table doesn't grow unbounded between cold starts.
+            "recent_jackpots": collections.deque(maxlen=20),
         }
 
 
 _seed_tables()
+
+
+# How long a jackpot stays "fresh" enough to count toward table heat (seconds).
+TABLE_HEAT_WINDOW_SEC = 300
+
+
+def _table_heat(table: dict) -> dict:
+    """Compute current table heat from the rolling jackpot timestamp window."""
+    dq = table.get("recent_jackpots")
+    if not dq:
+        return {"jackpots5min": 0, "hot": False, "ultra_hot": False}
+    now = _time_mod.time()
+    fresh = sum(1 for ts in dq if now - ts <= TABLE_HEAT_WINDOW_SEC)
+    return {
+        "jackpots5min": fresh,
+        "hot": fresh >= 2,
+        "ultra_hot": fresh >= 5,
+    }
+
+
+def _record_jackpot(table: dict) -> None:
+    dq = table.get("recent_jackpots")
+    if dq is not None:
+        dq.append(_time_mod.time())
 
 
 # --- AI bots ---
@@ -290,6 +319,9 @@ async def _bot_step_blackjack(table_id: str, bot_id: str) -> None:
         else:
             game.stand(bot_id)
         _cancel_turn_timer(table_id)
+        # Same suspense window as the human path so spectators get the reveal beat
+        if game.phase != BJPhase.PLAYER_TURNS:
+            await asyncio.sleep(0.55)
         await _broadcast_state(table_id)
         _start_bj_turn_timer(table_id)
         return
@@ -885,6 +917,7 @@ async def _broadcast_blackjack(table_id: str, table: dict):
         equipped = player_cosmetics.get(pid, {})
         if equipped:
             state["players"][pid]["equipped"] = equipped
+    state["table_heat"] = _table_heat(table)
     await manager.broadcast(
         table_id,
         {"type": "game_state", "game_type": "blackjack", **state},
@@ -892,6 +925,13 @@ async def _broadcast_blackjack(table_id: str, table: dict):
 
     if game.phase == BJPhase.RESOLUTION:
         _cancel_turn_timer(table_id)
+        # Track jackpot occurrences for the table-heat social signal — bots count
+        # too so a fresh-spawned table doesn't look ice-cold the moment a human joins.
+        for pid, p in game.players.items():
+            r = game.results.get(pid)
+            if r is not None and r.value == "blackjack":
+                _record_jackpot(table)
+                break
         for pid in game.players:
             if _is_bot(pid):
                 continue
@@ -930,6 +970,7 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
         equipped = player_cosmetics.get(pid, {})
         if equipped:
             state["players"][pid]["equipped"] = equipped
+    state["table_heat"] = _table_heat(table)
     await manager.broadcast(
         table_id,
         {"type": "game_state", "game_type": "chinchiro", **state},
@@ -937,6 +978,14 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
 
     if game.phase == CCPhase.RESOLUTION:
         _cancel_turn_timer(table_id)
+        # Heat: count any pinzoro (banker or player) as a jackpot occurrence
+        if game.banker_hand and game.banker_hand.name == CCHandName.PINZORO.value:
+            _record_jackpot(table)
+        else:
+            for p in game.players.values():
+                if p.hand is not None and p.hand.name == CCHandName.PINZORO.value:
+                    _record_jackpot(table)
+                    break
         for pid in game.players:
             if _is_bot(pid):
                 continue
@@ -1170,12 +1219,19 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
         card = game.hit(user_id)
         if card:
             _cancel_turn_timer(table_id)
+            # If the hit pushed us out of player_turns the dealer is about to act
+            # — hold briefly so the client can play the heartbeat suspense before
+            # the hole card flips.
+            if game.phase != BJPhase.PLAYER_TURNS:
+                await asyncio.sleep(0.55)
             await _broadcast_state(table_id)
             _start_bj_turn_timer(table_id)
 
     elif action == "stand":
         if game.stand(user_id):
             _cancel_turn_timer(table_id)
+            if game.phase != BJPhase.PLAYER_TURNS:
+                await asyncio.sleep(0.55)
             await _broadcast_state(table_id)
             _start_bj_turn_timer(table_id)
 
@@ -1186,6 +1242,8 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
             card = game.double_down(user_id)
             if card:
                 _cancel_turn_timer(table_id)
+                if game.phase != BJPhase.PLAYER_TURNS:
+                    await asyncio.sleep(0.55)
                 await _broadcast_state(table_id)
                 _start_bj_turn_timer(table_id)
         else:

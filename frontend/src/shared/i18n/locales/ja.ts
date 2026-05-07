@@ -20,6 +20,11 @@ export const ja = {
     hifumi: "ヒフミ…",
     menashi: "目なし",
     wakare: "ワカレ",
+    nearMissDetail: {
+      byOne: "あと 1 で勝ちだった…",
+      byPoint: "わずか {n} 点差…",
+      busted22: "22… たった 1 点超過",
+    },
   },
   blackjack: {
     reasons: {
@@ -157,6 +162,13 @@ export const ja = {
   streak: {
     count: "{n} 連勝",
     tooltip: "{n} 連勝中",
+    tierUp: "TIER UP!",
+    tier3Reached: "🔥 ストリーク MAX!!",
+  },
+  tableHeat: {
+    hot: "ホット卓",
+    ultraHot: "🔥 超ホット卓!",
+    jackpots: "{n} 件ジャックポット",
   },
   ads: {
     watchToDouble: "広��を見て2倍",

@@ -31,7 +31,19 @@ type SoundId =
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let muted = false;
-let bgmNodes: { osc: OscillatorNode; gain: GainNode } | null = null;
+interface BgmNodes {
+  osc: OscillatorNode;
+  gain: GainNode;
+  tensionOsc: OscillatorNode;
+  tensionGain: GainNode;
+  tensionOsc2: OscillatorNode;
+  tensionGain2: GainNode;
+  tremoloLfo: OscillatorNode;
+  tremoloGain: GainNode;
+  bgmFilter: BiquadFilterNode;
+}
+let bgmNodes: BgmNodes | null = null;
+let currentTensionLevel: 0 | 1 | 2 | 3 = 0;
 
 function ensureCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -77,6 +89,7 @@ interface ToneOptions {
   release?: number;
   peakGain?: number;
   freqEnd?: number;
+  pitchShift?: number;
 }
 
 function tone(opts: ToneOptions): void {
@@ -92,13 +105,14 @@ function tone(opts: ToneOptions): void {
   const peak = opts.peakGain ?? 0.18;
   const sustainEnd = Math.max(start + attack, start + opts.duration - release);
   const decayEnd = Math.max(sustainEnd + 0.001, start + opts.duration);
+  const shift = opts.pitchShift ?? 0;
 
   const osc = c.createOscillator();
   osc.type = opts.type ?? "sine";
-  osc.frequency.setValueAtTime(opts.freq, start);
+  osc.frequency.setValueAtTime(Math.max(20, opts.freq + shift), start);
   if (opts.freqEnd != null) {
     osc.frequency.exponentialRampToValueAtTime(
-      Math.max(20, opts.freqEnd),
+      Math.max(20, opts.freqEnd + shift),
       decayEnd,
     );
   }
@@ -142,11 +156,12 @@ function chord(freqs: number[], opts: Omit<ToneOptions, "freq">): void {
   freqs.forEach((f) => tone({ ...opts, freq: f, peakGain: (opts.peakGain ?? 0.15) / freqs.length }));
 }
 
-export function play(id: SoundId): void {
+export function play(id: SoundId, opts?: { pitchShift?: number }): void {
   if (muted) return;
   const c = ensureCtx();
   if (!c) return;
   const t = c.currentTime;
+  const shift = opts?.pitchShift ?? 0;
 
   switch (id) {
     case "card_deal":
@@ -160,8 +175,8 @@ export function play(id: SoundId): void {
       break;
 
     case "chip_place":
-      tone({ freq: 1100, freqEnd: 700, duration: 0.06, type: "square", peakGain: 0.08 });
-      tone({ freq: 480, duration: 0.04, type: "sine", peakGain: 0.05, startTime: t + 0.04 });
+      tone({ freq: 1100, freqEnd: 700, duration: 0.06, type: "square", peakGain: 0.08, pitchShift: shift });
+      tone({ freq: 480, duration: 0.04, type: "sine", peakGain: 0.05, startTime: t + 0.04, pitchShift: shift });
       break;
 
     case "chip_payout":
@@ -354,13 +369,19 @@ export function startBgm(): void {
   const c = ensureCtx();
   if (!c || !masterGain) return;
 
+  // Master filter — opens up as tension level rises so the mix gets brighter.
+  const bgmFilter = c.createBiquadFilter();
+  bgmFilter.type = "highpass";
+  bgmFilter.frequency.value = 60;
+  bgmFilter.connect(masterGain);
+
+  // Base ambient drone (110Hz with slow LFO for breathing feel)
   const osc = c.createOscillator();
   osc.type = "sine";
   osc.frequency.value = 110;
   const g = c.createGain();
   g.gain.value = 0.025;
 
-  // Slow modulation for ambient feel
   const lfo = c.createOscillator();
   lfo.type = "sine";
   lfo.frequency.value = 0.12;
@@ -370,17 +391,109 @@ export function startBgm(): void {
   lfoGain.connect(osc.frequency);
 
   osc.connect(g);
-  g.connect(masterGain);
+  g.connect(bgmFilter);
   osc.start();
   lfo.start();
 
-  bgmNodes = { osc, gain: g };
+  // Tension layer 1: 220Hz square — adds urgency at L1+
+  const tensionOsc = c.createOscillator();
+  tensionOsc.type = "square";
+  tensionOsc.frequency.value = 220;
+  const tensionGain = c.createGain();
+  tensionGain.gain.value = 0;
+  tensionOsc.connect(tensionGain);
+  tensionGain.connect(bgmFilter);
+  tensionOsc.start();
+
+  // Tension layer 2: 440Hz triangle — adds height at L2+
+  const tensionOsc2 = c.createOscillator();
+  tensionOsc2.type = "triangle";
+  tensionOsc2.frequency.value = 440;
+  const tensionGain2 = c.createGain();
+  tensionGain2.gain.value = 0;
+  tensionOsc2.connect(tensionGain2);
+  tensionGain2.connect(bgmFilter);
+  tensionOsc2.start();
+
+  // Tremolo for L2+ — rapid amplitude wobble
+  const tremoloLfo = c.createOscillator();
+  tremoloLfo.type = "sine";
+  tremoloLfo.frequency.value = 3;
+  const tremoloGain = c.createGain();
+  tremoloGain.gain.value = 0;
+  tremoloLfo.connect(tremoloGain);
+  tremoloGain.connect(tensionGain2.gain);
+  tremoloLfo.start();
+
+  bgmNodes = {
+    osc,
+    gain: g,
+    tensionOsc,
+    tensionGain,
+    tensionOsc2,
+    tensionGain2,
+    tremoloLfo,
+    tremoloGain,
+    bgmFilter,
+  };
+  currentTensionLevel = 0;
 }
 
 export function stopBgm(): void {
   if (!bgmNodes || !ctx) return;
-  bgmNodes.gain.gain.cancelScheduledValues(ctx.currentTime);
-  bgmNodes.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
-  bgmNodes.osc.stop(ctx.currentTime + 0.6);
+  const t = ctx.currentTime;
+  bgmNodes.gain.gain.cancelScheduledValues(t);
+  bgmNodes.gain.gain.linearRampToValueAtTime(0, t + 0.5);
+  bgmNodes.tensionGain.gain.cancelScheduledValues(t);
+  bgmNodes.tensionGain.gain.linearRampToValueAtTime(0, t + 0.5);
+  bgmNodes.tensionGain2.gain.cancelScheduledValues(t);
+  bgmNodes.tensionGain2.gain.linearRampToValueAtTime(0, t + 0.5);
+  bgmNodes.osc.stop(t + 0.6);
+  bgmNodes.tensionOsc.stop(t + 0.6);
+  bgmNodes.tensionOsc2.stop(t + 0.6);
+  bgmNodes.tremoloLfo.stop(t + 0.6);
   bgmNodes = null;
+  currentTensionLevel = 0;
+}
+
+// Crank the BGM up/down without restarting it. Anticipation phases call this
+// to make the moment feel like it's swelling toward something.
+export function setBgmTension(level: 0 | 1 | 2 | 3): void {
+  if (!bgmNodes || !ctx) {
+    currentTensionLevel = level;
+    return;
+  }
+  const t = ctx.currentTime;
+  const ramp = level > currentTensionLevel ? 0.4 : 0.6;
+  currentTensionLevel = level;
+
+  // Filter cutoff — opens as tension rises
+  const cutoff = level === 0 ? 60 : level === 1 ? 200 : level === 2 ? 400 : 800;
+  bgmNodes.bgmFilter.frequency.cancelScheduledValues(t);
+  bgmNodes.bgmFilter.frequency.linearRampToValueAtTime(cutoff, t + ramp);
+
+  // Tension osc 1 (220Hz square)
+  const t1Gain = level === 0 ? 0 : level === 1 ? 0.015 : level === 2 ? 0.022 : 0.035;
+  bgmNodes.tensionGain.gain.cancelScheduledValues(t);
+  bgmNodes.tensionGain.gain.linearRampToValueAtTime(t1Gain, t + ramp);
+
+  // Tension osc 2 (440Hz triangle) — only at L2+
+  const t2Gain = level >= 2 ? (level === 2 ? 0.018 : 0.03) : 0;
+  bgmNodes.tensionGain2.gain.cancelScheduledValues(t);
+  bgmNodes.tensionGain2.gain.linearRampToValueAtTime(t2Gain, t + ramp);
+
+  // Tremolo amount — only at L2+ (modulates t2Gain)
+  const tremoloAmount = level >= 2 ? 0.012 : 0;
+  bgmNodes.tremoloGain.gain.cancelScheduledValues(t);
+  bgmNodes.tremoloGain.gain.linearRampToValueAtTime(tremoloAmount, t + ramp);
+
+  // Base gain — slightly louder at L3
+  const baseGain = level === 3 ? 0.04 : 0.025;
+  bgmNodes.gain.gain.cancelScheduledValues(t);
+  bgmNodes.gain.gain.linearRampToValueAtTime(baseGain, t + ramp);
+}
+
+// Auto-decay tension back to 0 after a delay (used after reveal phase)
+export function decayBgmTension(delayMs: number = 1000): void {
+  window.setTimeout(() => setBgmTension(0), delayMs);
 }

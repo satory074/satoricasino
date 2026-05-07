@@ -15,6 +15,7 @@ import { ReactionBar } from "../../shared/components/ReactionBar";
 import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { BannerAd } from "../../shared/components/BannerAd";
 import { InterstitialAd } from "../../shared/components/InterstitialAd";
+import { TableHeatBadge } from "../../shared/components/TableHeatBadge";
 import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { DealerArea } from "./DealerArea";
 import { PlayerBox } from "./PlayerBox";
@@ -37,9 +38,15 @@ type SoundId =
   | "push"
   | "near_miss"
   | "tick"
+  | "heartbeat"
   | "anticipation_jackpot"
   | "anticipation_win"
   | "anticipation_lose";
+
+interface NearMissDetail {
+  gap: number;
+  reason: "byOne" | "byPoint" | "busted22";
+}
 
 interface Props {
   tableId: string;
@@ -56,12 +63,13 @@ function detectNearMiss(
   isBusted: boolean,
   dealerValue: number,
   result: Result,
-): boolean {
-  if (result !== "lose") return false;
-  if (myValue === 20 && dealerValue === 21) return true;
-  if (isBusted && myValue === 22) return true;
-  if (!isBusted && dealerValue - myValue === 1) return true;
-  return false;
+): NearMissDetail | null {
+  if (result !== "lose") return null;
+  if (myValue === 20 && dealerValue === 21) return { gap: 1, reason: "byOne" };
+  if (isBusted && myValue === 22) return { gap: 1, reason: "busted22" };
+  if (!isBusted && dealerValue - myValue === 1) return { gap: 1, reason: "byOne" };
+  if (!isBusted && dealerValue - myValue === 2) return { gap: 2, reason: "byPoint" };
+  return null;
 }
 
 export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate, tableThemeClass }: Props) {
@@ -71,9 +79,12 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   const [overlay, setOverlay] = useState<{
     kind: ResultKind;
     amount: number | null;
+    nearMissDetail?: NearMissDetail | null;
   } | null>(null);
   const [shaking, setShaking] = useState(false);
-  const overlayRef = useRef<{ kind: ResultKind; amount: number | null } | null>(null);
+  const [softShaking, setSoftShaking] = useState(false);
+  const [dealerRevealing, setDealerRevealing] = useState(false);
+  const overlayRef = useRef<{ kind: ResultKind; amount: number | null; nearMissDetail?: NearMissDetail | null } | null>(null);
   overlayRef.current = overlay;
   const prevPhaseRef = useRef<Phase | null>(null);
   const prevBustedRef = useRef<Record<string, boolean>>({});
@@ -92,7 +103,12 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
       prevPhase === "player_turns" &&
       (phase === "dealer_turn" || phase === "resolution")
     ) {
-      playRef.current("card_flip");
+      // Dealer hole-card reveal — build suspense before the flip lands
+      playRef.current("heartbeat");
+      window.setTimeout(() => playRef.current("heartbeat"), 220);
+      window.setTimeout(() => playRef.current("card_flip"), 480);
+      setDealerRevealing(true);
+      window.setTimeout(() => setDealerRevealing(false), 620);
     }
     prevPhaseRef.current = phase;
 
@@ -127,6 +143,9 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
     let kind: ResultKind;
     let amount: number | null = null;
     let delta = 0;
+    let nearMissDetail: NearMissDetail | null = null;
+
+    const nm = detectNearMiss(myValue, isBusted, dealerValue, myResult);
 
     if (myResult === "blackjack") {
       kind = "blackjack";
@@ -138,10 +157,11 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
       delta = bet;
     } else if (myResult === "push") {
       kind = "push";
-    } else if (detectNearMiss(myValue, isBusted, dealerValue, myResult)) {
+    } else if (nm) {
       kind = "near_miss";
       amount = -bet;
       delta = -bet;
+      nearMissDetail = nm;
     } else {
       kind = isBusted ? "bust" : "lose";
       amount = -bet;
@@ -149,7 +169,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
     }
 
     onResolveRef.current(delta);
-    setOverlay({ kind, amount });
+    setOverlay({ kind, amount, nearMissDetail });
 
     // Anticipation SFX
     if (kind === "blackjack") {
@@ -165,7 +185,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   const onOverlayReveal = useCallback(() => {
     const o = overlayRef.current;
     if (!o) return;
-    const { kind } = o;
+    const { kind, amount: amt } = o;
 
     if (kind === "blackjack") {
       playRef.current("blackjack");
@@ -190,14 +210,34 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
     } else if (kind === "win") {
       playRef.current("win");
       playRef.current("chip_payout");
+      // Confetti scales with bet — bigger wins erupt more
+      const absAmt = Math.abs(amt ?? 0);
+      const tier = absAmt >= 500 ? "mega" : absAmt >= 200 ? "big" : "normal";
+      const intensity = tier === "mega" ? 200 : tier === "big" ? 140 : 100;
       confetti({
-        particleCount: 100,
-        spread: 80,
+        particleCount: intensity,
+        spread: tier === "mega" ? 110 : 80,
+        startVelocity: tier === "mega" ? 50 : 40,
         origin: { y: 0.6 },
         colors: ["#f4c430", "#3aa9ff", "#ffffff", "#c41e3a"],
       });
+      if (tier === "mega") {
+        window.setTimeout(
+          () =>
+            confetti({
+              particleCount: 120,
+              spread: 90,
+              origin: { y: 0.6 },
+              colors: ["#f4c430", "#ffffff"],
+            }),
+          350,
+        );
+      }
     } else if (kind === "near_miss") {
       playRef.current("near_miss");
+      // Soft shake + lingering crimson rim — "so close"
+      setSoftShaking(true);
+      window.setTimeout(() => setSoftShaking(false), 950);
     } else if (kind === "push") {
       playRef.current("push");
     } else if (kind === "bust") {
@@ -210,6 +250,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   const onOverlayComplete = useCallback(() => {
     setOverlay(null);
     setShaking(false);
+    setSoftShaking(false);
     if (interstitial.checkRound()) {
       interstitial.show();
     }
@@ -334,12 +375,13 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   }, [phase, canHit, canStand, canDouble]);
 
   return (
-    <div className={`game-section${shaking ? " is-shaking" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
+    <div className={`game-section${shaking ? " is-shaking" : ""}${softShaking ? " is-shaking-soft" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
           ← Lobby
         </button>
         <div className="game-phase">{phase.replace("_", " ")}</div>
+        <TableHeatBadge heat={gameState?.table_heat} />
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}
           title={connected ? "Connected" : "Reconnecting…"}
@@ -354,6 +396,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
               value={gameState.dealer_value}
               phase={phase}
               onCardEvent={onCardEvent}
+              revealing={dealerRevealing}
             />
 
             <div
@@ -430,6 +473,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
       <ResultOverlay
         shown={overlay?.kind ?? null}
         amount={overlay?.amount ?? null}
+        nearMissDetail={overlay?.nearMissDetail ?? null}
         onReveal={onOverlayReveal}
         onComplete={onOverlayComplete}
       />

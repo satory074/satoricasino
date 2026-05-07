@@ -22,6 +22,11 @@ export const en: Translation = {
     hifumi: "HIFUMI…",
     menashi: "NO HAND",
     wakare: "WAKARE",
+    nearMissDetail: {
+      byOne: "Off by one…",
+      byPoint: "Just {n} points short…",
+      busted22: "22… one point over",
+    },
   },
   blackjack: {
     reasons: {
@@ -159,6 +164,13 @@ export const en: Translation = {
   streak: {
     count: "{n} streak",
     tooltip: "On a {n}-win streak",
+    tierUp: "TIER UP!",
+    tier3Reached: "🔥 STREAK MAX!!",
+  },
+  tableHeat: {
+    hot: "Hot Table",
+    ultraHot: "🔥 Ultra Hot!",
+    jackpots: "{n} jackpots",
   },
   ads: {
     watchToDouble: "Watch ad for 2x",

@@ -86,6 +86,7 @@ Several systems drive retention and are wired through `_broadcast_blackjack` / `
 - **Player profile** (`GET /api/profile/{user_id}`): public stats (no coins), level, achievements, game stats.
 - **Reward ads** (`POST /api/ad/start`, `POST /api/ad/complete`): mock 5-second ad player for daily bonus 2x and bailout upgrade (500→1000 coins). In-memory session dict with 60s TTL. Daily cap (`AD_REWARD_DAILY_CAP=5`), min watch time (`AD_WATCH_MIN_SECONDS=5`). Firestore tracks `ad_watches_today` + `last_ad_date`. Frontend `AdPlayer` component shows countdown modal.
 - **Cosmetics shop** (`GET /api/shop`, `POST /api/shop/buy`, `POST /api/shop/equip`): 9 cosmetic items across 3 categories (card_skin, dice_skin, table_theme). Purchased with game coins (no real money). `backend/cosmetics.py` holds the hardcoded catalog. Firestore: `owned_cosmetics` map + `equipped` map. Card/dice skins broadcast to other players via `equipped` field in WS state. Table themes are personal display only (applied via CSS class on `.game-section`). `player_cosmetics` in-memory cache loaded on WS connect for broadcast injection.
+- **Table heat (social signal)**: each `tables[id]` carries a `recent_jackpots: deque(maxlen=20)` of jackpot timestamps. `_record_jackpot(table)` is called from `_broadcast_blackjack` / `_broadcast_chinchiro` whenever a jackpot resolves (BJ blackjack, chinchiro pinzoro on either side). `_table_heat(table)` projects this into `{jackpots5min, hot, ultra_hot}` based on a 300s rolling window and is injected as `state.table_heat` on every broadcast. Frontend `TableHeatBadge` renders 🔥 badges in `game-topbar`. Pure in-memory, wiped on Cloud Run restart — no Firestore write. Tested in `tests/test_table_heat.py`.
 
 ### Frontend layout
 
@@ -104,13 +105,13 @@ frontend/src/
 │   └── chinchiro/         # ChinchiroGame, BankerArea, PlayerSeat, Bowl, Die, HandLabel
 ├── shared/
 │   ├── api/api.ts, useGameSocket.ts
-│   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM
-│   ├── components/        # Card, Hand, Chip, BetArea, TurnTimer, ResultOverlay,
-│   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle,
+│   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM (incl. setBgmTension dynamic layer)
+│   ├── components/        # Card, Hand, Chip, BetArea, BetChipStack, TurnTimer, ResultOverlay,
+│   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle, TableHeatBadge,
 │   │                      # AchievementToast, ReactionBar, ReactionFloat, AdPlayer
 │   ├── cosmetics.ts       # CSS class resolver for equipped cosmetics
 │   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts
-│   └── types/game.ts      # WS message types incl. ChinchiroGameState, CosmeticItem, EquippedCosmetics
+│   └── types/game.ts      # WS message types incl. ChinchiroGameState, CosmeticItem, EquippedCosmetics, TableHeat
 ├── styles/theme.css
 ```
 
@@ -130,7 +131,9 @@ Action affordance and "whose turn" cues are normalized across games — re-use t
 
 ### Result overlay: 3-phase reveal
 
-`ResultOverlay` drives a CSS-only phase state machine: **anticipation** (dark backdrop + pulsing color-coded orb) → **reveal** (explosive `scale(0.2→1.4→1)` text + rim glow) → **afterglow** (amount counts up from 0, text fades out). Timing scales by result significance via `getTiming(kind)` — pinzoro gets 3.4s total, losses get 1.15s, push/wakare skip anticipation entirely.
+`ResultOverlay` drives a CSS-only phase state machine: **anticipation** (dark backdrop + pulsing color-coded orb, plus a rotating golden zone overlay for jackpot-class results) → **reveal** (explosive `scale(0.2→1.4→1)` text + rim glow) → **afterglow** (amount counts up from 0, text fades out). Timing scales by result significance via `getTiming(kind, amount)` — pinzoro gets 3.4s total, losses get 1.15s, push/wakare skip anticipation entirely. Normal `win` further scales by bet tier (`amount >= 200` → big, `>= 500` → mega) so a 1000-coin win feels noticeably more dramatic than a 50-coin one. The afterglow count-up runs an audible `count_up` SFX tick every step (mega: every 3rd) with rising pitch, and `near_miss` gets a crimson backdrop flash + "あと 1 で勝ちだった…" subtitle (passed in via `nearMissDetail` prop).
+
+The overlay is also the BGM driver: it calls `setBgmTension(level)` on entering anticipation (level scales by `kind`) and `decayBgmTension()` after completion, so the dynamic BGM layer in `sounds.ts` swells around the reveal without the game components having to coordinate.
 
 Game components interact via two callbacks:
 - `onReveal`: fires when reveal phase starts — play result SFX, fire confetti, set `is-shaking` class on `.game-section` for jackpots (pinzoro/blackjack/arashi)

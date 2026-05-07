@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Chip } from "./Chip";
+import { BetChipStack } from "./BetChipStack";
+import { play as playSound } from "../audio/sounds";
 
 interface Props {
   minBalance: number;
@@ -10,21 +12,60 @@ interface Props {
 
 const PRESETS = [10, 50, 100, 500];
 
+// Chip count for pitch shift — denser stack = higher pitch (more satisfying)
+function chipCountFor(amount: number): number {
+  let remaining = amount;
+  let count = 0;
+  for (const d of [1000, 500, 100, 50, 10]) {
+    while (remaining >= d) {
+      remaining -= d;
+      count++;
+    }
+  }
+  return count;
+}
+
 export function BetArea({ minBalance, initialBet, onPlace, play }: Props) {
   const [amount, setAmount] = useState(initialBet ?? 10);
+  const [bumped, setBumped] = useState(false);
+  const bumpTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (amount > minBalance) setAmount(Math.max(10, minBalance));
   }, [minBalance, amount]);
 
+  // Replay bet-display bump on every amount change (initial render skipped via initial state)
+  const prevAmountRef = useRef(amount);
+  useEffect(() => {
+    if (prevAmountRef.current !== amount) {
+      setBumped(true);
+      if (bumpTimerRef.current) window.clearTimeout(bumpTimerRef.current);
+      bumpTimerRef.current = window.setTimeout(() => setBumped(false), 320);
+    }
+    prevAmountRef.current = amount;
+    return () => {
+      if (bumpTimerRef.current) window.clearTimeout(bumpTimerRef.current);
+    };
+  }, [amount]);
+
   const add = (v: number) => {
-    play("chip_place");
-    setAmount((cur) => Math.min(minBalance, cur + v));
+    setAmount((cur) => {
+      const next = Math.min(minBalance, cur + v);
+      // Pitch climbs with stack density — call directly for pitch control
+      // (the parent's `play` doesn't expose pitch)
+      const pitchShift = Math.min(600, chipCountFor(next) * 60);
+      playSound("chip_place", { pitchShift });
+      return next;
+    });
   };
 
   const setMax = () => {
-    play("chip_place");
-    setAmount(Math.max(10, minBalance));
+    setAmount(() => {
+      const next = Math.max(10, minBalance);
+      const pitchShift = Math.min(700, chipCountFor(next) * 50);
+      playSound("chip_place", { pitchShift });
+      return next;
+    });
   };
 
   const reset = () => {
@@ -41,7 +82,9 @@ export function BetArea({ minBalance, initialBet, onPlace, play }: Props) {
         <Chip value={1000} onClick={setMax} label="MAX" />
       </div>
 
-      <div className="bet-display">
+      <BetChipStack amount={amount} />
+
+      <div className={`bet-display${bumped ? " bet-display-bumped" : ""}`}>
         <span>Bet</span>
         <input
           type="number"

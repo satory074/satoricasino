@@ -38,6 +38,12 @@ export interface PlayerStateData {
   equipped?: EquippedCosmetics;
 }
 
+export interface TableHeat {
+  jackpots5min: number;
+  hot: boolean;
+  ultra_hot: boolean;
+}
+
 export interface GameState {
   phase: Phase;
   dealer_cards: CardData[];
@@ -46,6 +52,7 @@ export interface GameState {
   current_player_id: string | null;
   results: Record<string, Result> | null;
   game_type?: string;
+  table_heat?: TableHeat;
 }
 
 export type WSMessage =
@@ -159,4 +166,5 @@ export interface ChinchiroGameState {
   current_player_id: string | null;
   payouts: Record<string, number> | null;
   game_type: "chinchiro";
+  table_heat?: TableHeat;
 }

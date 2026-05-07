@@ -3,6 +3,7 @@ import confetti from "canvas-confetti";
 import { useGameSocket } from "../../shared/api/useGameSocket";
 import { getUserId } from "../../shared/api/api";
 import { useTranslation } from "../../shared/i18n/useTranslation";
+import { setBgmTension } from "../../shared/audio/sounds";
 import { ActionButton } from "../../shared/components/ActionButton";
 import { BetArea } from "../../shared/components/BetArea";
 import { KeyHintBar, type KeyHint } from "../../shared/components/KeyHintBar";
@@ -18,6 +19,7 @@ import { ReactionBar } from "../../shared/components/ReactionBar";
 import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { BannerAd } from "../../shared/components/BannerAd";
 import { InterstitialAd } from "../../shared/components/InterstitialAd";
+import { TableHeatBadge } from "../../shared/components/TableHeatBadge";
 import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { BankerArea } from "./BankerArea";
 import { PlayerSeat } from "./PlayerSeat";
@@ -289,6 +291,26 @@ export function ChinchiroGame({
     !!state && phase === "player_rolls" && isMyTurn && !!me && !me.settled;
   const canNewRound = !!state && phase === "resolution";
 
+  // Final-roll tension mode — when it's my third roll about to land, dim the
+  // table, zoom the bowl, raise the BGM tension layer, and pulse a heartbeat.
+  const isLastRoll = !!me && me.rolls.length === 2 && canRoll;
+  useEffect(() => {
+    if (!isLastRoll) {
+      setBgmTension(0);
+      return;
+    }
+    setBgmTension(2);
+    // Heartbeat pulse — 3 beats spaced ~1.4s apart while waiting for the roll
+    const beatTimers: number[] = [];
+    [0, 1400, 2800].forEach((delay) => {
+      beatTimers.push(window.setTimeout(() => playRef.current("heartbeat"), delay));
+    });
+    return () => {
+      beatTimers.forEach(window.clearTimeout);
+      setBgmTension(0);
+    };
+  }, [isLastRoll]);
+
   const rollReason: string | null = !canRoll
     ? phase !== "player_rolls"
       ? t("chinchiro.reasons.wrongPhase")
@@ -354,12 +376,13 @@ export function ChinchiroGame({
   }
 
   return (
-    <div className={`game-section${shaking ? " is-shaking" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
+    <div className={`game-section${shaking ? " is-shaking" : ""}${isLastRoll ? " last-roll-mode" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
           ← Lobby
         </button>
         <div className="game-phase">{phase.replace("_", " ")}</div>
+        <TableHeatBadge heat={state.table_heat} />
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}
           title={connected ? "Connected" : "Reconnecting…"}
