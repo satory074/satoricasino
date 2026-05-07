@@ -83,5 +83,5 @@ function getAdClient(): string {
     const match = script.src.match(/client=(ca-pub-\d+)/);
     if (match) return match[1];
   }
-  return "ca-pub-XXXXXXXX";
+  return "ca-pub-3484332928684454";
 }
