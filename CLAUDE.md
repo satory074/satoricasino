@@ -18,7 +18,7 @@ SatoriCasino — multi-game casino web app. Currently ships **Blackjack** and **
 # Backend
 uv sync
 uv run uvicorn backend.main:app --reload --port 8000
-uv run pytest                                  # 84 tests
+uv run pytest                                  # 135 tests across blackjack, chinchiro, achievements, ads, cosmetics, table_heat
 uv run pytest tests/test_chinchiro.py          # one test file
 uv run pytest -k "test_pinzoro"                # one test by name
 
@@ -29,13 +29,19 @@ npm run dev                                    # Vite at :5173, proxies /api + /
 npm run build                                  # tsc -b && vite build → frontend/dist/ (also acts as type-check)
 npm run preview                                # No `lint` script — `build` is the type-check.
 
-# Production deploy
-firebase deploy --only hosting                 # frontend (~30s)
+# Production deploy (firebase reads default project from .firebaserc; --project explicit is safer)
+firebase deploy --only hosting --project satoricasino                                      # ~30s
 gcloud run deploy satoricasino --source . --region asia-northeast1 \
-  --project satoricasino --allow-unauthenticated --quiet  # backend (~3 min)
+  --project satoricasino --allow-unauthenticated --quiet                                   # ~3 min
 ```
 
 The backend needs Firebase Admin credentials via Application Default Credentials. If `gcloud config get-value project` is not `satoricasino`, set `GOOGLE_CLOUD_PROJECT=satoricasino` or run `gcloud auth application-default login` against the right project — Firestore will 403 otherwise. `PASSPHRASE` env var gates registration (default `satoricasino`).
+
+### Production hostnames
+
+- **Frontend**: `https://satoricasino.web.app` (Firebase Hosting)
+- **Backend**: `https://satoricasino-874739310695.asia-northeast1.run.app` (Cloud Run, asia-northeast1)
+- The Cloud Run URL is **hard-coded** in `frontend/src/shared/api/api.ts` (`PROD_BACKEND` constant) — `isLocal` switches between empty base (uses Vite dev proxy) and the prod URL. If the Cloud Run service is ever recreated with a different number, update both `PROD_BACKEND` and the WS URL in the same file.
 
 ## Architecture: multi-game
 
@@ -64,7 +70,7 @@ backend/
 - WS `websocket_endpoint` dispatches to `_handle_blackjack_action` / `_handle_chinchiro_action`
 - Game-specific turn timers (`_bj_turn_timeout`, `_cc_turn_timeout`) and the chinchiro banker async sequence (`_chinchiro_banker_sequence` — rolls one die set at a time with sleeps for animation pacing)
 
-Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e.g. `bj-low`, `cc-high`) with shape `{name, min_bet, game, game_type}`. When the last human leaves, the WS cleanup rebuilds a fresh `game` instance and respawns a bot — fixed tables persist across the table being empty. Cloud Run instance restarts wipe in-memory state, but `_seed_tables()` re-creates the same six tables with the same IDs and the FastAPI `lifespan` handler reseeds bots, so links/bookmarks remain stable. Only persistent state lives in Firestore.
+Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e.g. `bj-low`, `cc-high`) with shape `{name, min_bet, game, game_type, recent_jackpots: deque(maxlen=20)}`. When the last human leaves, the WS cleanup rebuilds a fresh `game` instance and respawns a bot — fixed tables persist across the table being empty. Cloud Run instance restarts wipe in-memory state, but `_seed_tables()` re-creates the same six tables with the same IDs and the FastAPI `lifespan` handler reseeds bots, so links/bookmarks remain stable. Only persistent state lives in Firestore.
 
 ### AI bots
 
@@ -214,8 +220,12 @@ Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` 
 
 All SFX are generated at runtime in `shared/audio/sounds.ts` via a small synth (`tone`, `noiseBurst`, `chord` helpers wired to a single `AudioContext`). The first user gesture unlocks the context (browser autoplay policy). Mute and BGM toggles persist in `localStorage`.
 
+`play(id, opts?)` accepts an optional `{pitchShift}` (Hz offset applied to all `tone()` calls in that SFX) — used for things like `chip_place` getting brighter as the bet stack grows. Don't push pitchShift past ~700Hz or the high frequencies start clipping.
+
+BGM is more than ambient drone: `startBgm()` builds a small synth graph with a base 110Hz osc + two tension layers (220Hz square, 440Hz triangle) + a 3Hz tremolo, all routed through a `BiquadFilter` highpass. `setBgmTension(0|1|2|3)` ramps gains and filter cutoff to swell the mix; `decayBgmTension(delayMs)` schedules a return to 0. The tension oscillators are **always running** and gain-gated — never `start()`/`stop()` them per call, or you'll trip the same fresh-AudioContext race that `tone()` works around. `ResultOverlay` is the canonical caller (anticipation phase → up, complete → decay), but `ChinchiroGame` also drives it manually for the final-roll tension mode.
+
 To add a sound: extend the `SoundId` union, add a `case` in the `play()` switch, compose with the helpers. No asset files involved.
 
 ## Testing conventions
 
-`tests/test_<game>.py` uses pytest classes grouped by unit (`TestEvaluateDice`, `TestPayout`, `TestGameFlow`). Game-flow tests use `monkeypatch.setattr(game, "_roll", ...)` to inject deterministic dice / cards. `tests/test_achievements.py` covers achievement check logic and XP/level calculations (pure functions, no Firestore). Run with `uv run pytest`.
+`tests/test_<game>.py` uses pytest classes grouped by unit (`TestEvaluateDice`, `TestPayout`, `TestGameFlow`). Game-flow tests use `monkeypatch.setattr(game, "_roll", ...)` to inject deterministic dice / cards. `tests/test_achievements.py` covers achievement check logic and XP/level calculations (pure functions, no Firestore). `tests/test_table_heat.py` tests the in-memory deque heat helpers directly without spinning a game. Run with `uv run pytest`.
