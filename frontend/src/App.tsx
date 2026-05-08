@@ -120,63 +120,62 @@ export default function App() {
 
   const playClick = useCallback(() => play("button_click"), [play]);
 
-  const isAuth = view === "auth";
+  if (view === "auth") {
+    return <Auth onAuthed={() => setView("lobby")} playClick={playClick} />;
+  }
 
   return (
     <SideAds>
-      {!isAuth && (
-        <header className="app-header">
-          <div className="app-logo">SatoriArcade</div>
-          <div className="user-info">
-            {profile?.level && profile.level > 1 && (
-              <span className="level-badge" title={`XP: ${profile.xp ?? 0}`}>
-                Lv.{profile.level}
-              </span>
-            )}
-            <span className="user-name">{getDisplayName() ?? "—"}</span>
-            <span
-              className={clsx(
-                "coin-display",
-                coinFlash === "up" && "flash-up",
-                coinFlash === "down" && "flash-down",
-              )}
-              title="Coins"
-            >
-              <span style={{ color: "var(--gold)" }}>◉</span>
-              <span>{shownCoins.toLocaleString()}</span>
+      <header className="app-header">
+        <div className="app-logo">SatoriArcade</div>
+        <div className="user-info">
+          {profile?.level && profile.level > 1 && (
+            <span className="level-badge" title={`XP: ${profile.xp ?? 0}`}>
+              Lv.{profile.level}
             </span>
-            {profile && (
-              <span className="user-stats">
-                {profile.wins}W / {profile.losses}L / {profile.draws}D
-              </span>
+          )}
+          <span className="user-name">{getDisplayName() ?? "—"}</span>
+          <span
+            className={clsx(
+              "coin-display",
+              coinFlash === "up" && "flash-up",
+              coinFlash === "down" && "flash-down",
             )}
-            {view === "game" && (
-              <StreakBadge streak={streaks[tableGameType] ?? 0} />
-            )}
-            <button
-              className="mute-btn audio-mute"
-              onClick={toggleMute}
-              title={muted ? t("header.unmute") : t("header.mute")}
-              aria-label={muted ? t("header.unmute") : t("header.mute")}
-            >
-              {muted ? "🔇" : "🔊"}
-            </button>
-            <button
-              className="mute-btn audio-bgm"
-              onClick={toggleBgm}
-              title={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
-              aria-label={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
-            >
-              {bgmOn ? "♪" : "♩"}
-            </button>
-            <span className="lang-toggle">
-              <LangToggle />
+            title="Coins"
+          >
+            <span style={{ color: "var(--gold)" }}>◉</span>
+            <span>{shownCoins.toLocaleString()}</span>
+          </span>
+          {profile && (
+            <span className="user-stats">
+              {profile.wins}W / {profile.losses}L / {profile.draws}D
             </span>
-          </div>
-        </header>
-      )}
+          )}
+          {view === "game" && (
+            <StreakBadge streak={streaks[tableGameType] ?? 0} />
+          )}
+          <button
+            className="mute-btn audio-mute"
+            onClick={toggleMute}
+            title={muted ? t("header.unmute") : t("header.mute")}
+            aria-label={muted ? t("header.unmute") : t("header.mute")}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+          <button
+            className="mute-btn audio-bgm"
+            onClick={toggleBgm}
+            title={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
+            aria-label={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
+          >
+            {bgmOn ? "♪" : "♩"}
+          </button>
+          <span className="lang-toggle">
+            <LangToggle />
+          </span>
+        </div>
+      </header>
 
-      {view === "auth" && <Auth onAuthed={() => setView("lobby")} playClick={playClick} />}
       {view === "lobby" && (
         <Lobby
           onJoinTable={onJoinTable}
