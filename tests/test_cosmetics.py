@@ -48,14 +48,14 @@ class TestValidatePurchase:
         assert validate_purchase("card_midnight", self._user(coins=500)) is None
 
     def test_not_enough_coins(self):
-        assert validate_purchase("card_midnight", self._user(coins=100)) == "Not enough coins"
+        assert validate_purchase("card_midnight", self._user(coins=100)) == "shop.insufficient_coins"
 
     def test_already_owned(self):
         user = self._user(owned={"card_midnight": "2025-01-01"})
-        assert validate_purchase("card_midnight", user) == "Already owned"
+        assert validate_purchase("card_midnight", user) == "shop.already_owned"
 
     def test_item_not_found(self):
-        assert validate_purchase("nonexistent", self._user()) == "Item not found"
+        assert validate_purchase("nonexistent", self._user()) == "shop.item_not_found"
 
     def test_exact_coins_for_purchase(self):
         price = COSMETICS["card_midnight"]["price"]
@@ -63,7 +63,7 @@ class TestValidatePurchase:
 
     def test_one_coin_short(self):
         price = COSMETICS["card_midnight"]["price"]
-        assert validate_purchase("card_midnight", self._user(coins=price - 1)) == "Not enough coins"
+        assert validate_purchase("card_midnight", self._user(coins=price - 1)) == "shop.insufficient_coins"
 
 
 class TestValidateEquip:
@@ -79,15 +79,15 @@ class TestValidateEquip:
 
     def test_equip_unowned_item(self):
         user = self._user()
-        assert validate_equip("card_midnight", "card_skin", user) == "Item not owned"
+        assert validate_equip("card_midnight", "card_skin", user) == "shop.item_not_owned"
 
     def test_equip_wrong_category(self):
         user = self._user(owned={"card_midnight": "2025-01-01"})
-        assert validate_equip("card_midnight", "dice_skin", user) == "Category mismatch"
+        assert validate_equip("card_midnight", "dice_skin", user) == "shop.category_mismatch"
 
     def test_equip_nonexistent_item(self):
         user = self._user()
-        assert validate_equip("nonexistent", "card_skin", user) == "Item not found"
+        assert validate_equip("nonexistent", "card_skin", user) == "shop.item_not_found"
 
     def test_unequip_valid_category(self):
         user = self._user()
@@ -95,7 +95,7 @@ class TestValidateEquip:
 
     def test_unequip_invalid_category(self):
         user = self._user()
-        assert validate_equip(None, "invalid_cat", user) == "Invalid category"
+        assert validate_equip(None, "invalid_cat", user) == "shop.invalid_category"
 
     def test_equip_each_category(self):
         for item_id, item in COSMETICS.items():
@@ -141,9 +141,9 @@ class TestAchievementCosmetics:
 
     def test_purchase_rejected_for_achievement_items(self):
         user = {"coins": 99999, "owned_cosmetics": {}}
-        assert validate_purchase("card_champion", user) == "Unlock via achievement"
-        assert validate_purchase("dice_streak", user) == "Unlock via achievement"
-        assert validate_purchase("table_veteran", user) == "Unlock via achievement"
+        assert validate_purchase("card_champion", user) == "shop.achievement_locked"
+        assert validate_purchase("dice_streak", user) == "shop.achievement_locked"
+        assert validate_purchase("table_veteran", user) == "shop.achievement_locked"
 
     def test_equip_achievement_item_with_unlocked_achievement(self):
         user = {
@@ -157,11 +157,11 @@ class TestAchievementCosmetics:
             "owned_cosmetics": {},
             "unlocked_achievements": {},
         }
-        assert validate_equip("card_champion", "card_skin", user) == "Achievement not unlocked"
+        assert validate_equip("card_champion", "card_skin", user) == "shop.achievement_not_unlocked"
 
     def test_equip_achievement_item_no_unlocked_field(self):
         user = {"owned_cosmetics": {}}
-        assert validate_equip("card_champion", "card_skin", user) == "Achievement not unlocked"
+        assert validate_equip("card_champion", "card_skin", user) == "shop.achievement_not_unlocked"
 
     def test_achievement_cosmetics_reverse_mapping(self):
         assert ACHIEVEMENT_COSMETICS["wins_100"] == "card_champion"
@@ -173,4 +173,4 @@ class TestAchievementCosmetics:
         user = {"coins": 5000, "owned_cosmetics": {"card_midnight": "2025-01-01"}}
         assert validate_equip("card_midnight", "card_skin", user) is None
         user_no_own = {"coins": 5000, "owned_cosmetics": {}}
-        assert validate_equip("card_midnight", "card_skin", user_no_own) == "Item not owned"
+        assert validate_equip("card_midnight", "card_skin", user_no_own) == "shop.item_not_owned"

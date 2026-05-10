@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { apiPost, setAuth } from "../shared/api/api";
+import { apiPost, ApiError, setAuth } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { AuthData } from "../shared/types/game";
 import clsx from "clsx";
@@ -31,7 +31,11 @@ export function Auth({ onAuthed, playClick }: Props) {
       setAuth(data);
       onAuthed();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : t("common.failed"));
+      if (e instanceof ApiError) {
+        setErr(t(`errors.${e.code}`, e.params));
+      } else {
+        setErr(t("common.failed"));
+      }
     } finally {
       setBusy(false);
     }

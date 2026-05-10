@@ -33,10 +33,35 @@ export function clearAuth(): void {
   localStorage.removeItem(DISPLAY_NAME_KEY);
 }
 
+export class ApiError extends Error {
+  code: string;
+  params: Record<string, string | number>;
+  status: number;
+  constructor(code: string, params: Record<string, string | number> = {}, status = 0) {
+    super(code);
+    this.name = "ApiError";
+    this.code = code;
+    this.params = params;
+    this.status = status;
+  }
+}
+
 async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(err.detail || `Request failed (${res.status})`);
+    const err = (await res.json().catch(() => ({}))) as {
+      detail?: string | { code?: string; [k: string]: unknown };
+    };
+    const detail = err.detail;
+    if (detail && typeof detail === "object" && typeof detail.code === "string") {
+      const { code, ...rest } = detail;
+      const params: Record<string, string | number> = {};
+      for (const [k, v] of Object.entries(rest)) {
+        if (typeof v === "string" || typeof v === "number") params[k] = v;
+      }
+      throw new ApiError(code, params, res.status);
+    }
+    // Legacy fallback: detail is a plain string or missing entirely.
+    throw new ApiError("common.failed", {}, res.status);
   }
   return res.json() as Promise<T>;
 }

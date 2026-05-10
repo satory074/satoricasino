@@ -12,6 +12,14 @@ export const ja = {
     coinsAmount: "{n} コイン",
     seconds: "{n}秒",
   },
+  log: {
+    player_joined: "{name} が参加しました",
+    player_left: "{name} が退室しました",
+    bet_placed: "ベット {n}",
+    auto_stand: "自動スタンド (タイムアウト)",
+    achievement_unlocked: "アチーブメント解除!",
+    level_up: "レベルアップ! Lv.{n}",
+  },
   reactions: {
     gg: "GG",
     nice: "ナイス",
@@ -19,6 +27,59 @@ export const ja = {
     ouch: "いてっ",
     lol: "www",
     gl: "GL",
+  },
+  errors: {
+    auth: {
+      invalid_token: "認証情報が無効です。再ログインしてください",
+      wrong_passphrase: "パスフレーズが違います",
+      display_name_required: "表示名を入力してください",
+      name_taken: "その表示名はすでに使われています",
+    },
+    user: {
+      not_found: "ユーザーが見つかりません",
+    },
+    daily_bonus: {
+      already_claimed: "今日のボーナスはすでに受け取っています",
+    },
+    bailout: {
+      has_coins: "まだコインが残っているため救済を受けられません",
+      already_today: "本日の救済はすでに受け取っています",
+    },
+    ad: {
+      invalid_purpose: "広告の用途が不正です",
+      daily_cap: "本日の広告視聴上限に達しました",
+      invalid_session: "広告セッションが無効または期限切れです",
+      session_mismatch: "広告セッションが一致しません",
+      too_short: "広告を最後まで視聴してください",
+    },
+    leaderboard: {
+      invalid_metric: "リーダーボード指標が不正です",
+    },
+    challenge: {
+      not_found: "チャレンジが見つかりません",
+      not_initialized: "本日のチャレンジが初期化されていません",
+      already_claimed: "このチャレンジはすでに受け取り済みです",
+      not_completed: "まだ条件を満たしていません",
+    },
+    shop: {
+      item_not_found: "商品が見つかりません",
+      achievement_locked: "アチーブメント解除が必要です",
+      already_owned: "すでに所持しています",
+      insufficient_coins: "コインが足りません",
+      invalid_category: "カテゴリが不正です",
+      category_mismatch: "カテゴリが商品と一致しません",
+      achievement_not_unlocked: "対応するアチーブメントが未解除です",
+      item_not_owned: "未所持のため装備できません",
+    },
+    bet: {
+      minimum: "最低ベットは {n} コインです",
+      insufficient_coins: "コインが足りません",
+      insufficient_for_double: "ダブルダウンに必要なコインが足りません",
+      banker_reserve: "親が払う可能性のため、ベット額の 5 倍が必要です",
+    },
+    common: {
+      failed: "操作に失敗しました",
+    },
   },
   auth: {
     tagline: "ブラックジャック・ラウンジ",
@@ -122,6 +183,8 @@ export const ja = {
     full: "満席",
     dailyBonus: "デイリーボーナス",
     bailout: "救済",
+    bailoutTitle: "緊急救済",
+    bailoutMsg: "次はバーストしないように。",
     logout: "ログアウト",
   },
   phase: {

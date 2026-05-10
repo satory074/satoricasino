@@ -22,39 +22,39 @@ def get_catalog() -> list[dict]:
 
 
 def validate_purchase(item_id: str, user: dict) -> str | None:
-    """Return error message or None if purchase is valid."""
+    """Return error code or None if purchase is valid. Codes are i18n keys under errors.*."""
     if item_id not in COSMETICS:
-        return "Item not found"
+        return "shop.item_not_found"
     item = COSMETICS[item_id]
     if item["price"] == 0:
-        return "Unlock via achievement"
+        return "shop.achievement_locked"
     owned = user.get("owned_cosmetics", {})
     if item_id in owned:
-        return "Already owned"
+        return "shop.already_owned"
     if user.get("coins", 0) < item["price"]:
-        return "Not enough coins"
+        return "shop.insufficient_coins"
     return None
 
 
 def validate_equip(item_id: str | None, category: str, user: dict) -> str | None:
-    """Return error message or None if equip/unequip is valid."""
+    """Return error code or None if equip/unequip is valid. Codes are i18n keys under errors.*."""
     if item_id is None:
         if category not in ("card_skin", "dice_skin", "table_theme"):
-            return "Invalid category"
+            return "shop.invalid_category"
         return None
     if item_id not in COSMETICS:
-        return "Item not found"
+        return "shop.item_not_found"
     if COSMETICS[item_id]["category"] != category:
-        return "Category mismatch"
+        return "shop.category_mismatch"
     item = COSMETICS[item_id]
     if "achievement" in item:
         unlocked = user.get("unlocked_achievements", {})
         if item["achievement"] not in unlocked:
-            return "Achievement not unlocked"
+            return "shop.achievement_not_unlocked"
         return None
     owned = user.get("owned_cosmetics", {})
     if item_id not in owned:
-        return "Item not owned"
+        return "shop.item_not_owned"
     return None
 
 

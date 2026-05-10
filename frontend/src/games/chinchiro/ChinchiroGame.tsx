@@ -434,7 +434,7 @@ export function ChinchiroGame({
             {log.length === 0 && <div className="log-entry">…</div>}
             {log.map((e) => (
               <div key={e.id} className="log-entry">
-                {e.emoji} {e.text}
+                {e.emoji} {t(e.textKey, e.textParams)}
               </div>
             ))}
           </div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { apiGet, apiPost, clearAuth } from "../shared/api/api";
+import { apiGet, apiPost, ApiError, clearAuth } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Leaderboard } from "./Leaderboard";
 import { AchievementList } from "./AchievementList";
@@ -155,7 +155,7 @@ export function Lobby({
       });
       await refreshProfile();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
     }
   };
 
@@ -169,16 +169,16 @@ export function Lobby({
       const prev = profile?.coins ?? 0;
       onCoinsChanged(result.coins, result.coins - prev);
       setBonus({
-        title: "Emergency Rescue",
+        title: t("lobby.bailoutTitle"),
         amount: result.bailout,
-        msg: "Try not to bust again.",
+        msg: t("lobby.bailoutMsg"),
         canWatchAd: result.can_watch_ad ?? false,
         isBailout: true,
       });
       play("bonus");
       await refreshProfile();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
     }
   };
 
@@ -197,7 +197,7 @@ export function Lobby({
       });
       setBonus(null);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
     }
   };
 

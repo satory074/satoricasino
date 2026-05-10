@@ -14,6 +14,14 @@ export const en: Translation = {
     coinsAmount: "{n} coins",
     seconds: "{n}s",
   },
+  log: {
+    player_joined: "{name} joined",
+    player_left: "{name} left",
+    bet_placed: "bet {n}",
+    auto_stand: "auto-stand (timeout)",
+    achievement_unlocked: "Achievement unlocked!",
+    level_up: "Level up! Lv.{n}",
+  },
   reactions: {
     gg: "GG",
     nice: "Nice",
@@ -21,6 +29,59 @@ export const en: Translation = {
     ouch: "Ouch",
     lol: "LOL",
     gl: "GL",
+  },
+  errors: {
+    auth: {
+      invalid_token: "Your session is invalid. Please sign in again.",
+      wrong_passphrase: "Wrong passphrase",
+      display_name_required: "Display name is required",
+      name_taken: "That display name is already taken",
+    },
+    user: {
+      not_found: "User not found",
+    },
+    daily_bonus: {
+      already_claimed: "You've already claimed today's bonus",
+    },
+    bailout: {
+      has_coins: "You still have coins — bailout not available",
+      already_today: "You've already taken today's bailout",
+    },
+    ad: {
+      invalid_purpose: "Invalid ad purpose",
+      daily_cap: "Daily ad limit reached",
+      invalid_session: "Ad session is invalid or expired",
+      session_mismatch: "Ad session mismatch",
+      too_short: "Please watch the full ad",
+    },
+    leaderboard: {
+      invalid_metric: "Invalid leaderboard metric",
+    },
+    challenge: {
+      not_found: "Challenge not found",
+      not_initialized: "Today's challenges aren't initialized yet",
+      already_claimed: "Already claimed",
+      not_completed: "Not completed yet",
+    },
+    shop: {
+      item_not_found: "Item not found",
+      achievement_locked: "Unlock via achievement",
+      already_owned: "Already owned",
+      insufficient_coins: "Not enough coins",
+      invalid_category: "Invalid category",
+      category_mismatch: "Category doesn't match the item",
+      achievement_not_unlocked: "Achievement not unlocked",
+      item_not_owned: "Item not owned",
+    },
+    bet: {
+      minimum: "Minimum bet is {n} coins",
+      insufficient_coins: "Not enough coins",
+      insufficient_for_double: "Not enough coins to double down",
+      banker_reserve: "Need 5x bet in reserve (banker pinzoro can take 5x)",
+    },
+    common: {
+      failed: "Something went wrong",
+    },
   },
   auth: {
     tagline: "Blackjack Lounge",
@@ -124,6 +185,8 @@ export const en: Translation = {
     full: "Full",
     dailyBonus: "Daily Bonus",
     bailout: "Bailout",
+    bailoutTitle: "Emergency Rescue",
+    bailoutMsg: "Try not to bust again.",
     logout: "Logout",
   },
   phase: {

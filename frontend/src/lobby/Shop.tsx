@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { apiGet, apiPost } from "../shared/api/api";
+import { apiGet, apiPost, ApiError } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { CosmeticItem, EquippedCosmetics } from "../shared/types/game";
 import { Card } from "../shared/components/Card";
@@ -67,7 +67,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
       });
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : t("common.failed"));
+      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
     }
   };
 
@@ -80,7 +80,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
       await apiPost(`/api/shop/equip?${params}`, {});
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : t("common.failed"));
+      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
     }
   };
 

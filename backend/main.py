@@ -113,7 +113,7 @@ SEED_TABLES: list[dict] = [
 def _get_current_user(token: str) -> dict:
     payload = decode_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail={"code": "auth.invalid_token"})
     return payload
 
 
@@ -389,13 +389,13 @@ async def _bot_step_chinchiro(table_id: str, bot_id: str) -> None:
 @app.post("/api/register", response_model=TokenResponse)
 async def register(req: RegisterRequest):
     if req.passphrase != PASSPHRASE:
-        raise HTTPException(status_code=403, detail="Wrong passphrase")
+        raise HTTPException(status_code=403, detail={"code": "auth.wrong_passphrase"})
     if not req.display_name.strip():
-        raise HTTPException(status_code=400, detail="Display name required")
+        raise HTTPException(status_code=400, detail={"code": "auth.display_name_required"})
 
     existing = await get_user_by_name(req.display_name)
     if existing:
-        raise HTTPException(status_code=409, detail="Name already taken")
+        raise HTTPException(status_code=409, detail={"code": "auth.name_taken"})
 
     user = await create_user(req.display_name.strip())
     token = create_token(user["user_id"], user["display_name"])
@@ -405,11 +405,11 @@ async def register(req: RegisterRequest):
 @app.post("/api/login", response_model=TokenResponse)
 async def login(req: LoginRequest):
     if req.passphrase != PASSPHRASE:
-        raise HTTPException(status_code=403, detail="Wrong passphrase")
+        raise HTTPException(status_code=403, detail={"code": "auth.wrong_passphrase"})
 
     user = await get_user_by_name(req.display_name)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail={"code": "user.not_found"})
 
     token = create_token(user["user_id"], user["display_name"])
     return TokenResponse(token=token, user_id=user["user_id"], display_name=user["display_name"])
@@ -420,7 +420,7 @@ async def get_me(token: str = Query(...)):
     payload = _get_current_user(token)
     user = await get_user(payload["user_id"])
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail={"code": "user.not_found"})
     return UserProfile(**user)
 
 
@@ -435,7 +435,7 @@ async def claim_daily_bonus(token: str = Query(...)):
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if user.get("last_daily_bonus") == today:
-        raise HTTPException(status_code=400, detail="Already claimed today")
+        raise HTTPException(status_code=400, detail={"code": "daily_bonus.already_claimed"})
 
     # Login streak: consecutive days → escalating bonus
     from datetime import timedelta
@@ -483,11 +483,11 @@ async def claim_bailout(token: str = Query(...)):
         raise HTTPException(status_code=404)
 
     if user["coins"] > 0:
-        raise HTTPException(status_code=400, detail="You still have coins")
+        raise HTTPException(status_code=400, detail={"code": "bailout.has_coins"})
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if user.get("last_bailout") == today:
-        raise HTTPException(status_code=400, detail="Already bailed out today")
+        raise HTTPException(status_code=400, detail={"code": "bailout.already_today"})
 
     new_coins = await update_coins(payload["user_id"], BAILOUT_COINS)
     await update_user(payload["user_id"], {"last_bailout": today})
@@ -509,7 +509,7 @@ def _cleanup_expired_ad_sessions():
 async def ad_start(token: str = Query(...), purpose: str = Query(...), bonus_amount: int = Query(0)):
     payload = _get_current_user(token)
     if purpose not in ("daily_bonus_double", "bailout_upgrade", "reward_ad"):
-        raise HTTPException(status_code=400, detail="Invalid purpose")
+        raise HTTPException(status_code=400, detail={"code": "ad.invalid_purpose"})
 
     user = await get_user(payload["user_id"])
     if not user:
@@ -518,7 +518,7 @@ async def ad_start(token: str = Query(...), purpose: str = Query(...), bonus_amo
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ad_watches = user.get("ad_watches_today", 0) if user.get("last_ad_date") == today else 0
     if ad_watches >= AD_REWARD_DAILY_CAP:
-        raise HTTPException(status_code=400, detail="Daily ad limit reached")
+        raise HTTPException(status_code=400, detail={"code": "ad.daily_cap"})
 
     _cleanup_expired_ad_sessions()
     session_id = str(uuid.uuid4())
@@ -538,13 +538,13 @@ async def ad_complete(token: str = Query(...), ad_session_id: str = Query(...)):
     _cleanup_expired_ad_sessions()
     session = ad_sessions.pop(ad_session_id, None)
     if not session:
-        raise HTTPException(status_code=400, detail="Invalid or expired ad session")
+        raise HTTPException(status_code=400, detail={"code": "ad.invalid_session"})
     if session["user_id"] != payload["user_id"]:
-        raise HTTPException(status_code=403, detail="Session mismatch")
+        raise HTTPException(status_code=403, detail={"code": "ad.session_mismatch"})
 
     elapsed = _time.time() - session["started_at"]
     if elapsed < AD_WATCH_MIN_SECONDS:
-        raise HTTPException(status_code=400, detail="Ad not watched long enough")
+        raise HTTPException(status_code=400, detail={"code": "ad.too_short"})
 
     user = await get_user(payload["user_id"])
     if not user:
@@ -553,7 +553,7 @@ async def ad_complete(token: str = Query(...), ad_session_id: str = Query(...)):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ad_watches = user.get("ad_watches_today", 0) if user.get("last_ad_date") == today else 0
     if ad_watches >= AD_REWARD_DAILY_CAP:
-        raise HTTPException(status_code=400, detail="Daily ad limit reached")
+        raise HTTPException(status_code=400, detail={"code": "ad.daily_cap"})
 
     purpose = session["purpose"]
     bonus_amount = session["bonus_amount"]
@@ -588,7 +588,7 @@ async def leaderboard(
 ):
     payload = _get_current_user(token)
     if metric not in ("coins", "wins"):
-        raise HTTPException(status_code=400, detail="metric must be coins or wins")
+        raise HTTPException(status_code=400, detail={"code": "leaderboard.invalid_metric"})
     entries = await get_leaderboard(metric, limit)
     rank = await get_user_rank(payload["user_id"], metric)
     return {"entries": entries, "my_rank": rank}
@@ -601,7 +601,7 @@ async def get_profile(user_id: str, token: str = Query(...)):
     _get_current_user(token)
     user = await get_user(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail={"code": "user.not_found"})
     # Public info only — no coins
     return {
         "user_id": user.get("user_id"),
@@ -657,24 +657,24 @@ async def claim_challenge(challenge_id: str, token: str = Query(...)):
 
     ch = get_challenge_by_id(payload["user_id"], challenge_id)
     if not ch:
-        raise HTTPException(status_code=404, detail="Challenge not found")
+        raise HTTPException(status_code=404, detail={"code": "challenge.not_found"})
 
     # Check completion
     ch_data = user.get("challenges", {}).get("daily", {})
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if ch_data.get("date") != today:
-        raise HTTPException(status_code=400, detail="Challenges not initialized")
+        raise HTTPException(status_code=400, detail={"code": "challenge.not_initialized"})
 
     baselines = ch_data.get("baselines", {})
     claimed = ch_data.get("claimed", [])
     if challenge_id in claimed:
-        raise HTTPException(status_code=400, detail="Already claimed")
+        raise HTTPException(status_code=400, detail={"code": "challenge.already_claimed"})
 
     current = ch["check"](user)
     baseline = baselines.get(challenge_id, current)
     progress = current - baseline
     if progress < ch["target"]:
-        raise HTTPException(status_code=400, detail="Not completed yet")
+        raise HTTPException(status_code=400, detail={"code": "challenge.not_completed"})
 
     # Award and mark claimed
     new_coins = await update_coins(payload["user_id"], ch["reward"])
@@ -718,7 +718,7 @@ async def shop_buy(token: str = Query(...), item_id: str = Query(...)):
 
     error = validate_purchase(item_id, user)
     if error:
-        raise HTTPException(status_code=400, detail=error)
+        raise HTTPException(status_code=400, detail={"code": error})
 
     price = COSMETICS[item_id]["price"]
     new_coins = await update_coins(payload["user_id"], -price)
@@ -736,7 +736,7 @@ async def shop_equip(token: str = Query(...), item_id: str | None = Query(None),
 
     error = validate_equip(item_id, category, user)
     if error:
-        raise HTTPException(status_code=400, detail=error)
+        raise HTTPException(status_code=400, detail={"code": error})
 
     if item_id is None:
         # Unequip
@@ -1192,7 +1192,8 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
         if amount < min_bet:
             await manager.send_to(table_id, user_id, {
                 "type": "error",
-                "message": f"Minimum bet is {min_bet}",
+                "code": "bet.minimum",
+                "n": min_bet,
             })
             return
 
@@ -1200,7 +1201,7 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
         if not user or user["coins"] < amount:
             await manager.send_to(table_id, user_id, {
                 "type": "error",
-                "message": "Not enough coins",
+                "code": "bet.insufficient_coins",
             })
             return
 
@@ -1249,7 +1250,7 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
         else:
             await manager.send_to(table_id, user_id, {
                 "type": "error",
-                "message": "Not enough coins for double down",
+                "code": "bet.insufficient_for_double",
             })
 
     elif action == "new_round":
@@ -1273,7 +1274,8 @@ async def _handle_chinchiro_action(table_id: str, user_id: str, action: str, dat
         if amount < min_bet:
             await manager.send_to(table_id, user_id, {
                 "type": "error",
-                "message": f"Minimum bet is {min_bet}",
+                "code": "bet.minimum",
+                "n": min_bet,
             })
             return
 
@@ -1283,7 +1285,7 @@ async def _handle_chinchiro_action(table_id: str, user_id: str, action: str, dat
         if not user or user["coins"] < amount * 5:
             await manager.send_to(table_id, user_id, {
                 "type": "error",
-                "message": "Need 5x bet in reserve (banker pinzoro can take 5x)",
+                "code": "bet.banker_reserve",
             })
             return
 

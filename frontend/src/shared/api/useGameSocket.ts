@@ -6,8 +6,15 @@ const MAX_RECONNECT = 10;
 
 export interface LogEntry {
   id: number;
-  text: string;
   emoji: string;
+  /** i18n key under `log.*` or `errors.*`. Renderers resolve via t(textKey, textParams). */
+  textKey: string;
+  textParams?: Record<string, string | number>;
+}
+
+export interface SocketError {
+  code: string;
+  params: Record<string, string | number>;
 }
 
 export interface Notification {
@@ -22,7 +29,7 @@ interface SocketState {
   connected: boolean;
   state: GameState | null;
   log: LogEntry[];
-  error: string | null;
+  error: SocketError | null;
   errorVersion: number;
   notifications: Notification[];
 }
@@ -31,16 +38,28 @@ type Action =
   | { type: "ws_open" }
   | { type: "ws_close" }
   | { type: "msg"; msg: WSMessage }
-  | { type: "log"; emoji: string; text: string }
   | { type: "reset" }
   | { type: "dismiss_notification"; id: number };
 
 let logCounter = 0;
-const newLog = (emoji: string, text: string): LogEntry => ({
-  id: ++logCounter,
-  emoji,
-  text,
+const pushLog = (
+  s: SocketState,
+  emoji: string,
+  textKey: string,
+  textParams?: Record<string, string | number>,
+): SocketState => ({
+  ...s,
+  log: [{ id: ++logCounter, emoji, textKey, textParams }, ...s.log].slice(0, 50),
 });
+
+function extractErrorParams(msg: Record<string, unknown>): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [k, v] of Object.entries(msg)) {
+    if (k === "type" || k === "code") continue;
+    if (typeof v === "string" || typeof v === "number") out[k] = v;
+  }
+  return out;
+}
 
 function reducer(s: SocketState, a: Action): SocketState {
   switch (a.type) {
@@ -48,8 +67,6 @@ function reducer(s: SocketState, a: Action): SocketState {
       return { ...s, connected: true };
     case "ws_close":
       return { ...s, connected: false };
-    case "log":
-      return { ...s, log: [newLog(a.emoji, a.text), ...s.log].slice(0, 50) };
     case "reset":
       return { connected: false, state: null, log: [], error: null, errorVersion: 0, notifications: [] };
     case "dismiss_notification":
@@ -63,35 +80,27 @@ function reducer(s: SocketState, a: Action): SocketState {
           return { ...s, state: rest as GameState };
         }
         case "player_joined":
-          return {
-            ...s,
-            log: [newLog("🟢", `${msg.display_name} joined`), ...s.log].slice(0, 50),
-          };
+          return pushLog(s, "🟢", "log.player_joined", { name: msg.display_name });
         case "player_left":
-          return {
-            ...s,
-            log: [newLog("⚪", `${msg.display_name} left`), ...s.log].slice(0, 50),
-          };
+          return pushLog(s, "⚪", "log.player_left", { name: msg.display_name });
         case "bet_placed":
-          return {
-            ...s,
-            log: [newLog("💰", `bet ${msg.amount}`), ...s.log].slice(0, 50),
-          };
+          return pushLog(s, "💰", "log.bet_placed", { n: msg.amount });
         case "auto_stand":
+          return pushLog(s, "⏱", "log.auto_stand");
+        case "error": {
+          const code = (msg as { code?: string }).code ?? "common.failed";
+          const params = extractErrorParams(msg as unknown as Record<string, unknown>);
+          const next = pushLog(s, "⚠️", `errors.${code}`, params);
           return {
-            ...s,
-            log: [newLog("⏱", `auto-stand (timeout)`), ...s.log].slice(0, 50),
-          };
-        case "error":
-          return {
-            ...s,
-            error: msg.message,
+            ...next,
+            error: { code, params },
             errorVersion: s.errorVersion + 1,
-            log: [newLog("⚠️", msg.message), ...s.log].slice(0, 50),
           };
-        case "achievement_unlocked":
+        }
+        case "achievement_unlocked": {
+          const next = pushLog(s, "🏆", "log.achievement_unlocked");
           return {
-            ...s,
+            ...next,
             notifications: [
               ...s.notifications,
               {
@@ -100,11 +109,12 @@ function reducer(s: SocketState, a: Action): SocketState {
                 data: { achievement_id: msg.achievement_id },
               },
             ],
-            log: [newLog("🏆", `Achievement unlocked!`), ...s.log].slice(0, 50),
           };
-        case "level_up":
+        }
+        case "level_up": {
+          const next = pushLog(s, "⬆️", "log.level_up", { n: msg.level });
           return {
-            ...s,
+            ...next,
             notifications: [
               ...s.notifications,
               {
@@ -113,8 +123,8 @@ function reducer(s: SocketState, a: Action): SocketState {
                 data: { level: msg.level, xp: msg.xp },
               },
             ],
-            log: [newLog("⬆️", `Level up! Lv.${msg.level}`), ...s.log].slice(0, 50),
           };
+        }
         case "reaction":
           return {
             ...s,
