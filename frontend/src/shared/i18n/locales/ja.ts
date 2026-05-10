@@ -92,6 +92,30 @@ export const ja = {
     tablesTitle: "{game} のテーブル",
     loadingTables: "テーブルを準備中…",
     watch: "観戦",
+    chooseGame: "ゲームを選んでください",
+    tablesOpen: "{n} 卓オープン中",
+    seats: "{n}/{max} 席",
+    minBet: "最低 {n}",
+    join: "参加",
+    full: "満席",
+    dailyBonus: "デイリーボーナス",
+    bailout: "救済",
+    logout: "ログアウト",
+  },
+  phase: {
+    blackjack: {
+      waiting: "待機中",
+      betting: "ベット中",
+      player_turns: "プレイヤーのターン",
+      resolution: "結果",
+    },
+    chinchiro: {
+      waiting: "待機中",
+      betting: "ベット中",
+      banker_roll: "親の出目",
+      player_rolls: "プレイヤーの出目",
+      resolution: "結果",
+    },
   },
   games: {
     blackjack: {

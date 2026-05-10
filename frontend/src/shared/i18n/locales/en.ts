@@ -94,6 +94,30 @@ export const en: Translation = {
     tablesTitle: "{game} tables",
     loadingTables: "Preparing tables…",
     watch: "Watch",
+    chooseGame: "Choose Your Game",
+    tablesOpen: "{n} tables open",
+    seats: "{n}/{max} seats",
+    minBet: "Min {n}",
+    join: "Join",
+    full: "Full",
+    dailyBonus: "Daily Bonus",
+    bailout: "Bailout",
+    logout: "Logout",
+  },
+  phase: {
+    blackjack: {
+      waiting: "Waiting",
+      betting: "Betting",
+      player_turns: "Player Turns",
+      resolution: "Result",
+    },
+    chinchiro: {
+      waiting: "Waiting",
+      betting: "Betting",
+      banker_roll: "Banker Rolling",
+      player_rolls: "Player Rolls",
+      resolution: "Result",
+    },
   },
   games: {
     blackjack: {

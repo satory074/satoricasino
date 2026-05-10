@@ -381,7 +381,7 @@ export function ChinchiroGame({
         <button className="btn-secondary" onClick={onLeave}>
           {t("common.backToLobby")}
         </button>
-        <div className="game-phase">{phase.replace("_", " ")}</div>
+        <div className="game-phase">{t(`phase.chinchiro.${phase}`)}</div>
         <TableHeatBadge heat={state.table_heat} />
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}

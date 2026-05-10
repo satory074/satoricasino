@@ -380,7 +380,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
         <button className="btn-secondary" onClick={onLeave}>
           {t("common.backToLobby")}
         </button>
-        <div className="game-phase">{phase.replace("_", " ")}</div>
+        <div className="game-phase">{t(`phase.blackjack.${phase}`)}</div>
         <TableHeatBadge heat={gameState?.table_heat} />
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}

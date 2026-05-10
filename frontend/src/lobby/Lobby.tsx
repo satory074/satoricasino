@@ -239,7 +239,7 @@ export function Lobby({
     <div className="lobby-section">
       <div className="lobby-actions">
         <button className="btn-secondary" style={{ position: "relative" }} onClick={claimDailyBonus}>
-          Daily Bonus
+          {t("lobby.dailyBonus")}
           {(() => {
             const today = new Date().toISOString().slice(0, 10);
             const last = profile?.last_daily_bonus?.slice(0, 10);
@@ -247,7 +247,7 @@ export function Lobby({
           })()}
         </button>
         <button className="btn-secondary" style={{ position: "relative" }} onClick={claimBailout}>
-          Bailout
+          {t("lobby.bailout")}
           {profile?.coins !== undefined && profile.coins < 100 && (
             <span className="notify-dot" />
           )}
@@ -303,7 +303,7 @@ export function Lobby({
           );
         })()}
         <button className="btn-danger" onClick={logout}>
-          Logout
+          {t("lobby.logout")}
         </button>
       </div>
 
@@ -361,7 +361,7 @@ export function Lobby({
 
           <Challenges onCoinsChanged={onCoinsChanged} play={play} />
 
-          <h3>Choose Your Game</h3>
+          <h3>{t("lobby.chooseGame")}</h3>
           <div className="game-grid">
             {SUPPORTED_GAMES.map((g) => {
               const tableCount = tables.filter(
@@ -386,7 +386,7 @@ export function Lobby({
                   <div className="game-card-tagline">
                     {t(`games.${g.value}.tagline`)}
                   </div>
-                  <div className="game-card-meta">{tableCount} tables open</div>
+                  <div className="game-card-meta">{t("lobby.tablesOpen", { n: tableCount })}</div>
                 </button>
               );
             })}
@@ -425,10 +425,10 @@ export function Lobby({
                         {t(`games.${gameType}.label`)}
                       </span>
                       <span className="pill">
-                        {tbl.player_count}/{tbl.max_players} seats
+                        {t("lobby.seats", { n: tbl.player_count, max: tbl.max_players })}
                       </span>
-                      <span className="pill">Min {tbl.min_bet}</span>
-                      <span className="pill">{tbl.status}</span>
+                      <span className="pill">{t("lobby.minBet", { n: tbl.min_bet })}</span>
+                      <span className="pill">{t(`phase.${gameType}.${tbl.status}`)}</span>
                     </div>
                   </div>
                   <div className="table-buttons">
@@ -445,7 +445,7 @@ export function Lobby({
                       </button>
                     )}
                     <button className="btn-primary" disabled={isFull} style={{ position: "relative" }}>
-                      {isFull ? "Full" : "Join"}
+                      {isFull ? t("lobby.full") : t("lobby.join")}
                       {!isFull && tbl.player_count > 0 && <span className="notify-dot" />}
                     </button>
                   </div>
