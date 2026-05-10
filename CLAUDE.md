@@ -237,6 +237,8 @@ Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` 
 - Challenges and leaderboard use aggregate fields (`wins`, `game_stats`, `coins`) so they pick up new games without code changes.
 - If the game introduces new achievement-worthy events, add check functions and entries to `ACHIEVEMENTS` in `backend/achievements.py`, then add i18n keys in `achievements.*`.
 
+**Final compliance pass**: Once the new game is functionally complete, walk through `docs/design-notes/tone-and-manner.md` §11 — that checklist (info hierarchy, action affordance / Fitts touch targets, placement consistency, motion / audio / copy unification, responsible-gaming guardrails) catches what the per-step list above does not.
+
 ## Sharp edges to know
 
 - **Animations must work in hidden tabs.** Browsers pause `requestAnimationFrame` when a tab is in the background, freezing Framer Motion mid-animation. Cards, dice, and result overlays all use pure CSS `@keyframes` (which run on the compositor) for entry/phase animations specifically because of this. Reserve Framer Motion for layout / hover / one-shot transitions where freezing is acceptable.
