@@ -40,6 +40,24 @@ export default function App() {
     }
   }, [profile?.streaks]);
 
+  // AdSense Auto Ads gate. Auth has no publisher content, so any auto-injected
+  // <ins> slot trips Google's "ads on screens without publisher-content" policy.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ads = ((window as unknown as { adsbygoogle?: unknown[] }).adsbygoogle ??= []);
+    try {
+      ads.push({ pauseAdRequests: view === "auth" ? 1 : 0 });
+    } catch {
+      // AdSense throws TagError if a re-fill walk hits already-filled slots.
+      // The pause/resume signal is still recorded — non-fatal.
+    }
+    if (view === "auth") {
+      document
+        .querySelectorAll("body > ins.adsbygoogle, body > iframe[id^='google_ads_iframe'], body > div[id^='google_ads_']")
+        .forEach((el) => el.remove());
+    }
+  }, [view]);
+
   // Coin counter animation
   useEffect(() => {
     const target = profile?.coins ?? 0;
