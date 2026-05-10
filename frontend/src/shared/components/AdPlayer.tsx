@@ -98,7 +98,7 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
               </div>
             </div>
             {countdown > 0 ? (
-              <div className="ad-countdown">{countdown}s</div>
+              <div className="ad-countdown">{t("common.seconds", { n: countdown })}</div>
             ) : (
               <button
                 className="btn-primary"

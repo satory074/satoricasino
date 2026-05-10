@@ -1,20 +1,15 @@
 import { useCallback } from "react";
 import { play } from "../audio/sounds";
+import { useTranslation } from "../i18n/useTranslation";
 
-const REACTIONS = [
-  { id: "gg", label: "GG" },
-  { id: "nice", label: "Nice" },
-  { id: "wow", label: "Wow" },
-  { id: "ouch", label: "Ouch" },
-  { id: "lol", label: "LOL" },
-  { id: "gl", label: "GL" },
-] as const;
+const REACTION_IDS = ["gg", "nice", "wow", "ouch", "lol", "gl"] as const;
 
 interface Props {
   send: (action: string, data?: Record<string, unknown>) => void;
 }
 
 export function ReactionBar({ send }: Props) {
+  const { t } = useTranslation();
   const react = useCallback(
     (emoji: string) => {
       play("button_click");
@@ -25,14 +20,14 @@ export function ReactionBar({ send }: Props) {
 
   return (
     <div className="reaction-bar">
-      {REACTIONS.map((r) => (
+      {REACTION_IDS.map((id) => (
         <button
-          key={r.id}
+          key={id}
           className="reaction-btn"
-          onClick={() => react(r.id)}
+          onClick={() => react(id)}
           type="button"
         >
-          {r.label}
+          {t(`reactions.${id}`)}
         </button>
       ))}
     </div>

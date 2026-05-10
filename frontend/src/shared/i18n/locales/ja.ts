@@ -10,6 +10,15 @@ export const ja = {
     close: "閉じる",
     failed: "操作に失敗しました",
     coinsAmount: "{n} コイン",
+    seconds: "{n}秒",
+  },
+  reactions: {
+    gg: "GG",
+    nice: "ナイス",
+    wow: "おお",
+    ouch: "いてっ",
+    lol: "www",
+    gl: "GL",
   },
   auth: {
     tagline: "ブラックジャック・ラウンジ",
@@ -72,6 +81,7 @@ export const ja = {
       notEnoughCoinsForDouble: "ダブル分のコインが足りません",
     },
     otherThinking: "他のプレイヤーが思考中…",
+    dealerLabel: "ディーラー",
     actions: {
       hit: "ヒット",
       stand: "スタンド",

@@ -1,4 +1,5 @@
 import { Hand } from "../../shared/components/Hand";
+import { useTranslation } from "../../shared/i18n/useTranslation";
 import type { CardData, Phase } from "../../shared/types/game";
 
 interface Props {
@@ -10,11 +11,12 @@ interface Props {
 }
 
 export function DealerArea({ cards, value, phase, onCardEvent, revealing }: Props) {
+  const { t } = useTranslation();
   const showValue =
     value != null && phase !== "player_turns" && phase !== "betting";
   return (
     <div className="dealer-area">
-      <h3>Dealer</h3>
+      <h3>{t("blackjack.dealerLabel")}</h3>
       <div className={`dealer-cards${revealing ? " is-revealing" : ""}`}>
         <Hand cards={cards} onCardEvent={onCardEvent} />
       </div>

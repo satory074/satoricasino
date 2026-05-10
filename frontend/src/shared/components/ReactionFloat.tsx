@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Notification } from "../api/useGameSocket";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface FloatingReaction {
   id: number;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ReactionFloat({ notifications, dismissNotification }: Props) {
+  const { t } = useTranslation();
   const [floats, setFloats] = useState<FloatingReaction[]>([]);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function ReactionFloat({ notifications, dismissNotification }: Props) {
       {floats.map((f) => (
         <div key={f.id} className="reaction-float">
           <span className="rf-name">{f.displayName}</span>
-          <span className="rf-emoji">{f.emoji.toUpperCase()}</span>
+          <span className="rf-emoji">{t(`reactions.${f.emoji}`)}</span>
         </div>
       ))}
     </div>

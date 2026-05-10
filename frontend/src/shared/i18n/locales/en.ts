@@ -12,6 +12,15 @@ export const en: Translation = {
     close: "Close",
     failed: "Something went wrong",
     coinsAmount: "{n} coins",
+    seconds: "{n}s",
+  },
+  reactions: {
+    gg: "GG",
+    nice: "Nice",
+    wow: "Wow",
+    ouch: "Ouch",
+    lol: "LOL",
+    gl: "GL",
   },
   auth: {
     tagline: "Blackjack Lounge",
@@ -74,6 +83,7 @@ export const en: Translation = {
       notEnoughCoinsForDouble: "Not enough coins to double",
     },
     otherThinking: "Another player is thinking…",
+    dealerLabel: "Dealer",
     actions: {
       hit: "Hit",
       stand: "Stand",
