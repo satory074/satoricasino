@@ -1,6 +1,31 @@
 import type { Translation } from "./ja";
 
 export const en: Translation = {
+  common: {
+    connecting: "Connecting…",
+    connected: "Connected",
+    reconnecting: "Reconnecting…",
+    backToLobby: "← Lobby",
+    log: "Log",
+    startGame: "Start Game",
+    newRound: "New Round",
+  },
+  keyHints: {
+    start: "Start",
+    nextRound: "Next",
+    hit: "Hit",
+    stand: "Stand",
+    double: "Double",
+    roll: "Roll",
+  },
+  betArea: {
+    bet: "Bet",
+    max: "MAX",
+    reset: "Reset",
+    placeBet: "Place Bet",
+    amountTooLow: "Minimum bet is 10 coins",
+    amountExceedsBalance: "Exceeds your balance",
+  },
   hands: {
     pinzoro: "Pinzoro",
     arashi: "Arashi",
@@ -37,6 +62,19 @@ export const en: Translation = {
       notEnoughCoinsForDouble: "Not enough coins to double",
     },
     otherThinking: "Another player is thinking…",
+    actions: {
+      hit: "Hit",
+      stand: "Stand",
+      double: "Double",
+    },
+    waitingForBets: "Waiting for other bets…",
+    inlineBlackjack: "BLACKJACK!",
+    resultBadge: {
+      win: "WIN",
+      lose: "LOSE",
+      push: "PUSH",
+      blackjack: "BJ",
+    },
   },
   chinchiro: {
     reasons: {

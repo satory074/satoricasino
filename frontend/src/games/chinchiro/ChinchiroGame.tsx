@@ -323,13 +323,13 @@ export function ChinchiroGame({
 
   const hints: KeyHint[] = useMemo(() => {
     if (!state) return [];
-    if (phase === "waiting") return [{ key: "Enter", label: "Start" }];
+    if (phase === "waiting") return [{ key: "Enter", label: t("keyHints.start") }];
     if (phase === "player_rolls") {
-      return [{ key: "R", label: "Roll", disabled: !canRoll }];
+      return [{ key: "R", label: t("keyHints.roll"), disabled: !canRoll }];
     }
-    if (phase === "resolution") return [{ key: "Enter", label: "Next round" }];
+    if (phase === "resolution") return [{ key: "Enter", label: t("keyHints.nextRound") }];
     return [];
-  }, [state, phase, canRoll]);
+  }, [state, phase, canRoll, t]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -359,16 +359,16 @@ export function ChinchiroGame({
       <div className="game-section">
         <div className="game-topbar">
           <button className="btn-secondary" onClick={onLeave}>
-            ← Lobby
+            {t("common.backToLobby")}
           </button>
-          <div className="game-phase">CONNECTING</div>
+          <div className="game-phase">{t("common.connecting")}</div>
           <span
             className={`status-dot ${connected ? "connected" : "disconnected"}`}
           />
         </div>
         <div className="game-table">
           <div style={{ padding: "3rem", color: "var(--text-mute)" }}>
-            Connecting…
+            {t("common.connecting")}
           </div>
         </div>
       </div>
@@ -379,13 +379,13 @@ export function ChinchiroGame({
     <div className={`game-section${shaking ? " is-shaking" : ""}${isLastRoll ? " last-roll-mode" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
-          ← Lobby
+          {t("common.backToLobby")}
         </button>
         <div className="game-phase">{phase.replace("_", " ")}</div>
         <TableHeatBadge heat={state.table_heat} />
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}
-          title={connected ? "Connected" : "Reconnecting…"}
+          title={connected ? t("common.connected") : t("common.reconnecting")}
         />
       </div>
 
@@ -429,7 +429,7 @@ export function ChinchiroGame({
         </div>
 
         <div className="game-log-area">
-          <h4>Log</h4>
+          <h4>{t("common.log")}</h4>
           <div className="game-log">
             {log.length === 0 && <div className="log-entry">…</div>}
             {log.map((e) => (
@@ -451,7 +451,7 @@ export function ChinchiroGame({
             highlight
             shortcut="↵"
           >
-            Start Game
+            {t("common.startGame")}
           </ActionButton>
         )}
         {phase === "betting" && me && me.bet === 0 && (
@@ -494,7 +494,7 @@ export function ChinchiroGame({
             highlight={canNewRound}
             shortcut="↵"
           >
-            New Round
+            {t("common.newRound")}
           </ActionButton>
         )}
       </div>

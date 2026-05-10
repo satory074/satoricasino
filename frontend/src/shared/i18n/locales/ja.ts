@@ -1,4 +1,29 @@
 export const ja = {
+  common: {
+    connecting: "接続中…",
+    connected: "接続済み",
+    reconnecting: "再接続中…",
+    backToLobby: "← ロビーへ",
+    log: "ログ",
+    startGame: "ゲーム開始",
+    newRound: "次のラウンド",
+  },
+  keyHints: {
+    start: "開始",
+    nextRound: "次へ",
+    hit: "ヒット",
+    stand: "スタンド",
+    double: "ダブル",
+    roll: "振る",
+  },
+  betArea: {
+    bet: "ベット",
+    max: "MAX",
+    reset: "リセット",
+    placeBet: "ベット確定",
+    amountTooLow: "10 コイン以上必要です",
+    amountExceedsBalance: "コイン残高を超えています",
+  },
   hands: {
     pinzoro: "ピンゾロ",
     arashi: "アラシ",
@@ -35,6 +60,19 @@ export const ja = {
       notEnoughCoinsForDouble: "ダブル分のコインが足りません",
     },
     otherThinking: "他のプレイヤーが思考中…",
+    actions: {
+      hit: "ヒット",
+      stand: "スタンド",
+      double: "ダブル",
+    },
+    waitingForBets: "他プレイヤーのベットを待っています…",
+    inlineBlackjack: "BLACKJACK!",
+    resultBadge: {
+      win: "WIN",
+      lose: "LOSE",
+      push: "PUSH",
+      blackjack: "BJ",
+    },
   },
   chinchiro: {
     reasons: {

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { play } from "../audio/sounds";
 
 const REACTIONS = [
   { id: "gg", label: "GG" },
@@ -16,6 +17,7 @@ interface Props {
 export function ReactionBar({ send }: Props) {
   const react = useCallback(
     (emoji: string) => {
+      play("button_click");
       send("react", { emoji });
     },
     [send],

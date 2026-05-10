@@ -364,27 +364,27 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   const hints: KeyHint[] = useMemo(() => {
     if (phase === "player_turns") {
       return [
-        { key: "H", label: "Hit", disabled: !canHit },
-        { key: "S", label: "Stand", disabled: !canStand },
-        { key: "D", label: "Double", disabled: !canDouble },
+        { key: "H", label: t("keyHints.hit"), disabled: !canHit },
+        { key: "S", label: t("keyHints.stand"), disabled: !canStand },
+        { key: "D", label: t("keyHints.double"), disabled: !canDouble },
       ];
     }
-    if (phase === "waiting") return [{ key: "Enter", label: "Start" }];
-    if (phase === "resolution") return [{ key: "Enter", label: "Next round" }];
+    if (phase === "waiting") return [{ key: "Enter", label: t("keyHints.start") }];
+    if (phase === "resolution") return [{ key: "Enter", label: t("keyHints.nextRound") }];
     return [];
-  }, [phase, canHit, canStand, canDouble]);
+  }, [phase, canHit, canStand, canDouble, t]);
 
   return (
     <div className={`game-section${shaking ? " is-shaking" : ""}${softShaking ? " is-shaking-soft" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
         <button className="btn-secondary" onClick={onLeave}>
-          ← Lobby
+          {t("common.backToLobby")}
         </button>
         <div className="game-phase">{phase.replace("_", " ")}</div>
         <TableHeatBadge heat={gameState?.table_heat} />
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}
-          title={connected ? "Connected" : "Reconnecting…"}
+          title={connected ? t("common.connected") : t("common.reconnecting")}
         />
       </div>
 
@@ -419,7 +419,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
             </div>
 
             <div className="game-log-area">
-              <h4>Log</h4>
+              <h4>{t("common.log")}</h4>
               <div className="game-log">
                 {log.length === 0 && <div className="log-entry">…</div>}
                 {log.map((e) => (
@@ -433,7 +433,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
             {phase === "resolution" && <BannerAd size="mrec" />}
           </>
         ) : (
-          <div style={{ padding: "3rem", color: "var(--text-mute)" }}>Connecting…</div>
+          <div style={{ padding: "3rem", color: "var(--text-mute)" }}>{t("common.connecting")}</div>
         )}
       </div>
 
@@ -575,7 +575,7 @@ function GameActions({
     return (
       <div className="game-actions">
         <ActionButton variant="deal" highlight onClick={onStart} shortcut="↵">
-          Start Game
+          {t("common.startGame")}
         </ActionButton>
       </div>
     );
@@ -585,7 +585,7 @@ function GameActions({
     if (!hasMe || myBet > 0) {
       return (
         <div className="game-actions">
-          <p className="action-hint">Waiting for other bets…</p>
+          <p className="action-hint">{t("blackjack.waitingForBets")}</p>
         </div>
       );
     }
@@ -605,7 +605,7 @@ function GameActions({
           highlight={canHit}
           shortcut="H"
         >
-          Hit
+          {t("blackjack.actions.hit")}
         </ActionButton>
         <ActionButton
           variant="stand"
@@ -615,7 +615,7 @@ function GameActions({
           highlight={canStand}
           shortcut="S"
         >
-          Stand
+          {t("blackjack.actions.stand")}
         </ActionButton>
         <ActionButton
           variant="double"
@@ -625,7 +625,7 @@ function GameActions({
           highlight={canDouble}
           shortcut="D"
         >
-          Double
+          {t("blackjack.actions.double")}
         </ActionButton>
         {!isMyTurn && <p className="action-hint">{otherThinkingText}</p>}
       </div>
@@ -641,7 +641,7 @@ function GameActions({
           highlight={canNewRound}
           shortcut="↵"
         >
-          New Round
+          {t("common.newRound")}
         </ActionButton>
       </div>
     );

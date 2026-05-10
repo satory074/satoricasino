@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Chip } from "./Chip";
 import { BetChipStack } from "./BetChipStack";
+import { ActionButton } from "./ActionButton";
 import { play as playSound } from "../audio/sounds";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface Props {
   minBalance: number;
@@ -26,6 +28,7 @@ function chipCountFor(amount: number): number {
 }
 
 export function BetArea({ minBalance, initialBet, onPlace, play }: Props) {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState(initialBet ?? 10);
   const [bumped, setBumped] = useState(false);
   const bumpTimerRef = useRef<number | null>(null);
@@ -73,19 +76,27 @@ export function BetArea({ minBalance, initialBet, onPlace, play }: Props) {
     setAmount(10);
   };
 
+  const placeReason =
+    amount < 10
+      ? t("betArea.amountTooLow")
+      : amount > minBalance
+        ? t("betArea.amountExceedsBalance")
+        : null;
+  const canPlace = placeReason === null;
+
   return (
     <div className="bet-area">
       <div className="chip-row">
         {PRESETS.map((v) => (
           <Chip key={v} value={v} onClick={() => add(v)} disabled={amount + v > minBalance} />
         ))}
-        <Chip value={1000} onClick={setMax} label="MAX" />
+        <Chip value={1000} onClick={setMax} label={t("betArea.max")} />
       </div>
 
       <BetChipStack amount={amount} />
 
       <div className={`bet-display${bumped ? " bet-display-bumped" : ""}`}>
-        <span>Bet</span>
+        <span>{t("betArea.bet")}</span>
         <input
           type="number"
           min={10}
@@ -97,19 +108,21 @@ export function BetArea({ minBalance, initialBet, onPlace, play }: Props) {
       </div>
 
       <div className="bet-actions">
-        <button className="btn-secondary" onClick={reset}>
-          Reset
-        </button>
-        <button
-          className="action-btn btn-deal"
+        <ActionButton variant="secondary" onClick={reset}>
+          {t("betArea.reset")}
+        </ActionButton>
+        <ActionButton
+          variant="deal"
           onClick={() => {
             play("button_click");
-            if (amount >= 10 && amount <= minBalance) onPlace(amount);
+            if (canPlace) onPlace(amount);
           }}
-          disabled={amount < 10 || amount > minBalance}
+          disabled={!canPlace}
+          reason={placeReason}
+          highlight={canPlace}
         >
-          Place Bet
-        </button>
+          {t("betArea.placeBet")}
+        </ActionButton>
       </div>
     </div>
   );

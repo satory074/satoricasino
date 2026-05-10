@@ -4,6 +4,7 @@ import { TurnTimer } from "../../shared/components/TurnTimer";
 import { Hand } from "../../shared/components/Hand";
 import type { PlayerStateData, Result } from "../../shared/types/game";
 import { getCardSkinClass } from "../../shared/cosmetics";
+import { useTranslation } from "../../shared/i18n/useTranslation";
 
 interface Props {
   playerId: string;
@@ -16,13 +17,6 @@ interface Props {
   shake: boolean;
   onCardEvent?: () => void;
 }
-
-const RESULT_LABEL: Record<Result, string> = {
-  win: "WIN",
-  lose: "LOSE",
-  push: "PUSH",
-  blackjack: "BJ",
-};
 
 const RESULT_COLOR: Record<Result, string> = {
   win: "#22c55e",
@@ -43,7 +37,9 @@ export function PlayerBox({
   onCardEvent,
 }: Props) {
   void playerId;
+  const { t } = useTranslation();
   const skinClass = getCardSkinClass(player.equipped);
+  const resultLabel = result ? t(`blackjack.resultBadge.${result}`) : null;
   return (
     <motion.div
       className={clsx("player-box", isMe && "is-me", isCurrent && "is-current")}
@@ -55,9 +51,11 @@ export function PlayerBox({
       <TurnTimer totalSec={turnTotalSec} resetKey={turnTimerKey} active={isCurrent} />
       <div className="player-name">
         {player.display_name}
-        {isMe && " (You)"}
+        {isMe && ` ${t("leaderboard.you")}`}
       </div>
-      <div className="player-bet">{player.bet > 0 ? `Bet ${player.bet}` : "—"}</div>
+      <div className="player-bet">
+        {player.bet > 0 ? `${t("betArea.bet")} ${player.bet}` : "—"}
+      </div>
       <div className="player-cards">
         <Hand cards={player.cards} shake={shake} onCardEvent={onCardEvent} skinClass={skinClass} />
       </div>
@@ -69,12 +67,12 @@ export function PlayerBox({
         )}
       >
         {player.is_busted
-          ? "BUST"
+          ? t("results.bust")
           : player.is_blackjack
-            ? "BLACKJACK!"
+            ? t("blackjack.inlineBlackjack")
             : player.value || ""}
       </div>
-      {result && (
+      {result && resultLabel && (
         <motion.div
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -90,7 +88,7 @@ export function PlayerBox({
             letterSpacing: "0.15em",
           }}
         >
-          {RESULT_LABEL[result]}
+          {resultLabel}
         </motion.div>
       )}
     </motion.div>
