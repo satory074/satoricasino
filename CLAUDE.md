@@ -153,6 +153,14 @@ frontend/src/
 
 i18n is in-house (no library). `locales/ja.ts` is the source of truth — its `Translation` type forces `en.ts` to provide a matching English entry for every key. `t("path.to.key", { name: value })` does dot-path lookup with `{name}` interpolation; missing keys fall back to ja, then to the key itself. Initial language reads `localStorage["sc:lang"]`, then `navigator.language` on first visit. Server payloads use stable enum IDs (`HandName.value`, `Result.value`) and structured table_ids (`bj-low`, `cc-high`) — translation lives entirely on the client; do not return display strings from the server.
 
+This rule extends to **errors and game-log entries**, which is non-obvious from the type signatures alone:
+- HTTP errors: `HTTPException(detail={"code": "auth.wrong_passphrase"})` or with params `detail={"code": "bet.minimum", "n": 10}`. `api.ts unwrap()` parses this into a typed `ApiError(code, params)` (subclass of `Error`) that `apiPost` / `apiGet` throw. Call sites render via `t(\`errors.${e.code}\`, e.params)` — never read `e.message`.
+- WS errors: `{"type": "error", "code": "...", **params}` (same shape). `useGameSocket` reduces these into both `state.error = {code, params}` and a log entry.
+- `cosmetics.validate_purchase` / `validate_equip` return error code strings (e.g. `"shop.item_not_found"`), not English; `shop_buy` / `shop_equip` wrap them as `detail={"code": error}`.
+- `LogEntry` is `{id, emoji, textKey, textParams?}` — store the i18n key, never the resolved string. Game components render with `t(e.textKey, e.textParams)` so language switches are reactive.
+
+Adding a new error path: pick a dotted code (e.g. `bet.banker_reserve`), add `errors.bet.banker_reserve` to ja.ts (Translation type forces en.ts to follow), then either `raise HTTPException(detail={"code": "bet.banker_reserve"})` (HTTP) or send `{"type": "error", "code": "bet.banker_reserve"}` (WS).
+
 `useGameSocket(tableId, spectate?)` is generic and returns `gameState`, `notifications` (achievement/level/reaction events), `dismissNotification`, and `send`. Each game component narrows `gameState` (`as ChinchiroGameState`). `App.tsx` wires `GameRouter` with the table's `game_type` and `spectate` flag so the right component renders even before the first WS message arrives.
 
 ### UX clarity conventions
@@ -195,7 +203,7 @@ Endpoint: `/ws/table/{table_id}?token=...&spectate=false`. Set `spectate=true` f
 {"type": "player_joined" | "player_left", "player_id": "...", "display_name": "..."}
 {"type": "bet_placed", "player_id": "...", "amount": 100}
 {"type": "auto_stand", "player_id": "..."}
-{"type": "error", "message": "..."}
+{"type": "error", "code": "bet.minimum", "n": 10}    // code is the i18n key under errors.*; remaining fields are template params
 {"type": "achievement_unlocked", "achievement_id": "first_win"}
 {"type": "level_up", "level": 5, "xp": 1600}
 {"type": "reaction", "player_id": "...", "display_name": "...", "emoji": "gg"}
@@ -229,7 +237,7 @@ This is the most useful contribution shape. To add e.g. roulette without touchin
 8. **Frontend wiring**: add `case "roulette"` in `GameRouter.tsx`, add `{value:"roulette", icon:"..."}` to `SUPPORTED_GAMES` in `Lobby.tsx` (label/tagline come from i18n — see step 11). The streak counter in `App.tsx` keys on `tableGameType`, so it picks up new games automatically as long as the component calls `onResolve(delta)` on resolution.
 9. **Keyboard shortcuts + hint bar**: add a `useEffect` window-keydown handler inside the game component that calls the same action callbacks the buttons use, and feed a `KeyHint[]` into `<KeyHintBar />` so the dock reflects what's live in this phase.
 10. **Audio (optional)**: add SoundIds in `shared/audio/sounds.ts` and the synthesis recipes (use existing `tone()` / `noiseBurst()` / `chord()` helpers).
-11. **i18n**: extend `shared/i18n/locales/ja.ts` with `games.roulette.{label,tagline}`, `tables.rl.{low,mid,high}`, plus any reasons / phase banners / button labels you introduce. The `Translation` type then forces matching English entries in `en.ts`. Use `t(key, params)` everywhere — never hardcode display strings.
+11. **i18n**: extend `shared/i18n/locales/ja.ts` with `games.roulette.{label,tagline}`, `tables.rl.{low,mid,high}`, `phase.roulette.{...}` for each phase ID the topbar will show, plus any reasons / phase banners / button labels you introduce. The `Translation` type then forces matching English entries in `en.ts`. Use `t(key, params)` everywhere — never hardcode display strings. **Error paths follow the same rule** (see "Frontend layout" i18n note): new HTTPException sites use `detail={"code": "roulette.bad_thing", **params}` and new WS error sends use `{"type": "error", "code": "roulette.bad_thing", **params}` with a matching `errors.roulette.bad_thing` i18n entry.
 
 Cross-game stats on `users.{wins, losses, draws}` are updated in `_broadcast_*` based on the per-game payout sign — keep that pattern. Engagement systems wire in automatically:
 - `update_game_stats()` and `update_streaks()` must be called in the new `_broadcast_*` function for per-game career stats and streak tracking.
