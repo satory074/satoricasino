@@ -57,7 +57,7 @@ backend/
 │   ├── chinchiro.py       # ChinchiroGame class + Phase + HandName + payout helpers
 │   └── deck.py            # Card / hand_value / SUITS / RANKS — shared by any card game
 ├── achievements.py    # 27 achievement definitions + check_achievements() + progress query
-│── challenges.py      # Daily challenge pool, deterministic selection, baseline tracking
+├── challenges.py      # Daily challenge pool, deterministic selection, baseline tracking
 ├── cosmetics.py       # Hardcoded cosmetic catalog (9 items), purchase/equip validation
 ├── auth.py, database.py, websocket_manager.py, models.py, config.py
 ```
@@ -94,6 +94,33 @@ Several systems drive retention and are wired through `_broadcast_blackjack` / `
 - **Cosmetics shop** (`GET /api/shop`, `POST /api/shop/buy`, `POST /api/shop/equip`): 9 cosmetic items across 3 categories (card_skin, dice_skin, table_theme). Purchased with game coins (no real money). `backend/cosmetics.py` holds the hardcoded catalog. Firestore: `owned_cosmetics` map + `equipped` map. Card/dice skins broadcast to other players via `equipped` field in WS state. Table themes are personal display only (applied via CSS class on `.game-section`). `player_cosmetics` in-memory cache loaded on WS connect for broadcast injection.
 - **Table heat (social signal)**: each `tables[id]` carries a `recent_jackpots: deque(maxlen=20)` of jackpot timestamps. `_record_jackpot(table)` is called from `_broadcast_blackjack` / `_broadcast_chinchiro` whenever a jackpot resolves (BJ blackjack, chinchiro pinzoro on either side). `_table_heat(table)` projects this into `{jackpots5min, hot, ultra_hot}` based on a 300s rolling window and is injected as `state.table_heat` on every broadcast. Frontend `TableHeatBadge` renders 🔥 badges in `game-topbar`. Pure in-memory, wiped on Cloud Run restart — no Firestore write. Tested in `tests/test_table_heat.py`.
 
+### Ads architecture
+
+Two distinct ad systems run in parallel — don't confuse them:
+
+1. **AdSense (real revenue ads)** — display banners on Lobby + Game views, served by `pagead2.googlesyndication.com/pagead/js/adsbygoogle.js` (loaded eagerly in `frontend/index.html`). Publisher ID `ca-pub-3484332928684454`, ads.txt at `frontend/public/ads.txt`. **Never render on Auth view** (see Sharp edges).
+2. **Reward ads (in-game mock)** — synthesized 5-second countdown modal that grants a gameplay reward (daily bonus 2x, bailout 500→1000). Backed by `POST /api/ad/{start,complete}` with in-memory session + Firestore daily cap. See "Reward ads" in Engagement systems.
+
+The frontend abstracts both behind one `AdBridge` interface so tests/dev can run without the real adsbygoogle.js loaded:
+
+```
+frontend/src/shared/ad/
+├── adBridge.ts          # AdBridge interface + AdResult / BannerSize types
+├── adSenseBridge.ts     # Production: injects <ins class="adsbygoogle"> with data-ad-slot
+├── mockAdBridge.ts      # Dev/preview: renders an "AD" placeholder div
+└── index.ts             # getAdBridge() — singleton, picks bridge by feature-detecting window.adsbygoogle
+```
+
+`getAdBridge()` returns `AdSenseBridge` if `window.adsbygoogle` is an array (script loaded), otherwise `MockAdBridge`. The factory caches the result, so once a tab boots into "mock mode" it stays there — this matters in unit tests / Storybook-like setups where you want predictable placeholders.
+
+The four `BannerSize` values map 1:1 to AdSense slot IDs (`SLOT_ID_320x50` / `SLOT_ID_300x250` / `SLOT_ID_728x90` / `SLOT_ID_160x600` in `adSenseBridge.ts`). When you create real slots in AdSense console, replace those slot ID constants — the size enum stays.
+
+Frontend ad components (in `shared/components/`):
+- **`SideAds`** — flex sandwich: `<aside class="ad-side ad-side--left">` + `{children}` + `<aside class="ad-side ad-side--right">`, each side is a 160×600 skyscraper. **Only wrap non-Auth views.** Currently wired in `App.tsx` for Lobby/Game.
+- **`BannerAd size="..."`** — single ad slot for inline placements. `useEffect` calls `getAdBridge().showBanner(ref, size)` on mount and `destroyBanner()` on unmount.
+- **`InterstitialAd open onClose`** — modal with countdown skip; gated by `useInterstitial` hook (3-minute global cooldown + every 5 rounds OR table-leave transition). The countdown also blocks click-to-dismiss until 0.
+- **`AdPlayer`** — modal for the reward-ad flow specifically (different from `InterstitialAd`). Wraps `bridge.show(container)` and resolves with `{watched, durationMs}` for the reward grant.
+
 ### Frontend layout
 
 ```
@@ -110,11 +137,14 @@ frontend/src/
 │   ├── blackjack/         # BlackjackGame, DealerArea, PlayerBox
 │   └── chinchiro/         # ChinchiroGame, BankerArea, PlayerSeat, Bowl, Die, HandLabel
 ├── shared/
+│   ├── ad/                # AdBridge interface + AdSense/Mock impls (see "Ads architecture")
 │   ├── api/api.ts, useGameSocket.ts
 │   ├── audio/sounds.ts, useAudio.ts   # synthesized SFX + ambient BGM (incl. setBgmTension dynamic layer)
 │   ├── components/        # Card, Hand, Chip, BetArea, BetChipStack, TurnTimer, ResultOverlay,
 │   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle, TableHeatBadge,
-│   │                      # AchievementToast, ReactionBar, ReactionFloat, AdPlayer
+│   │                      # AchievementToast, ReactionBar, ReactionFloat, AdPlayer,
+│   │                      # SideAds, BannerAd, InterstitialAd
+│   ├── hooks/useInterstitial.ts  # 3-min cooldown + every-5-rounds gate for InterstitialAd
 │   ├── cosmetics.ts       # CSS class resolver for equipped cosmetics
 │   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts
 │   └── types/game.ts      # WS message types incl. ChinchiroGameState, CosmeticItem, EquippedCosmetics, TableHeat
