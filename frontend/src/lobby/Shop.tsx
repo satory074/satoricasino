@@ -67,7 +67,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
       });
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof Error ? e.message : t("common.failed"));
     }
   };
 
@@ -80,7 +80,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
       await apiPost(`/api/shop/equip?${params}`, {});
       await load();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof Error ? e.message : t("common.failed"));
     }
   };
 
@@ -107,7 +107,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
             <div className="modal-title">{t("shop.title")}</div>
             {data && (
               <div className="shop-coins">
-                {data.coins.toLocaleString()} coins
+                {t("common.coinsAmount", { n: data.coins.toLocaleString() })}
               </div>
             )}
 
@@ -143,7 +143,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
                     </div>
                     {item.price > 0 ? (
                       <div className="shop-item-price">
-                        {item.price.toLocaleString()} coins
+                        {t("common.coinsAmount", { n: item.price.toLocaleString() })}
                       </div>
                     ) : (
                       <div className="shop-item-price shop-item-achievement">
@@ -185,7 +185,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
             )}
 
             <button className="btn-primary" onClick={onClose}>
-              Close
+              {t("common.close")}
             </button>
           </motion.div>
         </motion.div>

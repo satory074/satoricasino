@@ -9,6 +9,18 @@ export const en: Translation = {
     log: "Log",
     startGame: "Start Game",
     newRound: "New Round",
+    close: "Close",
+    failed: "Something went wrong",
+    coinsAmount: "{n} coins",
+  },
+  auth: {
+    tagline: "Blackjack Lounge",
+    login: "Login",
+    register: "Register",
+    enterLounge: "Enter Lounge",
+    createAccount: "Create Account",
+    displayName: "Display Name",
+    passphrase: "Passphrase",
   },
   keyHints: {
     start: "Start",
@@ -280,5 +292,7 @@ export const en: Translation = {
     unmute: "Unmute",
     bgmOn: "BGM on",
     bgmOff: "BGM off",
+    coinsLabel: "Coin balance",
+    xpLabel: "XP: {xp}",
   },
 };

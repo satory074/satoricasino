@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { apiPost, setAuth } from "../shared/api/api";
+import { useTranslation } from "../shared/i18n/useTranslation";
 import type { AuthData } from "../shared/types/game";
 import clsx from "clsx";
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function Auth({ onAuthed, playClick }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [pass, setPass] = useState("");
@@ -29,7 +31,7 @@ export function Auth({ onAuthed, playClick }: Props) {
       setAuth(data);
       onAuthed();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed");
+      setErr(e instanceof Error ? e.message : t("common.failed"));
     } finally {
       setBusy(false);
     }
@@ -39,7 +41,7 @@ export function Auth({ onAuthed, playClick }: Props) {
     <div className="auth-section">
       <div className="auth-card">
         <div className="auth-logo">SatoriArcade</div>
-        <div className="auth-tagline">Blackjack Lounge</div>
+        <div className="auth-tagline">{t("auth.tagline")}</div>
 
         <div className="auth-tabs">
           <div
@@ -50,7 +52,7 @@ export function Auth({ onAuthed, playClick }: Props) {
               setErr("");
             }}
           >
-            Login
+            {t("auth.login")}
           </div>
           <div
             className={clsx("auth-tab", tab === "register" && "active")}
@@ -60,14 +62,14 @@ export function Auth({ onAuthed, playClick }: Props) {
               setErr("");
             }}
           >
-            Register
+            {t("auth.register")}
           </div>
         </div>
 
         <form className="auth-form" onSubmit={submit}>
           <input
             type="text"
-            placeholder="Display Name"
+            placeholder={t("auth.displayName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="username"
@@ -75,14 +77,14 @@ export function Auth({ onAuthed, playClick }: Props) {
           />
           <input
             type="password"
-            placeholder="Passphrase"
+            placeholder={t("auth.passphrase")}
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             autoComplete="current-password"
             required
           />
           <button type="submit" className="btn-primary" disabled={busy}>
-            {tab === "login" ? "Enter Lounge" : "Create Account"}
+            {tab === "login" ? t("auth.enterLounge") : t("auth.createAccount")}
           </button>
         </form>
 

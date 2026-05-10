@@ -127,7 +127,7 @@ export function Leaderboard({ open, onClose }: Props) {
             )}
 
             <button className="btn-primary" onClick={onClose}>
-              Close
+              {t("common.close")}
             </button>
           </motion.div>
         </motion.div>

@@ -130,8 +130,8 @@ export default function App() {
         <div className="app-logo">SatoriArcade</div>
         <div className="user-info">
           {profile?.level && profile.level > 1 && (
-            <span className="level-badge" title={`XP: ${profile.xp ?? 0}`}>
-              Lv.{profile.level}
+            <span className="level-badge" title={t("header.xpLabel", { xp: profile.xp ?? 0 })}>
+              {t("xp.level", { n: profile.level })}
             </span>
           )}
           <span className="user-name">{getDisplayName() ?? "—"}</span>
@@ -141,7 +141,7 @@ export default function App() {
               coinFlash === "up" && "flash-up",
               coinFlash === "down" && "flash-down",
             )}
-            title="Coins"
+            title={t("header.coinsLabel")}
           >
             <span style={{ color: "var(--gold)" }}>◉</span>
             <span>{shownCoins.toLocaleString()}</span>

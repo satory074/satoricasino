@@ -7,6 +7,18 @@ export const ja = {
     log: "ログ",
     startGame: "ゲーム開始",
     newRound: "次のラウンド",
+    close: "閉じる",
+    failed: "操作に失敗しました",
+    coinsAmount: "{n} コイン",
+  },
+  auth: {
+    tagline: "ブラックジャック・ラウンジ",
+    login: "ログイン",
+    register: "新規登録",
+    enterLounge: "ラウンジに入る",
+    createAccount: "アカウント作成",
+    displayName: "表示名",
+    passphrase: "パスフレーズ",
   },
   keyHints: {
     start: "開始",
@@ -278,6 +290,8 @@ export const ja = {
     unmute: "ミュート解除",
     bgmOn: "BGM オン",
     bgmOff: "BGM オフ",
+    coinsLabel: "コイン残高",
+    xpLabel: "XP: {xp}",
   },
 };
 
