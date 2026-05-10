@@ -183,6 +183,8 @@ Screen shake uses a CSS `@keyframes screen-shake` animation on `.game-section.is
 
 `docs/design-notes/` holds the research that drove non-trivial UX decisions (excitement effects, "next action" clarity). When making another large UX change, drop a note there — it saves the next contributor from re-doing the literature review.
 
+`docs/design-notes/tone-and-manner.md` is the umbrella tone & manner doc — start there before adding a new game or component for the unified rules on color, typography, motion, audio, microcopy, and responsible-gaming guardrails. The two narrower notes (`excitement-effects.md`, `ui-ux-clarity.md`) sit under it.
+
 ### WS protocol
 
 Endpoint: `/ws/table/{table_id}?token=...&spectate=false`. Set `spectate=true` for watch-only mode (receives broadcasts, can only react). Single message envelope:
