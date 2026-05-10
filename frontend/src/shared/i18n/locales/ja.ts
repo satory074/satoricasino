@@ -192,6 +192,7 @@ export const ja = {
       waiting: "待機中",
       betting: "ベット中",
       player_turns: "プレイヤーのターン",
+      dealer_turn: "ディーラーのターン",
       resolution: "結果",
     },
     chinchiro: {

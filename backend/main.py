@@ -88,6 +88,7 @@ tables: dict[str, dict] = {}
 
 turn_timers: dict[str, asyncio.Task] = {}
 banker_tasks: dict[str, asyncio.Task] = {}
+dealer_tasks: dict[str, asyncio.Task] = {}
 
 # In-memory ad sessions (60s TTL, wiped on restart — fine for ephemeral data)
 import time as _time
@@ -207,6 +208,7 @@ async def _spawn_bot(table_id: str) -> None:
     if game.phase.value not in ("waiting", "betting"):
         _cancel_turn_timer(table_id)
         _cancel_banker_task(table_id)
+        _cancel_dealer_task(table_id)
         table["game"] = _make_game(table["game_type"])
         game = table["game"]
     bot_id = _make_bot_id()
@@ -303,8 +305,11 @@ async def _bot_step_blackjack(table_id: str, bot_id: str) -> None:
             })
             if game.all_bets_placed():
                 game.deal()
-                await _broadcast_state(table_id)
-                _start_bj_turn_timer(table_id)
+                if game.phase == BJPhase.DEALER_TURN:
+                    _schedule_dealer_sequence(table_id)
+                else:
+                    await _broadcast_state(table_id)
+                    _start_bj_turn_timer(table_id)
             else:
                 await _broadcast_state(table_id)
         return
@@ -319,11 +324,11 @@ async def _bot_step_blackjack(table_id: str, bot_id: str) -> None:
         else:
             game.stand(bot_id)
         _cancel_turn_timer(table_id)
-        # Same suspense window as the human path so spectators get the reveal beat
-        if game.phase != BJPhase.PLAYER_TURNS:
-            await asyncio.sleep(0.55)
-        await _broadcast_state(table_id)
-        _start_bj_turn_timer(table_id)
+        if game.phase == BJPhase.DEALER_TURN:
+            _schedule_dealer_sequence(table_id)
+        else:
+            await _broadcast_state(table_id)
+            _start_bj_turn_timer(table_id)
         return
 
     if game.phase == BJPhase.RESOLUTION:
@@ -791,8 +796,13 @@ async def _bj_turn_timeout(table_id: str, player_id: str):
             "type": "auto_stand",
             "player_id": player_id,
         })
-        await _broadcast_state(table_id)
-        _start_bj_turn_timer(table_id)
+        if game.phase == BJPhase.DEALER_TURN:
+            # Auto-stand pushed us into the dealer turn — let the paced
+            # sequence drive the rest of the broadcasts.
+            _schedule_dealer_sequence(table_id)
+        else:
+            await _broadcast_state(table_id)
+            _start_bj_turn_timer(table_id)
 
 
 def _start_bj_turn_timer(table_id: str):
@@ -851,6 +861,18 @@ def _cancel_banker_task(table_id: str):
     task = banker_tasks.pop(table_id, None)
     if task:
         task.cancel()
+
+
+def _cancel_dealer_task(table_id: str):
+    task = dealer_tasks.pop(table_id, None)
+    if task:
+        task.cancel()
+
+
+def _schedule_dealer_sequence(table_id: str):
+    """Kick off (or restart) the paced dealer reveal for a blackjack table."""
+    _cancel_dealer_task(table_id)
+    dealer_tasks[table_id] = asyncio.create_task(_blackjack_dealer_sequence(table_id))
 
 
 async def _post_round_xp_and_achievements(
@@ -1019,6 +1041,45 @@ async def _broadcast_chinchiro(table_id: str, table: dict):
 
 # --- Chinchiro banker sequence ---
 
+async def _blackjack_dealer_sequence(table_id: str):
+    """Walk the dealer turn one card at a time so the client can animate each flip.
+
+    Mirrors `_chinchiro_banker_sequence`. Phase is already DEALER_TURN when this
+    starts (set by `_advance_player`/`_skip_done_players`/dealer-BJ short-circuit).
+    """
+    if table_id not in tables:
+        return
+    table = tables[table_id]
+    if table["game_type"] != "blackjack":
+        return
+    game: BlackjackGame = table["game"]
+
+    # First broadcast: hole card now revealed (get_state stops hiding it once
+    # phase != PLAYER_TURNS). Hold for the heartbeat/peek beat.
+    await _broadcast_state(table_id)
+    await asyncio.sleep(0.7)
+
+    # Pace each dealer hit individually.
+    while True:
+        if table_id not in tables:
+            return
+        if not game.dealer_should_hit():
+            break
+        try:
+            game.dealer_step()
+        except Exception:
+            return
+        await _broadcast_state(table_id)
+        await asyncio.sleep(0.8)
+
+    if table_id not in tables:
+        return
+    # Hold on the final dealer hand so the SFX/overlay reveal lands cleanly.
+    await asyncio.sleep(0.6)
+    game.resolve()
+    await _broadcast_state(table_id)
+
+
 async def _chinchiro_banker_sequence(table_id: str):
     """Roll banker dice one at a time with broadcasts in between for dramatic pacing."""
     if table_id not in tables:
@@ -1149,6 +1210,7 @@ async def websocket_endpoint(
         if _human_count(game) == 0:
             _cancel_turn_timer(table_id)
             _cancel_banker_task(table_id)
+            _cancel_dealer_task(table_id)
             # Fixed tables persist; just rebuild a fresh game instance and
             # invite a bot back so the table doesn't sit empty.
             table["game"] = _make_game(table["game_type"])
@@ -1213,28 +1275,34 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
             })
             if game.all_bets_placed():
                 game.deal()
-                await _broadcast_state(table_id)
-                _start_bj_turn_timer(table_id)
+                if game.phase == BJPhase.DEALER_TURN:
+                    # Dealer-BJ short-circuit: the paced sequence handles the
+                    # peek beat → resolve, including the broadcast.
+                    _schedule_dealer_sequence(table_id)
+                else:
+                    await _broadcast_state(table_id)
+                    _start_bj_turn_timer(table_id)
 
     elif action == "hit":
         card = game.hit(user_id)
         if card:
             _cancel_turn_timer(table_id)
-            # If the hit pushed us out of player_turns the dealer is about to act
-            # — hold briefly so the client can play the heartbeat suspense before
-            # the hole card flips.
-            if game.phase != BJPhase.PLAYER_TURNS:
-                await asyncio.sleep(0.55)
-            await _broadcast_state(table_id)
-            _start_bj_turn_timer(table_id)
+            if game.phase == BJPhase.DEALER_TURN:
+                # Dealer is about to play — let the paced sequence drive the
+                # rest of the broadcasts.
+                _schedule_dealer_sequence(table_id)
+            else:
+                await _broadcast_state(table_id)
+                _start_bj_turn_timer(table_id)
 
     elif action == "stand":
         if game.stand(user_id):
             _cancel_turn_timer(table_id)
-            if game.phase != BJPhase.PLAYER_TURNS:
-                await asyncio.sleep(0.55)
-            await _broadcast_state(table_id)
-            _start_bj_turn_timer(table_id)
+            if game.phase == BJPhase.DEALER_TURN:
+                _schedule_dealer_sequence(table_id)
+            else:
+                await _broadcast_state(table_id)
+                _start_bj_turn_timer(table_id)
 
     elif action == "double":
         user = await get_user(user_id)
@@ -1243,10 +1311,11 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
             card = game.double_down(user_id)
             if card:
                 _cancel_turn_timer(table_id)
-                if game.phase != BJPhase.PLAYER_TURNS:
-                    await asyncio.sleep(0.55)
-                await _broadcast_state(table_id)
-                _start_bj_turn_timer(table_id)
+                if game.phase == BJPhase.DEALER_TURN:
+                    _schedule_dealer_sequence(table_id)
+                else:
+                    await _broadcast_state(table_id)
+                    _start_bj_turn_timer(table_id)
         else:
             await manager.send_to(table_id, user_id, {
                 "type": "error",
@@ -1255,6 +1324,7 @@ async def _handle_blackjack_action(table_id: str, user_id: str, action: str, dat
 
     elif action == "new_round":
         if game.phase == BJPhase.RESOLUTION:
+            _cancel_dealer_task(table_id)
             game.reset_for_new_round()
             await _broadcast_state(table_id)
 

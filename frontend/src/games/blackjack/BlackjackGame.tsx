@@ -87,6 +87,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   const overlayRef = useRef<{ kind: ResultKind; amount: number | null; nearMissDetail?: NearMissDetail | null } | null>(null);
   overlayRef.current = overlay;
   const prevPhaseRef = useRef<Phase | null>(null);
+  const prevDealerCountRef = useRef<number>(0);
   const prevBustedRef = useRef<Record<string, boolean>>({});
   const playRef = useRef(play);
   playRef.current = play;
@@ -98,19 +99,33 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
     if (!gameState) return;
     const phase = gameState.phase;
     const prevPhase = prevPhaseRef.current;
+    const dealerCount = gameState.dealer_cards.length;
+    const prevDealerCount = prevDealerCountRef.current;
 
     if (
-      prevPhase === "player_turns" &&
+      (prevPhase === "player_turns" || prevPhase === "betting") &&
       (phase === "dealer_turn" || phase === "resolution")
     ) {
-      // Dealer hole-card reveal — build suspense before the flip lands
+      // Dealer hole-card reveal — build suspense before the flip lands.
+      // (Also fires on the dealer-BJ short-circuit, where deal() routes
+      // straight from betting → dealer_turn for the peek beat.)
       playRef.current("heartbeat");
       window.setTimeout(() => playRef.current("heartbeat"), 220);
       window.setTimeout(() => playRef.current("card_flip"), 480);
       setDealerRevealing(true);
       window.setTimeout(() => setDealerRevealing(false), 620);
+    } else if (
+      phase === "dealer_turn" &&
+      prevPhase === "dealer_turn" &&
+      dealerCount > prevDealerCount
+    ) {
+      // Server paced the dealer's next hit through — flip the new card.
+      playRef.current("card_flip");
+      setDealerRevealing(true);
+      window.setTimeout(() => setDealerRevealing(false), 420);
     }
     prevPhaseRef.current = phase;
+    prevDealerCountRef.current = dealerCount;
 
     for (const [pid, p] of Object.entries(gameState.players)) {
       const wasBusted = prevBustedRef.current[pid] ?? false;

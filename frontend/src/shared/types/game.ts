@@ -1,7 +1,6 @@
 export type Phase =
   | "waiting"
   | "betting"
-  | "dealing"
   | "player_turns"
   | "dealer_turn"
   | "resolution";

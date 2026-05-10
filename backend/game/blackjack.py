@@ -10,7 +10,6 @@ from backend.game.deck import Card, Deck, hand_value, is_blackjack
 class Phase(str, Enum):
     WAITING = "waiting"
     BETTING = "betting"
-    DEALING = "dealing"
     PLAYER_TURNS = "player_turns"
     DEALER_TURN = "dealer_turn"
     RESOLUTION = "resolution"
@@ -127,15 +126,15 @@ class BlackjackGame:
                 self.players[pid].cards.append(self.deck.deal())
             self.dealer_cards.append(self.deck.deal())
 
-        self.phase = Phase.DEALING
         self.current_player_index = 0
 
-        # Check for dealer blackjack
+        # Dealer-BJ short-circuit: hand off to DEALER_TURN so the WS layer
+        # can run the paced reveal sequence (peek beat → resolve), instead
+        # of jumping straight to RESOLUTION.
         if is_blackjack(self.dealer_cards):
-            self._resolve()
+            self.phase = Phase.DEALER_TURN
             return True
 
-        # Skip to player turns
         self.phase = Phase.PLAYER_TURNS
         self._skip_done_players()
         return True
@@ -193,7 +192,7 @@ class BlackjackGame:
         self._skip_done_players()
 
         if self.current_player_index >= len(self.player_order):
-            self._dealer_play()
+            self.begin_dealer_turn()
 
     def _skip_done_players(self) -> None:
         while self.current_player_index < len(self.player_order):
@@ -202,21 +201,44 @@ class BlackjackGame:
             if player.is_blackjack:
                 player.is_standing = True
                 self.current_player_index += 1
+            elif player.is_done:
+                # Defensive: covers any future path that marks a player
+                # done (busted/standing) without auto-advancing the index.
+                self.current_player_index += 1
             else:
                 break
 
         if self.current_player_index >= len(self.player_order):
-            self._dealer_play()
+            self.begin_dealer_turn()
 
-    def _dealer_play(self) -> None:
+    def begin_dealer_turn(self) -> None:
+        """Transition to DEALER_TURN. Does not draw — the WS layer paces hits via dealer_step()."""
         self.phase = Phase.DEALER_TURN
 
-        # If all players busted, dealer doesn't need to draw
-        all_busted = all(p.is_busted for p in self.players.values())
-        if not all_busted:
-            while hand_value(self.dealer_cards) < 17:
-                self.dealer_cards.append(self.deck.deal())
+    def dealer_should_hit(self) -> bool:
+        """True when the dealer must draw another card.
 
+        Dealer stands on all 17s (S17). All-busted players short-circuit the loop
+        entirely — dealer doesn't risk a bust when it can't lose.
+        """
+        if self.phase != Phase.DEALER_TURN:
+            return False
+        if is_blackjack(self.dealer_cards):
+            return False
+        if self.players and all(p.is_busted for p in self.players.values()):
+            return False
+        return hand_value(self.dealer_cards) < 17
+
+    def dealer_step(self) -> Card | None:
+        """Deal one card to the dealer. Returns the card, or None if not in DEALER_TURN."""
+        if self.phase != Phase.DEALER_TURN:
+            return None
+        card = self.deck.deal()
+        self.dealer_cards.append(card)
+        return card
+
+    def resolve(self) -> None:
+        """Public entry point for the WS layer once the dealer sequence completes."""
         self._resolve()
 
     def _resolve(self) -> None:

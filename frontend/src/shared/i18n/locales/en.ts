@@ -194,6 +194,7 @@ export const en: Translation = {
       waiting: "Waiting",
       betting: "Betting",
       player_turns: "Player Turns",
+      dealer_turn: "Dealer's Turn",
       resolution: "Result",
     },
     chinchiro: {

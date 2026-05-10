@@ -68,7 +68,7 @@ backend/
 - `_make_game(game_type)` factory
 - `_broadcast_state(table_id)` that branches into `_broadcast_blackjack` / `_broadcast_chinchiro` (each handles payout, global stats, per-game stats, streaks, XP, and achievement checks via `_post_round_xp_and_achievements`)
 - WS `websocket_endpoint` dispatches to `_handle_blackjack_action` / `_handle_chinchiro_action`
-- Game-specific turn timers (`_bj_turn_timeout`, `_cc_turn_timeout`) and the chinchiro banker async sequence (`_chinchiro_banker_sequence` — rolls one die set at a time with sleeps for animation pacing)
+- Game-specific turn timers (`_bj_turn_timeout`, `_cc_turn_timeout`) and the per-game async reveal sequences (`_blackjack_dealer_sequence`, `_chinchiro_banker_sequence`) — both broadcast one card/die at a time with sleeps so the client can animate each draw. Tracked in `dealer_tasks` / `banker_tasks` and cancelled on table teardown / disconnect / new round.
 
 Tables are kept in an in-memory `tables: dict[str, dict]` keyed by stable IDs (e.g. `bj-low`, `cc-high`) with shape `{name, min_bet, game, game_type, recent_jackpots: deque(maxlen=20)}`. When the last human leaves, the WS cleanup rebuilds a fresh `game` instance and respawns a bot — fixed tables persist across the table being empty. Cloud Run instance restarts wipe in-memory state, but `_seed_tables()` re-creates the same six tables with the same IDs and the FastAPI `lifespan` handler reseeds bots, so links/bookmarks remain stable. Only persistent state lives in Firestore.
 
