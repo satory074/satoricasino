@@ -852,8 +852,8 @@ input:focus {
 
 /* Cards */
 .card-shell {
-  width: clamp(48px, 14vw, 60px);
-  height: clamp(67px, 19.6vw, 84px);
+  width: clamp(54px, 8vw, 84px);
+  height: clamp(76px, 11.2vw, 118px);
   position: relative;
   display: inline-block;
   flex-shrink: 0;
@@ -1000,8 +1000,8 @@ input:focus {
 }
 
 .chip {
-  width: 56px;
-  height: 56px;
+  width: clamp(48px, 6vw, 72px);
+  height: clamp(48px, 6vw, 72px);
   border-radius: 50%;
   border: 4px dashed rgba(255, 255, 255, 0.85);
   display: flex;
@@ -1859,6 +1859,13 @@ input:focus {
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.7));
 }
 
+@media (max-width: 720px) {
+  /* W/L/D ratio is L4 (env) info — drop it before the header crowds. */
+  .user-stats {
+    display: none;
+  }
+}
+
 @media (max-width: 600px) {
   .auth-card {
     padding: 1.75rem 1.25rem;
@@ -1918,9 +1925,12 @@ input:focus {
     flex: 1 1 calc(50% - 0.5rem);
     max-width: 100%;
   }
+  .card-shell {
+    /* Two-column player wrap at this width — cap cards so 5-card hands fit. */
+    width: clamp(46px, 12vw, 58px);
+    height: clamp(64px, 16.8vw, 81px);
+  }
   .chip {
-    width: 48px;
-    height: 48px;
     font-size: 0.78rem;
   }
   .chip-row {
@@ -1954,6 +1964,10 @@ input:focus {
 @media (hover: none) and (pointer: coarse) {
   .key-hint-bar {
     display: none;
+  }
+  /* No hover to brighten the bar — keep it legible by default. */
+  .reaction-bar {
+    opacity: 0.9;
   }
 }
 
@@ -2591,7 +2605,8 @@ input:focus {
 
 @media (min-width: 1024px) {
   .layout-with-sides {
-    grid-template-columns: 160px 1fr 160px;
+    grid-template-columns: 160px minmax(0, 1080px) 160px;
+    justify-content: center;
     gap: 0;
   }
 
