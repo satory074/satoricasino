@@ -373,7 +373,7 @@ export const en: Translation = {
     common: {
       back: "← Back to home",
       lastUpdated: "Last updated: {date}",
-      siteName: "SatoriArcade",
+      siteName: "SatoriCasino",
       footerHeading: "Related pages",
     },
     nav: {
@@ -385,7 +385,7 @@ export const en: Translation = {
     privacy: {
       title: "Privacy Policy",
       intro:
-        "SatoriArcade (\"the Service\") respects your personal information and privacy and is committed to protecting it. This policy describes what information we collect through the Service, how we use it, when we share it with third parties, how long we retain it, and what rights you have as a user. The Service only deals in virtual coins and offers no real-money payment functionality. Account registration requires only a display name and a passphrase; we do not ask for any contact information such as email address or phone number.",
+        "SatoriCasino (\"the Service\") respects your personal information and privacy and is committed to protecting it. This policy describes what information we collect through the Service, how we use it, when we share it with third parties, how long we retain it, and what rights you have as a user. The Service only deals in virtual coins and offers no real-money payment functionality. Account registration requires only a display name and a passphrase; we do not ask for any contact information such as email address or phone number.",
       sections: {
         collection: {
           title: "Information We Collect",
@@ -417,7 +417,7 @@ export const en: Translation = {
     terms: {
       title: "Terms of Service",
       intro:
-        "These Terms of Service (\"the Terms\") set out the conditions for using SatoriArcade (\"the Service\"). Users of the Service (\"the User\") are deemed to have agreed to these Terms. The Service is a hobby project for entertainment purposes that deals only in virtual coins; it provides no real-money gambling, conversion, withdrawal, or related functionality whatsoever.",
+        "These Terms of Service (\"the Terms\") set out the conditions for using SatoriCasino (\"the Service\"). Users of the Service (\"the User\") are deemed to have agreed to these Terms. The Service is a hobby project for entertainment purposes that deals only in virtual coins; it provides no real-money gambling, conversion, withdrawal, or related functionality whatsoever.",
       sections: {
         eligibility: {
           title: "Eligibility",
@@ -457,14 +457,14 @@ export const en: Translation = {
       },
     },
     about: {
-      title: "About SatoriArcade",
+      title: "About SatoriCasino",
       intro:
-        "SatoriArcade (formerly SatoriCasino) is a virtual-coin-only collection of casino games built around the concept of \"a pocket Monaco wearing the friendliness of a Japanese tavern.\" Combining the formality of a real casino with the warmth of traditional Japanese dice gambling (chinchiro), it currently offers two games: blackjack and chinchiro. Open it alone late at night, or invite someone to spectate — we aim for a place where tension and laughter coexist.",
+        "SatoriCasino is a virtual-coin-only collection of casino games built around the concept of \"a pocket Monaco wearing the friendliness of a Japanese tavern.\" Combining the formality of a real casino with the warmth of traditional Japanese dice gambling (chinchiro), it currently offers two games: blackjack and chinchiro. Open it alone late at night, or invite someone to spectate — we aim for a place where tension and laughter coexist.",
       sections: {
         mission: {
           title: "Mission and Brand",
           body:
-            "SatoriArcade aims to deliver excitement and tension comparable to a real casino while holding firm to its virtual-coin-only policy. With the brand statement \"a pocket Monaco wearing the friendliness of a Japanese tavern,\" we design around four core values.\n\n[Festive] To ensure you never miss \"what is happening right now,\" jackpot moments combine screen shake, rim glow, and count-up SFX to make the moment land.\n\n[Refined] To keep things from looking cheap or garish, the foundation is Cinzel display typography, deep felt-green surfaces, and restrained gold accents.\n\n[Honest] We avoid deceiving players. Probabilities and payouts are disclosed up front, copy is respectful, and near-misses are shown honestly.\n\n[Inclusive] To avoid excluding beginners, non-Japanese speakers, mobile users, or spectators, the Service ships i18n (Japanese/English), a spectate mode, touch-friendly alternatives, and reduced-motion support as standard.\n\nWhen these four values come into conflict, we prioritize Honest above all. \"Excitement around betting\" must never be confused with \"luring through deception\" — that is our guiding principle.",
+            "SatoriCasino aims to deliver excitement and tension comparable to a real casino while holding firm to its virtual-coin-only policy. With the brand statement \"a pocket Monaco wearing the friendliness of a Japanese tavern,\" we design around four core values.\n\n[Festive] To ensure you never miss \"what is happening right now,\" jackpot moments combine screen shake, rim glow, and count-up SFX to make the moment land.\n\n[Refined] To keep things from looking cheap or garish, the foundation is Cinzel display typography, deep felt-green surfaces, and restrained gold accents.\n\n[Honest] We avoid deceiving players. Probabilities and payouts are disclosed up front, copy is respectful, and near-misses are shown honestly.\n\n[Inclusive] To avoid excluding beginners, non-Japanese speakers, mobile users, or spectators, the Service ships i18n (Japanese/English), a spectate mode, touch-friendly alternatives, and reduced-motion support as standard.\n\nWhen these four values come into conflict, we prioritize Honest above all. \"Excitement around betting\" must never be confused with \"luring through deception\" — that is our guiding principle.",
         },
         howToPlay: {
           title: "How to Play",
@@ -491,7 +491,7 @@ export const en: Translation = {
     responsible: {
       title: "Responsible Gaming",
       intro:
-        "As an entertainment-oriented hobby project, SatoriArcade respects the mental and physical health of its users and is designed with care to help prevent gambling addiction. This page describes the Service's commitments to responsible gaming and outlines what we ask of our users.",
+        "As an entertainment-oriented hobby project, SatoriCasino respects the mental and physical health of its users and is designed with care to help prevent gambling addiction. This page describes the Service's commitments to responsible gaming and outlines what we ask of our users.",
       sections: {
         noRealMoney: {
           title: "No Real-Money Handling",

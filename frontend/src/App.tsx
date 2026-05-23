@@ -215,7 +215,7 @@ export default function App() {
   return (
     <SideAds ready={adsReady}>
       <header className="app-header">
-        <div className="app-logo">SatoriArcade</div>
+        <div className="app-logo">SatoriCasino</div>
         <div className="user-info">
           {profile?.level && profile.level > 1 && (
             <span className="level-badge" title={t("header.xpLabel", { xp: profile.xp ?? 0 })}>

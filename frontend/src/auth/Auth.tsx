@@ -70,7 +70,7 @@ export function Auth({ onAuthed, playClick, onNavigate }: Props) {
   return (
     <div className="auth-section">
       <div className="auth-card">
-        <div className="auth-logo">SatoriArcade</div>
+        <div className="auth-logo">SatoriCasino</div>
         <div className="auth-tagline">{t("auth.tagline")}</div>
 
         <div className="auth-tabs">
