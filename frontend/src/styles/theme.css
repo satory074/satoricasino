@@ -138,9 +138,197 @@ input:focus {
   overflow-y: auto;
   overscroll-behavior: contain;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.75rem;
   padding: 2rem;
+}
+
+/* Footer links beneath the auth card. Required so AdSense crawlers can
+   reach the legal pages (policy 11112688) without going through the
+   passphrase gate. */
+.auth-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.2rem;
+  font-size: 0.8rem;
+  color: var(--text-mute);
+  text-align: center;
+  max-width: 480px;
+}
+
+.auth-footer a {
+  color: var(--text-mute);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  padding-bottom: 1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.auth-footer a:hover {
+  color: var(--gold);
+  border-bottom-color: rgba(244, 196, 48, 0.4);
+}
+
+@media (max-width: 480px) {
+  .auth-footer {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+}
+
+/* Info pages (Privacy / Terms / About / Responsible Gaming).
+   Single-scroll-region rule (CLAUDE.md "Sharp edges" #App shell): the
+   page shell never scrolls — only .info-section scrolls itself. */
+.info-section {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem clamp(1rem, 4vw, 2rem);
+  border-bottom: 1px solid rgba(244, 196, 48, 0.15);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.info-home-link {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.18em;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-decoration: none;
+}
+
+.info-back-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--cream);
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  border: 1px solid rgba(244, 196, 48, 0.2);
+  cursor: pointer;
+}
+
+.info-back-btn:hover {
+  background: rgba(244, 196, 48, 0.1);
+  border-color: var(--gold);
+}
+
+.info-content {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 4vw, 3rem) 3rem;
+  font-family: var(--font-body);
+  line-height: 1.75;
+}
+
+.info-content h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  letter-spacing: 0.08em;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: 0 0 0.5rem;
+}
+
+.info-meta {
+  color: var(--text-mute);
+  font-size: 0.82rem;
+  margin: 0 0 1.5rem;
+  letter-spacing: 0.05em;
+}
+
+.info-intro {
+  font-size: 1rem;
+  color: var(--text);
+  margin: 0 0 2.25rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(244, 196, 48, 0.12);
+}
+
+.info-section-block {
+  margin: 0 0 2.25rem;
+}
+
+.info-section-block h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.15rem, 2.6vw, 1.45rem);
+  letter-spacing: 0.06em;
+  color: var(--cream);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(244, 196, 48, 0.25);
+}
+
+.info-section-block p {
+  margin: 0 0 0.85rem;
+  color: var(--text);
+  font-size: 0.94rem;
+}
+
+.info-section-block p:last-child {
+  margin-bottom: 0;
+}
+
+.info-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(244, 196, 48, 0.15);
+}
+
+.info-footer h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin: 0 0 0.75rem;
+}
+
+.info-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.info-nav-list a {
+  color: var(--cream);
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-bottom: 1px dashed rgba(244, 196, 48, 0.25);
+  padding-bottom: 1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.info-nav-list a:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
 }
 
 .auth-card {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Auth } from "./auth/Auth";
 import { Lobby } from "./lobby/Lobby";
 import { GameRouter } from "./games/GameRouter";
+import { InfoPage } from "./info/InfoPage";
 import { useAudio } from "./shared/audio/useAudio";
 import { clearAuth, getDisplayName, getToken } from "./shared/api/api";
 import { StreakBadge } from "./shared/components/StreakBadge";
@@ -14,10 +15,44 @@ import type { UserProfile } from "./shared/types/game";
 import { getTableThemeClass } from "./shared/cosmetics";
 import clsx from "clsx";
 
-type View = "auth" | "lobby" | "game";
+type InfoView =
+  | "info-privacy"
+  | "info-terms"
+  | "info-about"
+  | "info-responsible";
+
+type View = "auth" | "lobby" | "game" | InfoView;
+
+const INFO_PATHS: Record<string, InfoView> = {
+  "/privacy": "info-privacy",
+  "/terms": "info-terms",
+  "/about": "info-about",
+  "/responsible-gaming": "info-responsible",
+};
+
+const PATH_FOR_VIEW: Record<View, string> = {
+  auth: "/",
+  lobby: "/",
+  game: "/",
+  "info-privacy": "/privacy",
+  "info-terms": "/terms",
+  "info-about": "/about",
+  "info-responsible": "/responsible-gaming",
+};
+
+function isInfoView(v: View): v is InfoView {
+  return v.startsWith("info-");
+}
+
+function initialView(): View {
+  if (typeof window === "undefined") return getToken() ? "lobby" : "auth";
+  const fromPath = INFO_PATHS[window.location.pathname];
+  if (fromPath) return fromPath;
+  return getToken() ? "lobby" : "auth";
+}
 
 export default function App() {
-  const [view, setView] = useState<View>(() => (getToken() ? "lobby" : "auth"));
+  const [view, setView] = useState<View>(initialView);
   const [tableId, setTableId] = useState<string | null>(null);
   const [tableGameType, setTableGameType] = useState<string>("blackjack");
   const [spectateMode, setSpectateMode] = useState(false);
@@ -25,6 +60,7 @@ export default function App() {
   const [coinFlash, setCoinFlash] = useState<"up" | "down" | null>(null);
   const [shownCoins, setShownCoins] = useState<number>(0);
   const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const [adsReady, setAdsReady] = useState(false);
   const streaksInitialized = useRef(false);
   const tableGameTypeRef = useRef(tableGameType);
   tableGameTypeRef.current = tableGameType;
@@ -40,23 +76,41 @@ export default function App() {
     }
   }, [profile?.streaks]);
 
-  // AdSense Auto Ads gate. Auth has no publisher content, so any auto-injected
-  // <ins> slot trips Google's "ads on screens without publisher-content" policy.
+  // Sync browser URL with the current view so direct links + back/forward work.
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const target = PATH_FOR_VIEW[view];
+    if (window.location.pathname !== target) {
+      window.history.replaceState(null, "", target);
+    }
+  }, [view]);
+
+  // Reset "ads can show" on every view change. Children will signal ready
+  // once real publisher content is on screen (lobby tables loaded, game state arrived).
+  useEffect(() => {
+    setAdsReady(false);
+  }, [view]);
+
+  // AdSense Auto Ads gate. Publisher-policy 11112688 forbids ads on screens
+  // without publisher content: login (auth), static info pages, and any
+  // loading state (lobby fetching tables, game waiting on WS state).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const shouldPause =
+      view === "auth" || view.startsWith("info-") || !adsReady;
     const ads = ((window as unknown as { adsbygoogle?: unknown[] }).adsbygoogle ??= []);
     try {
-      ads.push({ pauseAdRequests: view === "auth" ? 1 : 0 });
+      ads.push({ pauseAdRequests: shouldPause ? 1 : 0 });
     } catch {
       // AdSense throws TagError if a re-fill walk hits already-filled slots.
       // The pause/resume signal is still recorded — non-fatal.
     }
-    if (view === "auth") {
+    if (shouldPause) {
       document
         .querySelectorAll("body > ins.adsbygoogle, body > iframe[id^='google_ads_iframe'], body > div[id^='google_ads_']")
         .forEach((el) => el.remove());
     }
-  }, [view]);
+  }, [view, adsReady]);
 
   // Coin counter animation
   useEffect(() => {
@@ -136,14 +190,30 @@ export default function App() {
     setView("auth");
   }, []);
 
+  const onContentReady = useCallback(() => {
+    setAdsReady(true);
+  }, []);
+
+  const navigateInfo = useCallback((target: InfoView) => {
+    setView(target);
+  }, []);
+
+  const navigateHome = useCallback(() => {
+    setView(getToken() ? "lobby" : "auth");
+  }, []);
+
   const playClick = useCallback(() => play("button_click"), [play]);
 
   if (view === "auth") {
-    return <Auth onAuthed={() => setView("lobby")} playClick={playClick} />;
+    return <Auth onAuthed={() => setView("lobby")} playClick={playClick} onNavigate={navigateInfo} />;
+  }
+
+  if (isInfoView(view)) {
+    return <InfoPage view={view} onClose={navigateHome} onNavigate={navigateInfo} />;
   }
 
   return (
-    <SideAds>
+    <SideAds ready={adsReady}>
       <header className="app-header">
         <div className="app-logo">SatoriArcade</div>
         <div className="user-info">
@@ -202,6 +272,7 @@ export default function App() {
           profile={profile}
           setProfile={setProfile}
           play={play}
+          onContentReady={onContentReady}
         />
       )}
       {view === "game" && tableId && (
@@ -214,6 +285,7 @@ export default function App() {
           play={play}
           spectate={spectateMode}
           tableThemeClass={getTableThemeClass(profile?.equipped)}
+          onContentReady={onContentReady}
         />
       )}
 

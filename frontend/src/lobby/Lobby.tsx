@@ -44,6 +44,7 @@ interface Props {
   onCoinsChanged: (coins: number, delta: number) => void;
   profile: UserProfile | null;
   setProfile: (p: UserProfile) => void;
+  onContentReady?: () => void;
   play: (id:
     | "button_click"
     | "bonus"
@@ -67,6 +68,7 @@ export function Lobby({
   profile,
   setProfile,
   play,
+  onContentReady,
 }: Props) {
   const { t } = useTranslation();
   const [tables, setTables] = useState<TableInfo[]>([]);
@@ -109,6 +111,12 @@ export function Lobby({
     const id = window.setInterval(loadTables, 3000);
     return () => clearInterval(id);
   }, [refreshProfile, loadTables]);
+
+  // Signal the App that real publisher content is on screen so AdSense ads
+  // may be requested (policy 11112688 — no ads on empty/loading screens).
+  useEffect(() => {
+    if (tables.length > 0) onContentReady?.();
+  }, [tables.length, onContentReady]);
 
   const pickGame = (value: string) => {
     play("button_click");
@@ -392,7 +400,7 @@ export function Lobby({
             })}
           </div>
 
-          <BannerAd size="mrec" />
+          {tables.length > 0 && <BannerAd size="mrec" />}
         </>
       ) : (
         <>
@@ -456,7 +464,7 @@ export function Lobby({
         </>
       )}
 
-      <BannerAd size="standard" className="ad-anchor-bottom" />
+      {tables.length > 0 && <BannerAd size="standard" className="ad-anchor-bottom" />}
 
       <InterstitialAd open={interstitial.shouldShow} onClose={interstitial.onDismiss} />
 

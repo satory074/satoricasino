@@ -56,6 +56,7 @@ interface Props {
   play: (id: SoundId) => void;
   spectate?: boolean;
   tableThemeClass?: string;
+  onContentReady?: () => void;
 }
 
 function detectNearMiss(
@@ -72,7 +73,7 @@ function detectNearMiss(
   return null;
 }
 
-export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate, tableThemeClass }: Props) {
+export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate, tableThemeClass, onContentReady }: Props) {
   const myId = getUserId();
   const { connected, gameState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
   const interstitial = useInterstitial();
@@ -93,6 +94,12 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   playRef.current = play;
   const onResolveRef = useRef(onResolve);
   onResolveRef.current = onResolve;
+
+  // Signal "publisher content present" once the WS state arrives so AdSense
+  // is gated off during the connecting placeholder (policy 11112688).
+  useEffect(() => {
+    if (gameState) onContentReady?.();
+  }, [gameState, onContentReady]);
 
   // Phase transition + bust detection
   useEffect(() => {

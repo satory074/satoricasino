@@ -4,12 +4,30 @@ import { useTranslation } from "../shared/i18n/useTranslation";
 import type { AuthData } from "../shared/types/game";
 import clsx from "clsx";
 
+type InfoView =
+  | "info-privacy"
+  | "info-terms"
+  | "info-about"
+  | "info-responsible";
+
 interface Props {
   onAuthed: () => void;
   playClick: () => void;
+  onNavigate: (view: InfoView) => void;
 }
 
-export function Auth({ onAuthed, playClick }: Props) {
+const FOOTER_LINKS: { view: InfoView; path: string; navKey: string }[] = [
+  { view: "info-about", path: "/about", navKey: "info.nav.about" },
+  { view: "info-privacy", path: "/privacy", navKey: "info.nav.privacy" },
+  { view: "info-terms", path: "/terms", navKey: "info.nav.terms" },
+  {
+    view: "info-responsible",
+    path: "/responsible-gaming",
+    navKey: "info.nav.responsible",
+  },
+];
+
+export function Auth({ onAuthed, playClick, onNavigate }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -39,6 +57,14 @@ export function Auth({ onAuthed, playClick }: Props) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleFooterClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    view: InfoView,
+  ) => {
+    e.preventDefault();
+    onNavigate(view);
   };
 
   return (
@@ -94,6 +120,18 @@ export function Auth({ onAuthed, playClick }: Props) {
 
         <div className="error-msg">{err}</div>
       </div>
+
+      <nav className="auth-footer" aria-label={t("info.common.footerHeading")}>
+        {FOOTER_LINKS.map((link) => (
+          <a
+            key={link.view}
+            href={link.path}
+            onClick={(e) => handleFooterClick(e, link.view)}
+          >
+            {t(link.navKey)}
+          </a>
+        ))}
+      </nav>
     </div>
   );
 }

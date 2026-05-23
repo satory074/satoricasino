@@ -38,14 +38,29 @@ interface Props {
   play: (id: SoundId) => void;
   spectate?: boolean;
   tableThemeClass?: string;
+  onContentReady?: () => void;
 }
 
-export function GameRouter({ gameType, spectate, tableThemeClass, ...rest }: Props) {
+export function GameRouter({ gameType, spectate, tableThemeClass, onContentReady, ...rest }: Props) {
   switch (gameType) {
     case "blackjack":
-      return <BlackjackGame {...rest} spectate={spectate} tableThemeClass={tableThemeClass} />;
+      return (
+        <BlackjackGame
+          {...rest}
+          spectate={spectate}
+          tableThemeClass={tableThemeClass}
+          onContentReady={onContentReady}
+        />
+      );
     case "chinchiro":
-      return <ChinchiroGame {...rest} spectate={spectate} tableThemeClass={tableThemeClass} />;
+      return (
+        <ChinchiroGame
+          {...rest}
+          spectate={spectate}
+          tableThemeClass={tableThemeClass}
+          onContentReady={onContentReady}
+        />
+      );
     default:
       return (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-mute)" }}>

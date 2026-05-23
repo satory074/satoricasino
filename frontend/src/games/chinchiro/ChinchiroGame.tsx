@@ -62,6 +62,7 @@ interface Props {
   play: (id: SoundId) => void;
   spectate?: boolean;
   tableThemeClass?: string;
+  onContentReady?: () => void;
 }
 
 const HAND_SOUNDS: Record<string, SoundId> = {
@@ -80,12 +81,19 @@ export function ChinchiroGame({
   play,
   spectate,
   tableThemeClass,
+  onContentReady,
 }: Props) {
   const { t } = useTranslation();
   const myId = getUserId();
   const { connected, gameState: rawState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
   const state = rawState as unknown as ChinchiroGameState | null;
   const interstitial = useInterstitial();
+
+  // Signal "publisher content present" once the WS state arrives so AdSense
+  // is gated off during the connecting placeholder (policy 11112688).
+  useEffect(() => {
+    if (state) onContentReady?.();
+  }, [state, onContentReady]);
 
   const [overlay, setOverlay] = useState<
     { kind: ResultKind; amount: number | null } | null
