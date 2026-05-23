@@ -49,6 +49,14 @@ export class AdSenseBridge implements AdBridge {
     const slot = SLOT_MAP[size];
     const dim = SIZE_MAP[size];
 
+    // Skip when the slot ID is still a build-time placeholder. Real slot IDs
+    // can only be issued after AdSense site approval; until then, mounting
+    // an <ins data-ad-slot="SLOT_ID_..."> would push a fill request with an
+    // invalid ID, producing a TagError in the console that reviewers can
+    // see. Leaving the container empty is policy-clean (no ad-shaped
+    // artifact, no failed network request).
+    if (slot.startsWith("SLOT_ID_")) return;
+
     const ins = document.createElement("ins");
     ins.className = "adsbygoogle";
     ins.style.display = "inline-block";
