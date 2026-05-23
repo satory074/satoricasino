@@ -18,7 +18,7 @@ SatoriCasino — multi-game casino web app. Currently ships **Blackjack** and **
 # Backend
 uv sync
 uv run uvicorn backend.main:app --reload --port 8000
-uv run pytest                                  # 135 tests across blackjack, chinchiro, achievements, ads, cosmetics, table_heat
+uv run pytest                                  # 142 tests across blackjack, chinchiro, achievements, ads, cosmetics, table_heat
 uv run pytest tests/test_chinchiro.py          # one test file
 uv run pytest -k "test_pinzoro"                # one test by name
 
@@ -113,7 +113,7 @@ frontend/src/shared/ad/
 
 `getAdBridge()` returns `AdSenseBridge` if `window.adsbygoogle` is an array (script loaded), otherwise `MockAdBridge`. The factory caches the result, so once a tab boots into "mock mode" it stays there — this matters in unit tests / Storybook-like setups where you want predictable placeholders.
 
-The four `BannerSize` values map 1:1 to AdSense slot IDs (`SLOT_ID_320x50` / `SLOT_ID_300x250` / `SLOT_ID_728x90` / `SLOT_ID_160x600` in `adSenseBridge.ts`). When you create real slots in AdSense console, replace those slot ID constants — the size enum stays.
+The four `BannerSize` values map 1:1 to AdSense slot IDs (`SLOT_ID_320x50` / `SLOT_ID_300x250` / `SLOT_ID_728x90` / `SLOT_ID_160x600` in `adSenseBridge.ts`). When you create real slots in AdSense console, replace those slot ID constants — the size enum stays. `AdSenseBridge.showBanner` early-returns when the slot value still starts with `SLOT_ID_`, so no `<ins>` element is created until real IDs are filled in — this keeps the DOM clean of failing fill requests during the audit-then-create-units window. Removing those placeholder values automatically re-enables the path.
 
 Frontend ad components (in `shared/components/`):
 - **`SideAds`** — flex sandwich: `<aside class="ad-side ad-side--left">` + `{children}` + `<aside class="ad-side ad-side--right">`, each side is a 160×600 skyscraper. **Only wrap non-Auth views.** Currently wired in `App.tsx` for Lobby/Game.
