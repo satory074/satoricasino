@@ -105,6 +105,8 @@ export const en: Translation = {
       feature3Body:
         "Achievements, levels, win streaks, leaderboards, and cosmetics. The more you play, the deeper it gets.",
       learnMore: "Learn more:",
+      disclaimer:
+        "For ages 18+. A free, entertainment-only game — no real money, no cash-out, no purchases, and no prizes of real-world value.",
     },
   },
   keyHints: {
@@ -398,6 +400,7 @@ export const en: Translation = {
       faq: "Frequently Asked Questions | SatoriCasino",
       gettingStarted: "Getting Started — Player Guide | SatoriCasino",
       glossary: "Casino Glossary | SatoriCasino",
+      contact: "Contact | SatoriCasino",
     },
     descriptions: {
       home: "SatoriCasino is a free, virtual-coin-only collection of casino games. Play blackjack and chinchiro with no real money. Full guides, basic strategy, and FAQ included.",
@@ -412,6 +415,7 @@ export const en: Translation = {
       faq: "Frequently asked questions and answers about SatoriCasino's coins, accounts, bailout, daily challenges, spectate mode, and privacy.",
       gettingStarted: "A beginner's guide to SatoriCasino, walking you step by step from creating an account to joining a game, betting, and earning coins.",
       glossary: "A glossary of blackjack, chinchiro, and general casino terms, plus SatoriCasino's own feature names.",
+      contact: "How to contact SatoriCasino with questions, bug reports, or data-deletion requests.",
     },
   },
   info: {
@@ -431,6 +435,7 @@ export const en: Translation = {
       faq: "FAQ",
       gettingStarted: "Getting Started",
       glossary: "Glossary",
+      contact: "Contact",
     },
     privacy: {
       title: "Privacy Policy",
@@ -733,6 +738,28 @@ export const en: Translation = {
           title: "7. Things to Chase",
           body:
             "As you keep playing, various long-term goals unlock: 27 achievements, leveling up through experience points, win streaks, a top-10 leaderboard, and nine cosmetics buyable with coins (card, dice, and table decorations). All of these are for enjoying the look and the record — none of them give you a gameplay advantage.",
+        },
+      },
+    },
+    contact: {
+      title: "Contact",
+      intro:
+        "For questions, feedback, bug reports, or requests regarding personal information and data deletion concerning SatoriCasino, please reach out through the channel below. The Service is run as an individual's hobby project.",
+      sections: {
+        howToReach: {
+          title: "How to Reach Us",
+          body:
+            "For inquiries, please use the Issues feature of our GitHub repository.\n\nGitHub Issues: https://github.com/satory074/satoricasino/issues\n\nYou can send anything through the link above — bug reports, feature requests, or questions about the games. There is no dedicated support desk, so a reply may take some time. Thank you for your understanding.",
+        },
+        operator: {
+          title: "About the Operator",
+          body:
+            "SatoriCasino is a free hobby project developed and operated by an individual. Revenue from advertising (Google AdSense) goes toward operating costs such as server fees.\n\nThe Service deals only in virtual coins and has no functionality for real-money payment, conversion, or withdrawal. There is no mechanism to purchase coins.\n\nInquiries are handled in Japanese or English.",
+        },
+        otherInquiries: {
+          title: "Privacy and Data Deletion",
+          body:
+            "Requests regarding the handling of personal information and the deletion of your account and associated data are also accepted via the GitHub Issues link above.\n\nFor details on how data is handled, please also see the Privacy Policy page. If you request data deletion, complete removal from backups may take up to 30 days due to technical constraints.",
         },
       },
     },

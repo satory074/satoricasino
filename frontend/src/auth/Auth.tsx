@@ -13,7 +13,8 @@ type InfoView =
   | "info-chinchiro-guide"
   | "info-faq"
   | "info-getting-started"
-  | "info-glossary";
+  | "info-glossary"
+  | "info-contact";
 
 interface Props {
   onAuthed: () => void;
@@ -42,6 +43,7 @@ const FOOTER_LINKS: { view: InfoView; path: string; navKey: string }[] = [
   { view: "info-faq", path: "/faq", navKey: "info.nav.faq" },
   { view: "info-glossary", path: "/glossary", navKey: "info.nav.glossary" },
   { view: "info-about", path: "/about", navKey: "info.nav.about" },
+  { view: "info-contact", path: "/contact", navKey: "info.nav.contact" },
   { view: "info-privacy", path: "/privacy", navKey: "info.nav.privacy" },
   { view: "info-terms", path: "/terms", navKey: "info.nav.terms" },
   {
@@ -117,6 +119,7 @@ export function Auth({ onAuthed, playClick, onNavigate }: Props) {
         <h1 className="auth-landing-title">{t("info.common.siteName")}</h1>
         <p className="auth-landing-sub">{t("auth.landing.subheading")}</p>
         <p className="auth-landing-intro">{t("auth.landing.intro")}</p>
+        <p className="auth-landing-disclaimer">{t("auth.landing.disclaimer")}</p>
         <div className="auth-landing-features">
           <div className="auth-landing-feature">
             <h2>{t("auth.landing.feature1Title")}</h2>

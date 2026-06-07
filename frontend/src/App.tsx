@@ -24,7 +24,8 @@ type InfoView =
   | "info-chinchiro-guide"
   | "info-faq"
   | "info-getting-started"
-  | "info-glossary";
+  | "info-glossary"
+  | "info-contact";
 
 type View = "auth" | "lobby" | "game" | InfoView;
 
@@ -38,6 +39,7 @@ const INFO_PATHS: Record<string, InfoView> = {
   "/faq": "info-faq",
   "/getting-started": "info-getting-started",
   "/glossary": "info-glossary",
+  "/contact": "info-contact",
 };
 
 const PATH_FOR_VIEW: Record<View, string> = {
@@ -53,6 +55,7 @@ const PATH_FOR_VIEW: Record<View, string> = {
   "info-faq": "/faq",
   "info-getting-started": "/getting-started",
   "info-glossary": "/glossary",
+  "info-contact": "/contact",
 };
 
 // Maps each view to its `seo.titles.*` / `seo.descriptions.*` i18n key so the
@@ -71,6 +74,7 @@ const SEO_KEY_FOR_VIEW: Record<View, string> = {
   "info-faq": "faq",
   "info-getting-started": "gettingStarted",
   "info-glossary": "glossary",
+  "info-contact": "contact",
 };
 
 function isInfoView(v: View): v is InfoView {

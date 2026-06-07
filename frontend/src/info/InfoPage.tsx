@@ -9,7 +9,8 @@ type InfoView =
   | "info-chinchiro-guide"
   | "info-faq"
   | "info-getting-started"
-  | "info-glossary";
+  | "info-glossary"
+  | "info-contact";
 
 interface Props {
   view: InfoView;
@@ -27,7 +28,8 @@ interface PageDef {
     | "chinchiroGuide"
     | "faq"
     | "gettingStarted"
-    | "glossary";
+    | "glossary"
+    | "contact";
   sections: readonly string[];
   lastUpdated: string;
 }
@@ -130,6 +132,11 @@ const PAGES: Record<InfoView, PageDef> = {
     sections: ["general", "blackjackTerms", "chinchiroTerms", "siteTerms"],
     lastUpdated: "2026-06-07",
   },
+  "info-contact": {
+    rootKey: "contact",
+    sections: ["howToReach", "operator", "otherInquiries"],
+    lastUpdated: "2026-06-07",
+  },
 };
 
 const NAV_VIEWS: { view: InfoView; navKey: string }[] = [
@@ -139,6 +146,7 @@ const NAV_VIEWS: { view: InfoView; navKey: string }[] = [
   { view: "info-faq", navKey: "info.nav.faq" },
   { view: "info-glossary", navKey: "info.nav.glossary" },
   { view: "info-about", navKey: "info.nav.about" },
+  { view: "info-contact", navKey: "info.nav.contact" },
   { view: "info-responsible", navKey: "info.nav.responsible" },
   { view: "info-privacy", navKey: "info.nav.privacy" },
   { view: "info-terms", navKey: "info.nav.terms" },
@@ -233,4 +241,5 @@ const INFO_PATHS: Record<InfoView, string> = {
   "info-faq": "/faq",
   "info-getting-started": "/getting-started",
   "info-glossary": "/glossary",
+  "info-contact": "/contact",
 };
