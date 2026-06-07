@@ -1,6 +1,7 @@
 export const ja = {
   common: {
     connecting: "接続中…",
+    loading: "読み込み中…",
     connected: "接続済み",
     reconnecting: "再接続中…",
     backToLobby: "← ロビーへ",
@@ -203,6 +204,14 @@ export const ja = {
     bailoutTitle: "緊急救済",
     bailoutMsg: "次はバーストしないように。",
     logout: "ログアウト",
+    guide: {
+      pickGame: "遊ぶゲームを選ぶと、参加できるテーブルが表示されます。",
+      pickTable: "テーブルをタップして着席。空いていれば誰でも参加できます。",
+    },
+    onboarding: {
+      title: "ようこそ！",
+      text: "コインは無料です。ゲームを選んでテーブルに着席し、まずは1ゲーム遊んでみましょう。毎日デイリーボーナスでコインを受け取れます。",
+    },
   },
   phase: {
     blackjack: {

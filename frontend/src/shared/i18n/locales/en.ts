@@ -3,6 +3,7 @@ import type { Translation } from "./ja";
 export const en: Translation = {
   common: {
     connecting: "Connecting…",
+    loading: "Loading…",
     connected: "Connected",
     reconnecting: "Reconnecting…",
     backToLobby: "← Lobby",
@@ -205,6 +206,14 @@ export const en: Translation = {
     bailoutTitle: "Emergency Rescue",
     bailoutMsg: "Try not to bust again.",
     logout: "Logout",
+    guide: {
+      pickGame: "Pick a game to see the tables you can join.",
+      pickTable: "Tap a table to take a seat — anyone can join an open one.",
+    },
+    onboarding: {
+      title: "Welcome!",
+      text: "Coins are free. Pick a game, take a seat, and play a hand. Come back daily to claim your bonus coins.",
+    },
   },
   phase: {
     blackjack: {

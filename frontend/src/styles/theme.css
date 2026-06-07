@@ -1,7 +1,8 @@
 :root {
-  --felt-dark: #0a1612;
-  --felt-mid: #0b3d2c;
-  --felt-light: #0e5238;
+  /* Felt base — lifted 1–2 steps brighter so the floor is no longer near-black */
+  --felt-dark: #10241c;
+  --felt-mid: #0f4a36;
+  --felt-light: #136146;
   --gold: #f4c430;
   --gold-soft: #d4a017;
   --gold-bright: #ffd84a;
@@ -11,13 +12,26 @@
   --cream: #f5f1e8;
   --ink: #1a1a1a;
   --text: #f5f1e8;
-  --text-mute: #a8b3a4;
+  --text-mute: #bcc6b8;
   --danger: #ef4444;
   --success: #22c55e;
   --warn: #f59e0b;
 
-  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
-  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.45);
+  /* Surface elevation — solid, theme-agnostic slate-green tones.
+     Cards/panels sit on these so they separate from the felt by fill + border,
+     not by translucent multi-gradients. */
+  --surface-1: #21463a; /* frontmost: cards, buttons */
+  --surface-2: #1a3a2f; /* panels, modals */
+  --surface-3: #143027; /* sunken: logs, inputs, pills */
+  --surface-hover: #2a574733;
+
+  /* Borders — visible neutral hairline + gold accent variant */
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(244, 196, 48, 0.55);
+
+  /* Flat, single-layer shadows (no inset emboss, no stacked shadows) */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.32);
+  --shadow-soft: 0 6px 20px rgba(0, 0, 0, 0.35);
   --radius-card: 8px;
   --radius-pill: 999px;
 
@@ -40,22 +54,13 @@ body {
   font-family: var(--font-body);
   color: var(--text);
   background:
-    radial-gradient(ellipse at top, var(--felt-light) 0%, var(--felt-mid) 45%, var(--felt-dark) 100%),
+    radial-gradient(ellipse at top, var(--felt-light) 0%, var(--felt-dark) 100%),
     var(--felt-dark);
   background-attachment: fixed;
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
   overscroll-behavior-y: contain;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><circle cx='1' cy='1' r='0.5' fill='%23ffffff' fill-opacity='0.025'/></svg>");
-  z-index: 0;
 }
 
 #root {
@@ -102,8 +107,8 @@ button:disabled {
 
 input {
   font-family: var(--font-body);
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(244, 196, 48, 0.25);
+  background: var(--surface-3);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   color: var(--text);
   font-size: 1rem;
@@ -204,8 +209,8 @@ input:focus {
 }
 
 .auth-landing-feature {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(244, 196, 48, 0.18);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 1rem 0.9rem;
   text-align: left;
@@ -329,17 +334,17 @@ input:focus {
 }
 
 .info-back-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-1);
   color: var(--cream);
   padding: 0.45rem 0.9rem;
   border-radius: 8px;
   font-size: 0.82rem;
-  border: 1px solid rgba(244, 196, 48, 0.2);
+  border: 1px solid var(--border-strong);
   cursor: pointer;
 }
 
 .info-back-btn:hover {
-  background: rgba(244, 196, 48, 0.1);
+  background: rgba(244, 196, 48, 0.12);
   border-color: var(--gold);
 }
 
@@ -446,12 +451,11 @@ input:focus {
 .auth-card {
   width: 380px;
   max-width: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.4));
-  border: 1px solid rgba(244, 196, 48, 0.2);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 2.5rem 2rem;
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(8px);
 }
 
 .auth-logo {
@@ -511,7 +515,7 @@ input:focus {
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold-soft));
+  background: var(--gold);
   color: var(--ink);
   padding: 0.85rem 1rem;
   border-radius: 10px;
@@ -519,25 +523,25 @@ input:focus {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  box-shadow: 0 4px 14px rgba(244, 196, 48, 0.3);
+  box-shadow: var(--shadow-card);
 }
 
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-  box-shadow: 0 6px 20px rgba(244, 196, 48, 0.45);
+  background: var(--gold-bright);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-1);
   color: var(--cream);
   padding: 0.6rem 1rem;
   border-radius: 8px;
   font-size: 0.85rem;
-  border: 1px solid rgba(244, 196, 48, 0.2);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-card);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(244, 196, 48, 0.1);
+  background: rgba(244, 196, 48, 0.12);
   border-color: var(--gold);
 }
 
@@ -652,12 +656,12 @@ input:focus {
 }
 
 .mute-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-1);
   color: var(--cream);
   padding: 0.4rem 0.55rem;
   border-radius: 8px;
   font-size: 1rem;
-  border: 1px solid rgba(244, 196, 48, 0.2);
+  border: 1px solid var(--border-strong);
   line-height: 1;
 }
 
@@ -714,20 +718,21 @@ input:focus {
   align-items: flex-start;
   gap: 0.5rem;
   text-align: left;
-  background: linear-gradient(160deg, rgba(244, 196, 48, 0.12), rgba(0, 0, 0, 0.45));
-  border: 1px solid rgba(244, 196, 48, 0.3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   padding: 1.5rem 1.25rem;
   color: var(--text);
   cursor: pointer;
   font-family: var(--font-body);
+  box-shadow: var(--shadow-card);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .game-card:hover {
   transform: translateY(-3px);
   border-color: var(--gold);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-soft);
 }
 
 .game-card:focus-visible {
@@ -763,10 +768,10 @@ input:focus {
 }
 
 .lobby-back {
-  background: transparent;
-  border: 1px solid rgba(244, 196, 48, 0.3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
-  color: var(--text-mute);
+  color: var(--cream);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -787,12 +792,12 @@ input:focus {
 
 .table-card.is-full:hover {
   transform: none;
-  border-color: rgba(244, 196, 48, 0.2);
+  border-color: var(--border-subtle);
   box-shadow: none;
 }
 
 .pill-game {
-  background: linear-gradient(180deg, rgba(244, 196, 48, 0.25), rgba(244, 196, 48, 0.1)) !important;
+  background: rgba(244, 196, 48, 0.18) !important;
   color: var(--gold-bright) !important;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -811,19 +816,51 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25));
-  border: 1px solid rgba(244, 196, 48, 0.2);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 1rem 1.25rem;
   margin-bottom: 0.6rem;
   cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .table-card:hover {
   border-color: var(--gold);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-soft);
+}
+
+.table-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Decorative "Join" affordance inside the (clickable) table card. The card is
+   the single click target; this is the visual CTA cue, not a separate button. */
+.table-join-cue {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold);
+  color: var(--ink);
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table-card:hover .table-join-cue {
+  background: var(--gold-bright);
+}
+
+.table-join-cue.is-full {
+  background: var(--surface-3);
+  color: var(--text-mute);
 }
 
 .table-name {
@@ -842,7 +879,8 @@ input:focus {
 }
 
 .table-info .pill {
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--surface-3);
+  color: var(--text);
   padding: 0.15rem 0.6rem;
   border-radius: var(--radius-pill);
   font-variant-numeric: tabular-nums;
@@ -867,8 +905,8 @@ input:focus {
 }
 
 .stats-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25));
-  border: 1px solid rgba(244, 196, 48, 0.15);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 1rem 1.25rem;
 }
@@ -909,8 +947,8 @@ input:focus {
 .lb-tab {
   flex: 1;
   padding: 0.45rem 0.75rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(244, 196, 48, 0.15);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   color: var(--text-mute);
   font-size: 0.85rem;
@@ -1067,13 +1105,14 @@ input:focus {
 
 .player-box {
   position: relative;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.35));
-  border: 2px solid rgba(244, 196, 48, 0.2);
+  background: var(--surface-2);
+  border: 2px solid var(--border-subtle);
   border-radius: 14px;
   padding: 1rem 1rem 1.25rem;
   min-width: min(200px, 100%);
   text-align: center;
-  transition: all 0.3s;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
 }
 
 .player-box.is-me {
@@ -1402,7 +1441,7 @@ input:focus {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-family: var(--font-display);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
 }
@@ -1413,19 +1452,19 @@ input:focus {
 }
 
 .btn-hit {
-  background: linear-gradient(180deg, #4caf50, #2e7d32);
+  background: #3a9d44;
 }
 
 .btn-stand {
-  background: linear-gradient(180deg, #ff9800, #c66900);
+  background: #e08600;
 }
 
 .btn-double {
-  background: linear-gradient(180deg, var(--neon), #1976d2);
+  background: var(--neon);
 }
 
 .btn-deal {
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold-soft));
+  background: var(--gold);
   color: var(--ink) !important;
 }
 
@@ -1467,13 +1506,13 @@ input:focus {
   0%,
   100% {
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.4),
-      0 0 0 0 rgba(244, 196, 48, 0.55);
+      var(--shadow-card),
+      0 0 0 0 rgba(244, 196, 48, 0.4);
   }
   50% {
     box-shadow:
-      0 6px 22px rgba(0, 0, 0, 0.45),
-      0 0 22px 6px rgba(244, 196, 48, 0.45);
+      var(--shadow-card),
+      0 0 14px 3px rgba(244, 196, 48, 0.32);
   }
 }
 
@@ -1529,7 +1568,8 @@ input:focus {
   overflow-y: auto;
   font-size: 0.82rem;
   color: var(--text-mute);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--surface-3);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
 }
@@ -1730,13 +1770,13 @@ input:focus {
 }
 
 .modal-card {
-  background: linear-gradient(180deg, var(--felt-light), var(--felt-mid));
-  border: 1px solid var(--gold);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   padding: 2rem 2.5rem;
   text-align: center;
   max-width: 440px;
-  box-shadow: 0 12px 60px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-soft);
 }
 
 .modal-title {
@@ -1927,8 +1967,8 @@ input:focus {
 
 .player-seat {
   position: relative;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.35));
-  border: 2px solid rgba(244, 196, 48, 0.2);
+  background: var(--surface-2);
+  border: 2px solid var(--border-subtle);
   border-radius: 14px;
   padding: 1rem 0.85rem 1rem;
   min-width: min(200px, 100%);
@@ -1936,7 +1976,8 @@ input:focus {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.3s;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
 }
 
 .player-seat.is-me {
@@ -2300,8 +2341,8 @@ input:focus {
 }
 
 .challenge-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 0.75rem 1rem;
 }
@@ -2367,8 +2408,8 @@ input:focus {
 .reaction-btn {
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
   color: var(--text-mute);
   cursor: pointer;
@@ -2496,8 +2537,8 @@ input:focus {
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   opacity: 0.5;
 }
@@ -2526,7 +2567,7 @@ input:focus {
 
 .ach-bar-wrap {
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 0.2rem;
@@ -2602,7 +2643,8 @@ input:focus {
 }
 
 .shop-item {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   padding: 0.75rem;
   text-align: center;
@@ -3406,5 +3448,126 @@ input:focus {
   }
   .sparkle {
     opacity: 0;
+  }
+}
+
+/* --- Loading spinner (CSS keyframes; keeps spinning in background tabs) --- */
+.spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 3rem 1rem;
+  color: var(--text-mute);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border: 3px solid var(--surface-1);
+  border-top-color: var(--gold);
+  animation: spinner-spin 0.8s linear infinite;
+}
+
+.spinner--sm {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-width: 2px;
+}
+
+.spinner--md {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.spinner-label {
+  text-transform: uppercase;
+}
+
+@keyframes spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Lobby guidance: one-line "what to do next" cue above each step --- */
+.lobby-guide {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+  color: var(--text-mute);
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+}
+
+.lobby-guide-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* --- First-login onboarding banner (dismissible) --- */
+.onboarding-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+.onboarding-banner-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.onboarding-banner-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding-banner-title {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--gold-bright);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.15rem;
+}
+
+.onboarding-banner-text {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.onboarding-banner-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.onboarding-banner-close:hover {
+  color: var(--cream);
+  background: var(--surface-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.6s;
   }
 }

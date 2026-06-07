@@ -8,6 +8,7 @@ import { AchievementList } from "./AchievementList";
 import { Challenges } from "./Challenges";
 import { Shop } from "./Shop";
 import { AdPlayer } from "../shared/components/AdPlayer";
+import { Spinner } from "../shared/components/Spinner";
 import { BannerAd } from "../shared/components/BannerAd";
 import { InterstitialAd } from "../shared/components/InterstitialAd";
 import { useInterstitial } from "../shared/hooks/useInterstitial";
@@ -85,6 +86,19 @@ export function Lobby({
   }>({ open: false, sessionId: null, purpose: "daily_bonus_double", pendingBonus: null });
   const interstitial = useInterstitial();
   const prevSelectedGame = useRef<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => typeof localStorage !== "undefined" && localStorage.getItem("sc:onboarded") !== "1",
+  );
+
+  const dismissOnboarding = () => {
+    play("button_click");
+    try {
+      localStorage.setItem("sc:onboarded", "1");
+    } catch {
+      /* ignore */
+    }
+    setShowOnboarding(false);
+  };
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -317,6 +331,23 @@ export function Lobby({
 
       {selectedGame === null ? (
         <>
+          {showOnboarding && (
+            <div className="onboarding-banner" role="note">
+              <span className="onboarding-banner-icon" aria-hidden="true">👋</span>
+              <div className="onboarding-banner-body">
+                <div className="onboarding-banner-title">{t("lobby.onboarding.title")}</div>
+                <div className="onboarding-banner-text">{t("lobby.onboarding.text")}</div>
+              </div>
+              <button
+                className="onboarding-banner-close"
+                onClick={dismissOnboarding}
+                aria-label={t("common.close")}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {profile?.game_stats && Object.keys(profile.game_stats).length > 0 && (
             <div className="stats-section">
               <h3>{t("stats.title")}</h3>
@@ -370,6 +401,10 @@ export function Lobby({
           <Challenges onCoinsChanged={onCoinsChanged} play={play} />
 
           <h3>{t("lobby.chooseGame")}</h3>
+          <div className="lobby-guide">
+            <span className="lobby-guide-icon" aria-hidden="true">👇</span>
+            <span>{t("lobby.guide.pickGame")}</span>
+          </div>
           <div className="game-grid">
             {SUPPORTED_GAMES.map((g) => {
               const tableCount = tables.filter(
@@ -408,8 +443,12 @@ export function Lobby({
             {t("lobby.backToGames")}
           </button>
           <h3>{t("lobby.tablesTitle", { game: selectedGameLabel })}</h3>
+          <div className="lobby-guide">
+            <span className="lobby-guide-icon" aria-hidden="true">👆</span>
+            <span>{t("lobby.guide.pickTable")}</span>
+          </div>
           {filteredTables.length === 0 ? (
-            <div className="empty-msg">{t("lobby.loadingTables")}</div>
+            <Spinner label={t("lobby.loadingTables")} />
           ) : (
             filteredTables.map((tbl) => {
               const isFull = tbl.player_count >= tbl.max_players;
@@ -418,10 +457,22 @@ export function Lobby({
                 <div
                   key={tbl.table_id}
                   className={`table-card${isFull ? " is-full" : ""}`}
+                  role="button"
+                  tabIndex={isFull ? -1 : 0}
+                  aria-disabled={isFull}
+                  aria-label={`${resolveTableName(t, tbl.table_id, tbl.name)} — ${isFull ? t("lobby.full") : t("lobby.join")}`}
                   onClick={() => {
                     if (isFull) return;
                     play("button_click");
                     onJoinTable(tbl.table_id, gameType);
+                  }}
+                  onKeyDown={(e) => {
+                    if (isFull) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      play("button_click");
+                      onJoinTable(tbl.table_id, gameType);
+                    }
                   }}
                 >
                   <div>
@@ -452,10 +503,13 @@ export function Lobby({
                         {t("lobby.watch")}
                       </button>
                     )}
-                    <button className="btn-primary" disabled={isFull} style={{ position: "relative" }}>
+                    <span
+                      className={`table-join-cue${isFull ? " is-full" : ""}`}
+                      aria-hidden="true"
+                    >
                       {isFull ? t("lobby.full") : t("lobby.join")}
                       {!isFull && tbl.player_count > 0 && <span className="notify-dot" />}
-                    </button>
+                    </span>
                   </div>
                 </div>
               );

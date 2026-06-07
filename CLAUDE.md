@@ -145,7 +145,7 @@ frontend/src/
 │   ├── components/        # Card, Hand, Chip, BetArea, BetChipStack, TurnTimer, ResultOverlay,
 │   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle, TableHeatBadge,
 │   │                      # AchievementToast, ReactionBar, ReactionFloat, AdPlayer,
-│   │                      # SideAds, BannerAd, InterstitialAd
+│   │                      # SideAds, BannerAd, InterstitialAd, Spinner
 │   ├── hooks/useInterstitial.ts  # 3-min cooldown + every-5-rounds gate for InterstitialAd
 │   ├── cosmetics.ts       # CSS class resolver for equipped cosmetics
 │   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts

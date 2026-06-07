@@ -16,6 +16,7 @@ import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { BannerAd } from "../../shared/components/BannerAd";
 import { InterstitialAd } from "../../shared/components/InterstitialAd";
 import { TableHeatBadge } from "../../shared/components/TableHeatBadge";
+import { Spinner } from "../../shared/components/Spinner";
 import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { DealerArea } from "./DealerArea";
 import { PlayerBox } from "./PlayerBox";
@@ -455,7 +456,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
             {phase === "resolution" && <BannerAd size="mrec" />}
           </>
         ) : (
-          <div style={{ padding: "3rem", color: "var(--text-mute)" }}>{t("common.connecting")}</div>
+          <Spinner label={t("common.connecting")} />
         )}
       </div>
 
