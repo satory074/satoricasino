@@ -27,6 +27,7 @@ cd frontend
 npm install
 npm run dev                                    # Vite at :5173, proxies /api + /ws → :8000
 npm run build                                  # tsc -b && vite build → frontend/dist/ (also acts as type-check)
+                                               # The "chunks larger than 500 kB" warning is expected (single bundle) — don't chase code-splitting over it.
 npm run preview                                # No `lint` script — `build` is the type-check.
 
 # Production deploy (firebase reads default project from .firebaserc; --project explicit is safer)
