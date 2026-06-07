@@ -4,7 +4,12 @@ type InfoView =
   | "info-privacy"
   | "info-terms"
   | "info-about"
-  | "info-responsible";
+  | "info-responsible"
+  | "info-blackjack-guide"
+  | "info-chinchiro-guide"
+  | "info-faq"
+  | "info-getting-started"
+  | "info-glossary";
 
 interface Props {
   view: InfoView;
@@ -13,7 +18,16 @@ interface Props {
 }
 
 interface PageDef {
-  rootKey: "privacy" | "terms" | "about" | "responsible";
+  rootKey:
+    | "privacy"
+    | "terms"
+    | "about"
+    | "responsible"
+    | "blackjackGuide"
+    | "chinchiroGuide"
+    | "faq"
+    | "gettingStarted"
+    | "glossary";
   sections: readonly string[];
   lastUpdated: string;
 }
@@ -53,13 +67,81 @@ const PAGES: Record<InfoView, PageDef> = {
     ],
     lastUpdated: "2026-05-23",
   },
+  "info-blackjack-guide": {
+    rootKey: "blackjackGuide",
+    sections: [
+      "overview",
+      "cardValues",
+      "gameFlow",
+      "actions",
+      "payouts",
+      "basicStrategy",
+      "oddsAndEdge",
+      "terminology",
+    ],
+    lastUpdated: "2026-06-07",
+  },
+  "info-chinchiro-guide": {
+    rootKey: "chinchiroGuide",
+    sections: [
+      "overview",
+      "gameFlow",
+      "hands",
+      "oddsAndPayouts",
+      "bankerStrategy",
+      "playerStrategy",
+      "terminology",
+    ],
+    lastUpdated: "2026-06-07",
+  },
+  "info-faq": {
+    rootKey: "faq",
+    sections: [
+      "isItRealMoney",
+      "howToGetCoins",
+      "whatIsBailout",
+      "dailyChallenges",
+      "streaksAndXp",
+      "cosmetics",
+      "spectateMode",
+      "leaderboard",
+      "languageSupport",
+      "accountAndPassphrase",
+      "dataDeletion",
+      "whoRunsIt",
+    ],
+    lastUpdated: "2026-06-07",
+  },
+  "info-getting-started": {
+    rootKey: "gettingStarted",
+    sections: [
+      "createAccount",
+      "chooseGame",
+      "chooseTable",
+      "placingBets",
+      "controls",
+      "whenCoinsRunOut",
+      "progression",
+    ],
+    lastUpdated: "2026-06-07",
+  },
+  "info-glossary": {
+    rootKey: "glossary",
+    sections: ["general", "blackjackTerms", "chinchiroTerms", "siteTerms"],
+    lastUpdated: "2026-06-07",
+  },
 };
 
 const NAV_VIEWS: { view: InfoView; navKey: string }[] = [
-  { view: "info-privacy", navKey: "info.nav.privacy" },
-  { view: "info-terms", navKey: "info.nav.terms" },
+  { view: "info-getting-started", navKey: "info.nav.gettingStarted" },
+  { view: "info-blackjack-guide", navKey: "info.nav.blackjackGuide" },
+  { view: "info-chinchiro-guide", navKey: "info.nav.chinchiroGuide" },
+  { view: "info-faq", navKey: "info.nav.faq" },
+  { view: "info-glossary", navKey: "info.nav.glossary" },
   { view: "info-about", navKey: "info.nav.about" },
   { view: "info-responsible", navKey: "info.nav.responsible" },
+  { view: "info-privacy", navKey: "info.nav.privacy" },
+  { view: "info-terms", navKey: "info.nav.terms" },
 ];
 
 export function InfoPage({ view, onClose, onNavigate }: Props) {
@@ -146,4 +228,9 @@ const INFO_PATHS: Record<InfoView, string> = {
   "info-terms": "/terms",
   "info-about": "/about",
   "info-responsible": "/responsible-gaming",
+  "info-blackjack-guide": "/games/blackjack",
+  "info-chinchiro-guide": "/games/chinchiro",
+  "info-faq": "/faq",
+  "info-getting-started": "/getting-started",
+  "info-glossary": "/glossary",
 };

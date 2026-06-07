@@ -19,7 +19,12 @@ type InfoView =
   | "info-privacy"
   | "info-terms"
   | "info-about"
-  | "info-responsible";
+  | "info-responsible"
+  | "info-blackjack-guide"
+  | "info-chinchiro-guide"
+  | "info-faq"
+  | "info-getting-started"
+  | "info-glossary";
 
 type View = "auth" | "lobby" | "game" | InfoView;
 
@@ -28,6 +33,11 @@ const INFO_PATHS: Record<string, InfoView> = {
   "/terms": "info-terms",
   "/about": "info-about",
   "/responsible-gaming": "info-responsible",
+  "/games/blackjack": "info-blackjack-guide",
+  "/games/chinchiro": "info-chinchiro-guide",
+  "/faq": "info-faq",
+  "/getting-started": "info-getting-started",
+  "/glossary": "info-glossary",
 };
 
 const PATH_FOR_VIEW: Record<View, string> = {
@@ -38,6 +48,29 @@ const PATH_FOR_VIEW: Record<View, string> = {
   "info-terms": "/terms",
   "info-about": "/about",
   "info-responsible": "/responsible-gaming",
+  "info-blackjack-guide": "/games/blackjack",
+  "info-chinchiro-guide": "/games/chinchiro",
+  "info-faq": "/faq",
+  "info-getting-started": "/getting-started",
+  "info-glossary": "/glossary",
+};
+
+// Maps each view to its `seo.titles.*` / `seo.descriptions.*` i18n key so the
+// document <title> + meta description can be set per route (helps crawlers
+// distinguish the public pages).
+const SEO_KEY_FOR_VIEW: Record<View, string> = {
+  auth: "home",
+  lobby: "lobby",
+  game: "game",
+  "info-privacy": "privacy",
+  "info-terms": "terms",
+  "info-about": "about",
+  "info-responsible": "responsible",
+  "info-blackjack-guide": "blackjackGuide",
+  "info-chinchiro-guide": "chinchiroGuide",
+  "info-faq": "faq",
+  "info-getting-started": "gettingStarted",
+  "info-glossary": "glossary",
 };
 
 function isInfoView(v: View): v is InfoView {
@@ -65,7 +98,7 @@ export default function App() {
   const tableGameTypeRef = useRef(tableGameType);
   tableGameTypeRef.current = tableGameType;
   const { muted, bgmOn, toggleMute, toggleBgm, play } = useAudio();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const leaveInterstitial = useInterstitial();
 
   // Initialize streaks from server profile on first load
@@ -90,6 +123,17 @@ export default function App() {
   useEffect(() => {
     setAdsReady(false);
   }, [view]);
+
+  // Per-view document title + meta description, so each crawlable route has a
+  // unique, descriptive head. Updates the existing <meta name="description">
+  // (added in index.html) rather than creating new tags.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const key = SEO_KEY_FOR_VIEW[view];
+    document.title = t(`seo.titles.${key}`);
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", t(`seo.descriptions.${key}`));
+  }, [view, lang, t]);
 
   // AdSense Auto Ads gate. Publisher-policy 11112688 forbids ads on screens
   // without publisher content: login (auth), static info pages, and any

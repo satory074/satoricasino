@@ -140,9 +140,109 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* "safe center" keeps the column centered when it fits, but anchors to the
+     top (instead of clipping it) once the landing copy + card overflow. */
+  justify-content: safe center;
   gap: 1.75rem;
   padding: 2rem;
+}
+
+/* Landing/marketing block above the login card. Gives the root URL real,
+   crawlable publisher content (AdSense minimum-content requirement) without
+   rendering any ad on the auth view. */
+.auth-landing {
+  width: 100%;
+  max-width: 640px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-landing-title {
+  font-family: "Cinzel", serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 7vw, 3rem);
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  margin: 0;
+}
+
+.auth-landing-sub {
+  font-size: clamp(1rem, 3.4vw, 1.25rem);
+  color: var(--text);
+  margin: 0;
+}
+
+.auth-landing-intro {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-mute);
+  margin: 0;
+  max-width: 560px;
+}
+
+.auth-landing-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-landing-feature {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(244, 196, 48, 0.18);
+  border-radius: 12px;
+  padding: 1rem 0.9rem;
+  text-align: left;
+}
+
+.auth-landing-feature h2 {
+  font-size: 0.95rem;
+  color: var(--gold);
+  margin: 0 0 0.4rem;
+}
+
+.auth-landing-feature p {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-mute);
+  margin: 0;
+}
+
+.auth-landing-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.auth-landing-links-label {
+  color: var(--text-mute);
+}
+
+.auth-landing-links a {
+  color: var(--gold);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(244, 196, 48, 0.4);
+  padding-bottom: 1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.auth-landing-links a:hover {
+  color: #ffe28a;
+  border-bottom-color: var(--gold);
+}
+
+@media (max-width: 480px) {
+  .auth-landing-features {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Footer links beneath the auth card. Required so AdSense crawlers can

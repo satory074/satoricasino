@@ -8,7 +8,12 @@ type InfoView =
   | "info-privacy"
   | "info-terms"
   | "info-about"
-  | "info-responsible";
+  | "info-responsible"
+  | "info-blackjack-guide"
+  | "info-chinchiro-guide"
+  | "info-faq"
+  | "info-getting-started"
+  | "info-glossary";
 
 interface Props {
   onAuthed: () => void;
@@ -16,7 +21,26 @@ interface Props {
   onNavigate: (view: InfoView) => void;
 }
 
+// Crawlable <a href> links from the public root page. Guides first (the
+// SEO-valuable publisher content), then the legal/info pages.
 const FOOTER_LINKS: { view: InfoView; path: string; navKey: string }[] = [
+  {
+    view: "info-getting-started",
+    path: "/getting-started",
+    navKey: "info.nav.gettingStarted",
+  },
+  {
+    view: "info-blackjack-guide",
+    path: "/games/blackjack",
+    navKey: "info.nav.blackjackGuide",
+  },
+  {
+    view: "info-chinchiro-guide",
+    path: "/games/chinchiro",
+    navKey: "info.nav.chinchiroGuide",
+  },
+  { view: "info-faq", path: "/faq", navKey: "info.nav.faq" },
+  { view: "info-glossary", path: "/glossary", navKey: "info.nav.glossary" },
   { view: "info-about", path: "/about", navKey: "info.nav.about" },
   { view: "info-privacy", path: "/privacy", navKey: "info.nav.privacy" },
   { view: "info-terms", path: "/terms", navKey: "info.nav.terms" },
@@ -25,6 +49,26 @@ const FOOTER_LINKS: { view: InfoView; path: string; navKey: string }[] = [
     path: "/responsible-gaming",
     navKey: "info.nav.responsible",
   },
+];
+
+// Featured guide links shown in the landing block above the login card.
+const LANDING_LINKS: { view: InfoView; path: string; navKey: string }[] = [
+  {
+    view: "info-getting-started",
+    path: "/getting-started",
+    navKey: "info.nav.gettingStarted",
+  },
+  {
+    view: "info-blackjack-guide",
+    path: "/games/blackjack",
+    navKey: "info.nav.blackjackGuide",
+  },
+  {
+    view: "info-chinchiro-guide",
+    path: "/games/chinchiro",
+    navKey: "info.nav.chinchiroGuide",
+  },
+  { view: "info-faq", path: "/faq", navKey: "info.nav.faq" },
 ];
 
 export function Auth({ onAuthed, playClick, onNavigate }: Props) {
@@ -69,6 +113,40 @@ export function Auth({ onAuthed, playClick, onNavigate }: Props) {
 
   return (
     <div className="auth-section">
+      <section className="auth-landing" aria-label={t("info.nav.about")}>
+        <h1 className="auth-landing-title">{t("info.common.siteName")}</h1>
+        <p className="auth-landing-sub">{t("auth.landing.subheading")}</p>
+        <p className="auth-landing-intro">{t("auth.landing.intro")}</p>
+        <div className="auth-landing-features">
+          <div className="auth-landing-feature">
+            <h2>{t("auth.landing.feature1Title")}</h2>
+            <p>{t("auth.landing.feature1Body")}</p>
+          </div>
+          <div className="auth-landing-feature">
+            <h2>{t("auth.landing.feature2Title")}</h2>
+            <p>{t("auth.landing.feature2Body")}</p>
+          </div>
+          <div className="auth-landing-feature">
+            <h2>{t("auth.landing.feature3Title")}</h2>
+            <p>{t("auth.landing.feature3Body")}</p>
+          </div>
+        </div>
+        <nav className="auth-landing-links" aria-label={t("auth.landing.learnMore")}>
+          <span className="auth-landing-links-label">
+            {t("auth.landing.learnMore")}
+          </span>
+          {LANDING_LINKS.map((link) => (
+            <a
+              key={link.view}
+              href={link.path}
+              onClick={(e) => handleFooterClick(e, link.view)}
+            >
+              {t(link.navKey)}
+            </a>
+          ))}
+        </nav>
+      </section>
+
       <div className="auth-card">
         <div className="auth-logo">SatoriCasino</div>
         <div className="auth-tagline">{t("auth.tagline")}</div>
