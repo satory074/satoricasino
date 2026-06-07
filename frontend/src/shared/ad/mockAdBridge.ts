@@ -72,4 +72,10 @@ export class MockAdBridge implements AdBridge {
       this.bannerContainer = null;
     }
   }
+
+  canShowBanner(): boolean {
+    // The mock only paints a placeholder in DEV (see show()/showBanner()); in a
+    // production build it renders nothing, so it can never "fill".
+    return import.meta.env.DEV;
+  }
 }

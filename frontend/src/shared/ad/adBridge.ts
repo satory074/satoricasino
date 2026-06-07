@@ -11,4 +11,8 @@ export interface AdBridge {
   isAvailable(): boolean;
   showBanner(container: HTMLElement, size?: BannerSize): void;
   destroyBanner(): void;
+  // True only when a real ad can actually fill the given size. Used to suppress
+  // involuntary ad surfaces (e.g. the interstitial) that would otherwise render
+  // an empty box while slot IDs are still build-time placeholders.
+  canShowBanner(size?: BannerSize): boolean;
 }

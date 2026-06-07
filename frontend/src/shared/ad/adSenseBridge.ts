@@ -80,6 +80,12 @@ export class AdSenseBridge implements AdBridge {
       this.bannerContainer = null;
     }
   }
+
+  canShowBanner(size: BannerSize = "standard"): boolean {
+    // Mirrors the placeholder guard in showBanner: until a real slot ID is
+    // issued (post-approval), nothing can fill, so report unfillable.
+    return this.isAvailable() && !SLOT_MAP[size].startsWith("SLOT_ID_");
+  }
 }
 
 function getAdClient(): string {

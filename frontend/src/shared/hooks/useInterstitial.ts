@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { getAdBridge } from "../ad";
 
 // Relaxed cadence (responsible-gaming / time-respect): a 5-minute global
 // cooldown and every-10-rounds gate, down from 3 min / 5 rounds. Combined with
@@ -33,6 +34,8 @@ export function useInterstitial(): UseInterstitialReturn {
   }, []);
 
   const checkRound = useCallback(() => {
+    // Never interrupt with an empty box: only show when a real ad can fill.
+    if (!getAdBridge().canShowBanner("mrec")) return false;
     roundCountRef.current += 1;
     if (roundCountRef.current % ROUND_INTERVAL === 0 && isCooldownElapsed()) {
       return true;
@@ -41,6 +44,7 @@ export function useInterstitial(): UseInterstitialReturn {
   }, [isCooldownElapsed]);
 
   const checkTransition = useCallback(() => {
+    if (!getAdBridge().canShowBanner("mrec")) return false;
     return isCooldownElapsed();
   }, [isCooldownElapsed]);
 
