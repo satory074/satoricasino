@@ -17,6 +17,9 @@ import { BannerAd } from "../../shared/components/BannerAd";
 import { InterstitialAd } from "../../shared/components/InterstitialAd";
 import { TableHeatBadge } from "../../shared/components/TableHeatBadge";
 import { Spinner } from "../../shared/components/Spinner";
+import { ConnectionLost } from "../../shared/components/ConnectionLost";
+import { RulesModal } from "../../shared/components/RulesModal";
+import { toast } from "../../shared/components/Toast";
 import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { DealerArea } from "./DealerArea";
 import { PlayerBox } from "./PlayerBox";
@@ -76,8 +79,25 @@ function detectNearMiss(
 
 export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spectate, tableThemeClass, onContentReady }: Props) {
   const myId = getUserId();
-  const { connected, gameState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
+  const {
+    connected,
+    gameState,
+    log,
+    send,
+    notifications,
+    dismissNotification,
+    error,
+    errorVersion,
+    reconnectExhausted,
+    reconnect,
+  } = useGameSocket(tableId, spectate);
   const interstitial = useInterstitial();
+  const [showRules, setShowRules] = useState(false);
+
+  // Surface WS errors as toasts (they otherwise only appear in the game log).
+  useEffect(() => {
+    if (error) toast(`errors.${error.code}`, error.params);
+  }, [errorVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const [overlay, setOverlay] = useState<{
     kind: ResultKind;
     amount: number | null;
@@ -194,10 +214,11 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
     onResolveRef.current(delta);
     setOverlay({ kind, amount, nearMissDetail });
 
-    // Anticipation SFX
+    // Anticipation SFX. A near-miss is a loss — it gets the lose cue, not the
+    // win cue (no "losses disguised as wins").
     if (kind === "blackjack") {
       playRef.current("anticipation_jackpot");
-    } else if (kind === "win" || kind === "near_miss") {
+    } else if (kind === "win") {
       playRef.current("anticipation_win");
     } else if (kind !== "push") {
       playRef.current("anticipation_lose");
@@ -257,10 +278,9 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
         );
       }
     } else if (kind === "near_miss") {
-      playRef.current("near_miss");
-      // Soft shake + lingering crimson rim — "so close"
-      setSoftShaking(true);
-      window.setTimeout(() => setSoftShaking(false), 950);
+      // A near-miss is just a loss. No "so close" shake/amplification — play the
+      // ordinary lose cue so a loss never feels like a near-win.
+      playRef.current("lose");
     } else if (kind === "push") {
       playRef.current("push");
     } else if (kind === "bust") {
@@ -405,6 +425,14 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
         </button>
         <div className="game-phase">{t(`phase.blackjack.${phase}`)}</div>
         <TableHeatBadge heat={gameState?.table_heat} />
+        <button
+          className="mute-btn help-btn"
+          onClick={() => { play("button_click"); setShowRules(true); }}
+          title={t("help.button")}
+          aria-label={t("help.button")}
+        >
+          ?
+        </button>
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}
           title={connected ? t("common.connected") : t("common.reconnecting")}
@@ -487,7 +515,7 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
 
       <KeyHintBar hints={hints} />
 
-      <BannerAd size="standard" className="ad-anchor-bottom" />
+      {gameState && <BannerAd size="standard" className="ad-anchor-bottom" />}
 
       <ReactionFloat notifications={notifications} dismissNotification={dismissNotification} />
 
@@ -500,6 +528,10 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
         onReveal={onOverlayReveal}
         onComplete={onOverlayComplete}
       />
+
+      <RulesModal open={showRules} onClose={() => setShowRules(false)} gameType="blackjack" />
+
+      <ConnectionLost open={reconnectExhausted} onReconnect={reconnect} onLeave={onLeave} />
     </div>
   );
 }
@@ -651,6 +683,11 @@ function GameActions({
           {t("blackjack.actions.double")}
         </ActionButton>
         {!isMyTurn && <p className="action-hint">{otherThinkingText}</p>}
+        {/* Touch devices can't see the disabled-button tooltips, so surface the
+            reason inline (hidden on hover-capable pointers via CSS). */}
+        {isMyTurn && doubleReason && (
+          <p className="action-hint action-hint--touch">{doubleReason}</p>
+        )}
       </div>
     );
   }

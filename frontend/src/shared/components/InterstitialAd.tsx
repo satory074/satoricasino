@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../i18n/useTranslation";
+import { useModalA11y } from "../hooks/useModalA11y";
+import { BannerAd } from "./BannerAd";
 
 interface InterstitialAdProps {
   open: boolean;
@@ -11,6 +13,12 @@ const COUNTDOWN_SEC = 3;
 export function InterstitialAd({ open, onClose }: InterstitialAdProps) {
   const { t } = useTranslation();
   const [remaining, setRemaining] = useState(COUNTDOWN_SEC);
+  // Escape only works once the forced countdown reaches 0 (mirrors click-dismiss).
+  const cardRef = useModalA11y<HTMLDivElement>({
+    open,
+    onClose,
+    escapeDisabled: remaining > 0,
+  });
 
   useEffect(() => {
     if (!open) {
@@ -33,11 +41,16 @@ export function InterstitialAd({ open, onClose }: InterstitialAdProps) {
 
   return (
     <div className="modal-overlay interstitial-overlay" onClick={remaining === 0 ? onClose : undefined}>
-      <div className="interstitial-ad" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="interstitial-ad"
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        ref={cardRef}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="interstitial-ad-content">
-          <div className="ad-banner-mock ad-banner-mock--mrec" style={{ width: "min(300px, 100%)", height: "250px" }}>
-            <span className="ad-banner-mock-label">AD 300x250</span>
-          </div>
+          <BannerAd size="mrec" />
         </div>
         <div className="interstitial-ad-footer">
           {remaining > 0 ? (

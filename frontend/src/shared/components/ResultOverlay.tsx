@@ -75,7 +75,10 @@ function getTiming(kind: ResultKind, amount?: number | null): Timing {
     case "wakare":
       return { anticipation: 0, reveal: 300, afterglow: 800 };
     case "near_miss":
-      return { anticipation: 600, reveal: 450, afterglow: 1100 };
+      // Responsible-gaming: a near-miss is a LOSS. We do not dramatize it with
+      // anticipation/tension (that's the classic "losses disguised as wins"
+      // dark pattern). Same short, quiet timing as any other loss.
+      return { anticipation: 0, reveal: 300, afterglow: 700 };
     default:
       return { anticipation: 150, reveal: 300, afterglow: 700 };
   }
@@ -99,7 +102,8 @@ function getTextClass(kind: ResultKind): string {
 function tensionForKind(kind: ResultKind): 0 | 1 | 2 | 3 {
   if (kind === "pinzoro") return 3;
   if (kind === "blackjack" || kind === "arashi") return 2;
-  if (kind === "win" || kind === "shigoro" || kind === "near_miss") return 1;
+  if (kind === "win" || kind === "shigoro") return 1;
+  // near_miss is a loss — no BGM tension swell.
   return 0;
 }
 
@@ -234,6 +238,16 @@ export function ResultOverlay({ shown, amount, nearMissDetail, onReveal, onCompl
 
   return (
     <>
+      {/* Screen-reader announcement of the outcome. The visual reveal is purely
+          decorative (color + animated text), so without this AT users get no
+          result. Announced once when the reveal phase begins. */}
+      {phase === "reveal" && (
+        <div className="sr-only" role="status" aria-live="polite">
+          {t(`results.${shown}`)}
+          {showAmount ? ` ${isPositive ? "+" : ""}${amount?.toLocaleString()}` : ""}
+        </div>
+      )}
+
       {/* Zone overlay — jackpot-class anticipation backdrop with golden rays */}
       {phase === "anticipation" && isZone && (
         <div className={`zone-overlay zone-${shown}`}>

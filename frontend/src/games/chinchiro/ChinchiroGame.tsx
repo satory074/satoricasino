@@ -21,6 +21,9 @@ import { BannerAd } from "../../shared/components/BannerAd";
 import { InterstitialAd } from "../../shared/components/InterstitialAd";
 import { TableHeatBadge } from "../../shared/components/TableHeatBadge";
 import { Spinner } from "../../shared/components/Spinner";
+import { ConnectionLost } from "../../shared/components/ConnectionLost";
+import { RulesModal } from "../../shared/components/RulesModal";
+import { toast } from "../../shared/components/Toast";
 import { useInterstitial } from "../../shared/hooks/useInterstitial";
 import { BankerArea } from "./BankerArea";
 import { PlayerSeat } from "./PlayerSeat";
@@ -86,9 +89,26 @@ export function ChinchiroGame({
 }: Props) {
   const { t } = useTranslation();
   const myId = getUserId();
-  const { connected, gameState: rawState, log, send, notifications, dismissNotification } = useGameSocket(tableId, spectate);
+  const {
+    connected,
+    gameState: rawState,
+    log,
+    send,
+    notifications,
+    dismissNotification,
+    error,
+    errorVersion,
+    reconnectExhausted,
+    reconnect,
+  } = useGameSocket(tableId, spectate);
   const state = rawState as unknown as ChinchiroGameState | null;
   const interstitial = useInterstitial();
+  const [showRules, setShowRules] = useState(false);
+
+  // Surface WS errors as toasts (they otherwise only appear in the game log).
+  useEffect(() => {
+    if (error) toast(`errors.${error.code}`, error.params);
+  }, [errorVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Signal "publisher content present" once the WS state arrives so AdSense
   // is gated off during the connecting placeholder (policy 11112688).
@@ -123,8 +143,9 @@ export function ChinchiroGame({
     if (state.banker_rolls.length > prevBankerRollCountRef.current) {
       playRef.current("dice_land");
 
-      // Banker near-miss reach: latest banker roll has 2 of the same value
-      // but the third differs → suspense heartbeat before result resolves.
+      // Banker roll with two matching dice → a single subtle heartbeat. This is
+      // genuine live suspense (the hand isn't decided yet), but we keep it to one
+      // beat rather than a manufactured drum-roll.
       const latest = state.banker_rolls[state.banker_rolls.length - 1];
       if (latest && !bankerNearMissFiredRef.current) {
         const [a, b, c] = latest;
@@ -132,8 +153,7 @@ export function ChinchiroGame({
         const twoSame = !allSame && (a === b || b === c || a === c);
         if (twoSame) {
           bankerNearMissFiredRef.current = true;
-          window.setTimeout(() => playRef.current("heartbeat"), 220);
-          window.setTimeout(() => playRef.current("heartbeat"), 700);
+          window.setTimeout(() => playRef.current("heartbeat"), 300);
         }
       }
     }
@@ -378,6 +398,7 @@ export function ChinchiroGame({
         <div className="game-table">
           <Spinner label={t("common.connecting")} />
         </div>
+        <ConnectionLost open={reconnectExhausted} onReconnect={reconnect} onLeave={onLeave} />
       </div>
     );
   }
@@ -390,6 +411,14 @@ export function ChinchiroGame({
         </button>
         <div className="game-phase">{t(`phase.chinchiro.${phase}`)}</div>
         <TableHeatBadge heat={state.table_heat} />
+        <button
+          className="mute-btn help-btn"
+          onClick={() => { play("button_click"); setShowRules(true); }}
+          title={t("help.button")}
+          aria-label={t("help.button")}
+        >
+          ?
+        </button>
         <span
           className={`status-dot ${connected ? "connected" : "disconnected"}`}
           title={connected ? t("common.connected") : t("common.reconnecting")}
@@ -510,7 +539,7 @@ export function ChinchiroGame({
 
       <KeyHintBar hints={hints} />
 
-      <BannerAd size="standard" className="ad-anchor-bottom" />
+      {state && <BannerAd size="standard" className="ad-anchor-bottom" />}
 
       <ReactionFloat notifications={notifications} dismissNotification={dismissNotification} />
 
@@ -522,6 +551,10 @@ export function ChinchiroGame({
         onReveal={onOverlayReveal}
         onComplete={onOverlayComplete}
       />
+
+      <RulesModal open={showRules} onClose={() => setShowRules(false)} gameType="chinchiro" />
+
+      <ConnectionLost open={reconnectExhausted} onReconnect={reconnect} onLeave={onLeave} />
     </div>
   );
 }

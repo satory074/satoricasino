@@ -22,9 +22,11 @@ export function BankerArea({ rolls, hand, showHand }: Props) {
         size="lg"
       />
       {showHand && <HandLabel hand={hand} size="lg" />}
-      <div className="roll-counter">
-        {t("chinchiro.rollCount", { n: rolls.length })}
-      </div>
+      {rolls.length > 0 && (
+        <div className="roll-counter">
+          {t("chinchiro.rollCount", { n: rolls.length })}
+        </div>
+      )}
     </div>
   );
 }

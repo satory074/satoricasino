@@ -65,6 +65,11 @@ export function PlayerBox({
           player.is_busted && "busted",
           player.is_blackjack && "bj",
         )}
+        aria-label={
+          player.value
+            ? t("blackjack.handValueLabel", { n: player.value })
+            : undefined
+        }
       >
         {player.is_busted
           ? t("results.bust")

@@ -24,16 +24,22 @@ export class MockAdBridge implements AdBridge {
     return new Promise((resolve) => {
       container.innerHTML = "";
 
-      const placeholder = document.createElement("div");
-      placeholder.className = "ad-placeholder";
-      const inner = document.createElement("div");
-      inner.className = "ad-placeholder-inner";
-      const label = document.createElement("span");
-      label.className = "ad-placeholder-label";
-      label.textContent = "AD";
-      inner.appendChild(label);
-      placeholder.appendChild(inner);
-      container.appendChild(placeholder);
+      // Only paint the gray "AD" placeholder in dev/preview. In a production
+      // build this bridge should never be selected, but if it ever is (e.g.
+      // adsbygoogle.js blocked), we must NOT leak a fake ad box onto a real
+      // visitor's screen — render nothing, just honor the reward timing.
+      if (import.meta.env.DEV) {
+        const placeholder = document.createElement("div");
+        placeholder.className = "ad-placeholder";
+        const inner = document.createElement("div");
+        inner.className = "ad-placeholder-inner";
+        const label = document.createElement("span");
+        label.className = "ad-placeholder-label";
+        label.textContent = "AD";
+        inner.appendChild(label);
+        placeholder.appendChild(inner);
+        container.appendChild(placeholder);
+      }
 
       setTimeout(() => {
         resolve({ watched: true, durationMs: AD_DURATION_MS });
@@ -44,6 +50,9 @@ export class MockAdBridge implements AdBridge {
   showBanner(container: HTMLElement, size: BannerSize = "standard"): void {
     this.bannerContainer = container;
     container.innerHTML = "";
+
+    // Dev/preview only — never render a placeholder box in production (see show()).
+    if (!import.meta.env.DEV) return;
 
     const config = SIZE_MAP[size];
     const banner = document.createElement("div");

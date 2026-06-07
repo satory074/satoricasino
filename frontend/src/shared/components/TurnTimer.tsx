@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface Props {
   totalSec: number;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function TurnTimer({ totalSec, resetKey, active, onTick }: Props) {
+  const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(performance.now());
   const onTickRef = useRef(onTick);
@@ -40,8 +42,16 @@ export function TurnTimer({ totalSec, resetKey, active, onTick }: Props) {
   const danger = remaining <= 3;
   const color = danger ? "#ef4444" : remaining <= 10 ? "#f59e0b" : "#f4c430";
 
+  const secs = Math.ceil(remaining);
+
   return (
-    <svg className="turn-timer" viewBox="0 0 36 36">
+    <svg
+      className="turn-timer"
+      viewBox="0 0 36 36"
+      role="timer"
+      aria-label={t("common.turnTimer", { n: secs })}
+    >
+      <title>{t("common.turnTimer", { n: secs })}</title>
       <circle cx="18" cy="18" r={r} stroke="rgba(0,0,0,0.4)" strokeWidth="3" fill="rgba(0,0,0,0.55)" />
       <circle
         cx="18"
@@ -63,7 +73,7 @@ export function TurnTimer({ totalSec, resetKey, active, onTick }: Props) {
         fill={color}
         className="turn-timer-text"
       >
-        {Math.ceil(remaining)}
+        {secs}
       </text>
     </svg>
   );

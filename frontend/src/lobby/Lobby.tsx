@@ -12,6 +12,8 @@ import { Spinner } from "../shared/components/Spinner";
 import { BannerAd } from "../shared/components/BannerAd";
 import { InterstitialAd } from "../shared/components/InterstitialAd";
 import { useInterstitial } from "../shared/hooks/useInterstitial";
+import { useModalA11y } from "../shared/hooks/useModalA11y";
+import { toast } from "../shared/components/Toast";
 import type { GameStatsEntry, TableInfo, UserProfile } from "../shared/types/game";
 
 const AD_REWARD_DAILY_CAP = 5;
@@ -73,8 +75,13 @@ export function Lobby({
 }: Props) {
   const { t } = useTranslation();
   const [tables, setTables] = useState<TableInfo[]>([]);
+  const [tablesLoaded, setTablesLoaded] = useState(false);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [bonus, setBonus] = useState<BonusModal | null>(null);
+  const bonusRef = useModalA11y<HTMLDivElement>({
+    open: bonus != null,
+    onClose: () => setBonus(null),
+  });
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showShop, setShowShop] = useState(false);
@@ -114,6 +121,7 @@ export function Lobby({
     try {
       const tbls = await apiGet<TableInfo[]>("/api/tables");
       setTables(tbls);
+      setTablesLoaded(true);
     } catch {
       /* ignore */
     }
@@ -134,10 +142,9 @@ export function Lobby({
 
   const pickGame = (value: string) => {
     play("button_click");
-    // Interstitial on game switch (not on first pick)
-    if (prevSelectedGame.current !== null && prevSelectedGame.current !== value && interstitial.checkTransition()) {
-      interstitial.show();
-    }
+    // No interstitial on game switch — penalizing the player for browsing games
+    // is hostile. Interstitials are now driven only by the in-game round/leave
+    // cadence (see useInterstitial), which is itself relaxed.
     prevSelectedGame.current = value;
     setSelectedGame(value);
   };
@@ -177,7 +184,8 @@ export function Lobby({
       });
       await refreshProfile();
     } catch (e) {
-      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
+      if (e instanceof ApiError) toast(`errors.${e.code}`, e.params);
+      else toast("common.failed");
     }
   };
 
@@ -200,7 +208,8 @@ export function Lobby({
       play("bonus");
       await refreshProfile();
     } catch (e) {
-      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
+      if (e instanceof ApiError) toast(`errors.${e.code}`, e.params);
+      else toast("common.failed");
     }
   };
 
@@ -219,7 +228,8 @@ export function Lobby({
       });
       setBonus(null);
     } catch (e) {
-      alert(e instanceof ApiError ? t(`errors.${e.code}`, e.params) : t("common.failed"));
+      if (e instanceof ApiError) toast(`errors.${e.code}`, e.params);
+      else toast("common.failed");
     }
   };
 
@@ -348,58 +358,6 @@ export function Lobby({
             </div>
           )}
 
-          {profile?.game_stats && Object.keys(profile.game_stats).length > 0 && (
-            <div className="stats-section">
-              <h3>{t("stats.title")}</h3>
-              <div className="stats-grid">
-                {SUPPORTED_GAMES.map((g) => {
-                  const gs: GameStatsEntry | undefined = profile.game_stats?.[g.value];
-                  if (!gs || gs.hands_played === 0) return null;
-                  const winRate = gs.hands_played > 0
-                    ? Math.round((gs.wins / gs.hands_played) * 100)
-                    : 0;
-                  return (
-                    <div key={g.value} className="stats-card">
-                      <div className="stats-card-title">
-                        {g.icon} {t(`games.${g.value}.label`)}
-                      </div>
-                      <div className="stats-card-row">
-                        <span>{t("stats.handsPlayed")}</span>
-                        <span>{gs.hands_played}</span>
-                      </div>
-                      <div className="stats-card-row">
-                        <span>{t("stats.winRate")}</span>
-                        <span>{winRate}% ({gs.wins}W / {gs.losses}L / {gs.draws}D)</span>
-                      </div>
-                      <div className="stats-card-row">
-                        <span>{t("stats.totalWagered")}</span>
-                        <span>{gs.total_wagered.toLocaleString()}</span>
-                      </div>
-                      <div className="stats-card-row">
-                        <span>{t("stats.netProfit")}</span>
-                        <span style={{ color: gs.total_won - gs.total_wagered >= 0 ? "var(--success)" : "var(--danger)" }}>
-                          {(gs.total_won - gs.total_wagered).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="stats-card-row">
-                        <span>{t("stats.biggestWin")}</span>
-                        <span style={{ color: "var(--gold)" }}>{gs.biggest_win.toLocaleString()}</span>
-                      </div>
-                      {(profile.best_streaks?.[g.value] ?? 0) > 0 && (
-                        <div className="stats-card-row">
-                          <span>{t("stats.bestStreak")}</span>
-                          <span>{profile.best_streaks![g.value]}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <Challenges onCoinsChanged={onCoinsChanged} play={play} />
-
           <h3>{t("lobby.chooseGame")}</h3>
           <div className="lobby-guide">
             <span className="lobby-guide-icon" aria-hidden="true">👇</span>
@@ -435,6 +393,61 @@ export function Lobby({
             })}
           </div>
 
+          <Challenges onCoinsChanged={onCoinsChanged} play={play} />
+
+          {profile?.game_stats && Object.keys(profile.game_stats).length > 0 && (
+            <details className="stats-section stats-disclosure">
+              <summary className="stats-summary">{t("stats.title")}</summary>
+              <div className="stats-grid">
+                {SUPPORTED_GAMES.map((g) => {
+                  const gs: GameStatsEntry | undefined = profile.game_stats?.[g.value];
+                  if (!gs || gs.hands_played === 0) return null;
+                  const winRate = gs.hands_played > 0
+                    ? Math.round((gs.wins / gs.hands_played) * 100)
+                    : 0;
+                  const net = gs.total_won - gs.total_wagered;
+                  return (
+                    <div key={g.value} className="stats-card">
+                      <div className="stats-card-title">
+                        {g.icon} {t(`games.${g.value}.label`)}
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.handsPlayed")}</span>
+                        <span>{gs.hands_played}</span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.winRate")}</span>
+                        <span>{winRate}% ({gs.wins}W / {gs.losses}L / {gs.draws}D)</span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.totalWagered")}</span>
+                        <span>{gs.total_wagered.toLocaleString()}</span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.netProfit")}</span>
+                        {/* Positive gets the gold/green nudge; negative stays neutral
+                            (no red loss-shaming on a free-coin game). */}
+                        <span style={{ color: net >= 0 ? "var(--success)" : "var(--text-mute)" }}>
+                          {net.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="stats-card-row">
+                        <span>{t("stats.biggestWin")}</span>
+                        <span style={{ color: "var(--gold)" }}>{gs.biggest_win.toLocaleString()}</span>
+                      </div>
+                      {(profile.best_streaks?.[g.value] ?? 0) > 0 && (
+                        <div className="stats-card-row">
+                          <span>{t("stats.bestStreak")}</span>
+                          <span>{profile.best_streaks![g.value]}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+
           {tables.length > 0 && <BannerAd size="mrec" />}
         </>
       ) : (
@@ -447,8 +460,10 @@ export function Lobby({
             <span className="lobby-guide-icon" aria-hidden="true">👆</span>
             <span>{t("lobby.guide.pickTable")}</span>
           </div>
-          {filteredTables.length === 0 ? (
+          {!tablesLoaded ? (
             <Spinner label={t("lobby.loadingTables")} />
+          ) : filteredTables.length === 0 ? (
+            <div className="empty-msg">{t("lobby.noTables")}</div>
           ) : (
             filteredTables.map((tbl) => {
               const isFull = tbl.player_count >= tbl.max_players;
@@ -468,6 +483,9 @@ export function Lobby({
                   }}
                   onKeyDown={(e) => {
                     if (isFull) return;
+                    // Ignore key events bubbling up from the nested Watch button —
+                    // only join when the card itself is the focused target.
+                    if (e.target !== e.currentTarget) return;
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
                       play("button_click");
@@ -554,6 +572,11 @@ export function Lobby({
           >
             <motion.div
               className="modal-card"
+              role="dialog"
+              aria-modal="true"
+              aria-label={bonus.title}
+              tabIndex={-1}
+              ref={bonusRef}
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
@@ -578,7 +601,7 @@ export function Lobby({
                 </button>
               )}
               <button className="btn-primary" onClick={() => setBonus(null)}>
-                Collect
+                {t("common.collect")}
               </button>
             </motion.div>
           </motion.div>

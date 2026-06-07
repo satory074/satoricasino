@@ -2,6 +2,8 @@
 
 SatoriCasino（Blackjack / Chinchiro）に「次の一手を打ちたくなる」演出を入れるためのリサーチノート。心理学・パチンコ/スロット研究をまとめ、実装の取っ掛かりを併記する。
 
+> **⚠️ 2026-06 更新 — ニアミス増幅は撤去済み。** 下表の「ニアミス効果（Near-Miss）」「LDW」は射倖心研究としては有効だが、SatoriCasino では**意図的に採用しない**。負け確定後にニアミスを煽る演出は典型的ダークパターン（losses disguised as wins）であり、[`tone-and-manner.md`](./tone-and-manner.md) §9 で明示禁止、[`responsible-gaming-pass.md`](./responsible-gaming-pass.md) で撤去内容を記録している。`near_miss` は通常の負けと同じ演出（anticipation/テンション/揺れなし、`LOSS` 表示、事実サブテキスト）。このノートは「なぜ効くか」の理解のために残すが、**実装指針ではない**。
+
 ## 1. 心理メカニズム
 
 | メカニズム | 概要 | ゲームへの含意 |

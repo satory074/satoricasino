@@ -9,6 +9,7 @@ import { StreakBadge } from "./shared/components/StreakBadge";
 import { LangToggle } from "./shared/components/LangToggle";
 import { InterstitialAd } from "./shared/components/InterstitialAd";
 import { SideAds } from "./shared/components/SideAds";
+import { ToastHost } from "./shared/components/Toast";
 import { useInterstitial } from "./shared/hooks/useInterstitial";
 import { useTranslation } from "./shared/i18n/useTranslation";
 import type { UserProfile } from "./shared/types/game";
@@ -338,6 +339,8 @@ export default function App() {
       )}
 
       <InterstitialAd open={leaveInterstitial.shouldShow} onClose={leaveInterstitial.onDismiss} />
+
+      <ToastHost />
     </SideAds>
   );
 }

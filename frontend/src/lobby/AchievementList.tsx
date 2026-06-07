@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { apiGet } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
+import { useModalA11y } from "../shared/hooks/useModalA11y";
 import type { AchievementInfo } from "../shared/types/game";
 
 interface Props {
@@ -13,6 +14,7 @@ export function AchievementList({ open, onClose }: Props) {
   const { t } = useTranslation();
   const [achievements, setAchievements] = useState<AchievementInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const cardRef = useModalA11y<HTMLDivElement>({ open, onClose });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,6 +46,11 @@ export function AchievementList({ open, onClose }: Props) {
         >
           <motion.div
             className="modal-card achievement-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("achievements.title")}
+            tabIndex={-1}
+            ref={cardRef}
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { apiGet, apiPost, ApiError } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
+import { useModalA11y } from "../shared/hooks/useModalA11y";
 import type { CosmeticItem, EquippedCosmetics } from "../shared/types/game";
 import { Card } from "../shared/components/Card";
 import { Die } from "../games/chinchiro/Die";
@@ -33,6 +34,7 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
   const [category, setCategory] = useState<Category>("card_skin");
   const [data, setData] = useState<ShopResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const cardRef = useModalA11y<HTMLDivElement>({ open, onClose });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,6 +100,11 @@ export function Shop({ open, onClose, onCoinsChanged, play }: Props) {
         >
           <motion.div
             className="modal-card shop-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("shop.title")}
+            tabIndex={-1}
+            ref={cardRef}
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}

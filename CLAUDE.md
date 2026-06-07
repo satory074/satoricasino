@@ -18,7 +18,7 @@ SatoriCasino — multi-game casino web app. Currently ships **Blackjack** and **
 # Backend
 uv sync
 uv run uvicorn backend.main:app --reload --port 8000
-uv run pytest                                  # 142 tests across blackjack, chinchiro, achievements, ads, cosmetics, table_heat
+uv run pytest                                  # 149 tests across blackjack, chinchiro, achievements, ads, cosmetics, table_heat, daily_bonus
 uv run pytest tests/test_chinchiro.py          # one test file
 uv run pytest -k "test_pinzoro"                # one test by name
 
@@ -112,7 +112,7 @@ frontend/src/shared/ad/
 └── index.ts             # getAdBridge() — singleton, picks bridge by feature-detecting window.adsbygoogle
 ```
 
-`getAdBridge()` returns `AdSenseBridge` if `window.adsbygoogle` is an array (script loaded), otherwise `MockAdBridge`. The factory caches the result, so once a tab boots into "mock mode" it stays there — this matters in unit tests / Storybook-like setups where you want predictable placeholders.
+`getAdBridge()` returns `AdSenseBridge` when the `adsbygoogle.js` script tag is present in the DOM (it is, loaded eagerly in `index.html`) **or** `import.meta.env.PROD` — i.e. always in production. Otherwise (dev with no script) it returns `MockAdBridge`. The factory caches the result. **Why not `Array.isArray(window.adsbygoogle)`?** That was the old probe and it was wrong: once the script loads it replaces the array with an object, so the check returned false in prod and fell back to `MockAdBridge`, leaking gray "AD" placeholder boxes onto the live site. As a second layer, `MockAdBridge` now renders nothing outside `import.meta.env.DEV`, and empty ad slots collapse via `.ad-banner-slot:empty` so they never reserve height / overlap content.
 
 The four `BannerSize` values map 1:1 to AdSense slot IDs (`SLOT_ID_320x50` / `SLOT_ID_300x250` / `SLOT_ID_728x90` / `SLOT_ID_160x600` in `adSenseBridge.ts`). When you create real slots in AdSense console, replace those slot ID constants — the size enum stays. `AdSenseBridge.showBanner` early-returns when the slot value still starts with `SLOT_ID_`, so no `<ins>` element is created until real IDs are filled in — this keeps the DOM clean of failing fill requests during the audit-then-create-units window. Removing those placeholder values automatically re-enables the path.
 
@@ -145,8 +145,9 @@ frontend/src/
 │   ├── components/        # Card, Hand, Chip, BetArea, BetChipStack, TurnTimer, ResultOverlay,
 │   │                      # ActionButton, KeyHintBar, StreakBadge, LangToggle, TableHeatBadge,
 │   │                      # AchievementToast, ReactionBar, ReactionFloat, AdPlayer,
-│   │                      # SideAds, BannerAd, InterstitialAd, Spinner
-│   ├── hooks/useInterstitial.ts  # 3-min cooldown + every-5-rounds gate for InterstitialAd
+│   │                      # SideAds, BannerAd, InterstitialAd, Spinner, Toast, RulesModal, ConnectionLost
+│   ├── hooks/useInterstitial.ts  # 5-min cooldown + every-10-rounds gate for InterstitialAd
+│   ├── hooks/useModalA11y.ts     # focus trap + Escape + focus-restore for all modals
 │   ├── cosmetics.ts       # CSS class resolver for equipped cosmetics
 │   ├── i18n/              # I18nProvider + useTranslation + locales/{ja,en}.ts
 │   └── types/game.ts      # WS message types incl. ChinchiroGameState, CosmeticItem, EquippedCosmetics, TableHeat
@@ -193,7 +194,7 @@ Screen shake uses a CSS `@keyframes screen-shake` animation on `.game-section.is
 
 `docs/design-notes/` holds the research that drove non-trivial UX decisions (excitement effects, "next action" clarity). When making another large UX change, drop a note there — it saves the next contributor from re-doing the literature review.
 
-`docs/design-notes/tone-and-manner.md` is the umbrella tone & manner doc — start there before adding a new game or component for the unified rules on color, typography, motion, audio, microcopy, and responsible-gaming guardrails. The two narrower notes (`excitement-effects.md`, `ui-ux-clarity.md`) sit under it.
+`docs/design-notes/tone-and-manner.md` is the umbrella tone & manner doc — start there before adding a new game or component for the unified rules on color, typography, motion, audio, microcopy, and responsible-gaming guardrails. The two narrower notes (`excitement-effects.md`, `ui-ux-clarity.md`) sit under it. `responsible-gaming-pass.md` records the 2026-06 dark-pattern correction (near-miss de-amplification, bailout copy, streak grace, ad cadence) plus the a11y/reliability fixes — **near-miss must stay de-amplified** (treated as an ordinary loss), see tone-and-manner §9.
 
 ### WS protocol
 

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { apiGet } from "../shared/api/api";
 import { getUserId } from "../shared/api/api";
 import { useTranslation } from "../shared/i18n/useTranslation";
+import { useModalA11y } from "../shared/hooks/useModalA11y";
 import type { LeaderboardResponse } from "../shared/types/game";
 
 type Metric = "coins" | "wins";
@@ -18,6 +19,7 @@ export function Leaderboard({ open, onClose }: Props) {
   const [data, setData] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const myId = getUserId();
+  const cardRef = useModalA11y<HTMLDivElement>({ open, onClose });
 
   const load = useCallback(async (m: Metric) => {
     setLoading(true);
@@ -58,6 +60,11 @@ export function Leaderboard({ open, onClose }: Props) {
         >
           <motion.div
             className="modal-card leaderboard-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("leaderboard.title")}
+            tabIndex={-1}
+            ref={cardRef}
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}

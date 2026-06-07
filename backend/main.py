@@ -431,6 +431,27 @@ async def get_me(token: str = Query(...)):
 
 # --- Coin Economy ---
 
+def compute_daily_streak(last_bonus: str | None, today: str, old_streak: int) -> int:
+    """Next login-streak day given the last claim date.
+
+    One-day grace: claiming the day after (gap 1) or after skipping a single
+    day (gap 2) both continue the streak. A larger gap resets to day 1. This
+    softens streak-loss FOMO — missing one day no longer wipes progress.
+    Caller must have already rejected a same-day re-claim (gap 0).
+    """
+    gap = 999
+    if last_bonus:
+        try:
+            last_dt = datetime.strptime(last_bonus, "%Y-%m-%d")
+            today_dt = datetime.strptime(today, "%Y-%m-%d")
+            gap = (today_dt - last_dt).days
+        except ValueError:
+            gap = 999
+    if 1 <= gap <= 2:
+        return min(old_streak + 1, 7)
+    return 1
+
+
 @app.post("/api/daily-bonus")
 async def claim_daily_bonus(token: str = Query(...)):
     payload = _get_current_user(token)
@@ -442,14 +463,10 @@ async def claim_daily_bonus(token: str = Query(...)):
     if user.get("last_daily_bonus") == today:
         raise HTTPException(status_code=400, detail={"code": "daily_bonus.already_claimed"})
 
-    # Login streak: consecutive days → escalating bonus
-    from datetime import timedelta
-    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+    # Login streak: consecutive days → escalating bonus, with a one-day grace
+    # so a single missed day doesn't wipe progress (avoids streak-loss FOMO).
     old_streak = user.get("daily_streak", 0)
-    if user.get("last_daily_bonus") == yesterday:
-        new_streak = min(old_streak + 1, 7)
-    else:
-        new_streak = 1
+    new_streak = compute_daily_streak(user.get("last_daily_bonus"), today, old_streak)
 
     bonus = 100 + (new_streak - 1) * 50  # Day1=100, Day7=400 (next day wraps to 1)
     if new_streak >= 7:

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { apiPost } from "../api/api";
 import { useTranslation } from "../i18n/useTranslation";
+import { useModalA11y } from "../hooks/useModalA11y";
 import { getAdBridge } from "../ad";
 
 interface Props {
@@ -17,6 +18,12 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
   const [completing, setCompleting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
+  // Escape disabled until the countdown finishes (reward requires the watch).
+  const cardRef = useModalA11y<HTMLDivElement>({
+    open,
+    onClose: onCancel,
+    escapeDisabled: countdown > 0,
+  });
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -33,22 +40,22 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
       return;
     }
 
+    // Countdown always runs — the reward is gated on watch time, not on a real
+    // ad being available, so it must work even when no ad fills.
+    intervalRef.current = window.setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearTimer();
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+
     const bridge = getAdBridge();
     const container = containerRef.current;
-
     if (container && bridge.isAvailable()) {
-      // Start countdown timer for UI
-      intervalRef.current = window.setInterval(() => {
-        setCountdown((c) => {
-          if (c <= 1) {
-            clearTimer();
-            return 0;
-          }
-          return c - 1;
-        });
-      }, 1000);
-
-      // Run the ad bridge (handles rendering into container)
+      // Render the real ad into the container (no-op for placeholder slots).
       bridge.show(container).catch(() => {
         // Bridge failure — countdown still works as fallback
       });
@@ -83,6 +90,11 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
         >
           <motion.div
             className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("ads.watching")}
+            tabIndex={-1}
+            ref={cardRef}
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
@@ -91,11 +103,13 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
           >
             <div className="modal-title">{t("ads.watching")}</div>
             <div ref={containerRef} className="ad-container">
-              <div className="ad-placeholder">
-                <div className="ad-placeholder-inner">
-                  <span className="ad-placeholder-label">AD</span>
+              {import.meta.env.DEV && (
+                <div className="ad-placeholder">
+                  <div className="ad-placeholder-inner">
+                    <span className="ad-placeholder-label">AD</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             {countdown > 0 ? (
               <div className="ad-countdown">{t("common.seconds", { n: countdown })}</div>
@@ -114,7 +128,7 @@ export function AdPlayer({ open, adSessionId, onComplete, onCancel }: Props) {
                 onClick={onCancel}
                 style={{ marginTop: "0.5rem" }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             )}
           </motion.div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { wsUrl } from "./api";
 import type { GameState, WSMessage } from "../types/game";
 
@@ -32,11 +32,14 @@ interface SocketState {
   error: SocketError | null;
   errorVersion: number;
   notifications: Notification[];
+  /** True once all reconnect attempts are spent — the connection is dead. */
+  reconnectExhausted: boolean;
 }
 
 type Action =
   | { type: "ws_open" }
   | { type: "ws_close" }
+  | { type: "ws_exhausted" }
   | { type: "msg"; msg: WSMessage }
   | { type: "reset" }
   | { type: "dismiss_notification"; id: number };
@@ -64,11 +67,13 @@ function extractErrorParams(msg: Record<string, unknown>): Record<string, string
 function reducer(s: SocketState, a: Action): SocketState {
   switch (a.type) {
     case "ws_open":
-      return { ...s, connected: true };
+      return { ...s, connected: true, reconnectExhausted: false };
     case "ws_close":
       return { ...s, connected: false };
+    case "ws_exhausted":
+      return { ...s, connected: false, reconnectExhausted: true };
     case "reset":
-      return { connected: false, state: null, log: [], error: null, errorVersion: 0, notifications: [] };
+      return { connected: false, state: null, log: [], error: null, errorVersion: 0, notifications: [], reconnectExhausted: false };
     case "dismiss_notification":
       return { ...s, notifications: s.notifications.filter((n) => n.id !== a.id) };
     case "msg": {
@@ -151,10 +156,13 @@ export function useGameSocket(tableId: string | null, spectate = false) {
     error: null,
     errorVersion: 0,
     notifications: [],
+    reconnectExhausted: false,
   });
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef(0);
   const closedByUser = useRef(false);
+  // Bumping this re-runs the connect effect for a manual reconnect.
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     if (!tableId) return;
@@ -191,6 +199,10 @@ export function useGameSocket(tableId: string | null, spectate = false) {
           const delay = Math.min(1000 * Math.pow(2, reconnectRef.current), 30000);
           reconnectRef.current += 1;
           timeoutId = window.setTimeout(connect, delay);
+        } else {
+          // Out of retries — surface a blocking "connection lost" state so the
+          // player isn't left staring at a frozen, silently-dead table.
+          dispatch({ type: "ws_exhausted" });
         }
       };
 
@@ -210,7 +222,11 @@ export function useGameSocket(tableId: string | null, spectate = false) {
         wsRef.current = null;
       }
     };
-  }, [tableId, spectate]);
+  }, [tableId, spectate, retryNonce]);
+
+  const reconnect = useCallback(() => {
+    setRetryNonce((n) => n + 1);
+  }, []);
 
   const send = useCallback((action: string, data: Record<string, unknown> = {}) => {
     const ws = wsRef.current;
@@ -229,8 +245,10 @@ export function useGameSocket(tableId: string | null, spectate = false) {
     log: state.log,
     error: state.error,
     errorVersion: state.errorVersion,
+    reconnectExhausted: state.reconnectExhausted,
     notifications: state.notifications,
     dismissNotification,
+    reconnect,
     send,
   };
 }

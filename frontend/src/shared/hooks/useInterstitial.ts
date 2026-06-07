@@ -1,7 +1,10 @@
 import { useCallback, useRef, useState } from "react";
 
-const GLOBAL_COOLDOWN_MS = 3 * 60 * 1000; // 3 minutes
-const ROUND_INTERVAL = 5; // every 5 rounds
+// Relaxed cadence (responsible-gaming / time-respect): a 5-minute global
+// cooldown and every-10-rounds gate, down from 3 min / 5 rounds. Combined with
+// dropping the game-switch trigger, interstitials are far less intrusive.
+const GLOBAL_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const ROUND_INTERVAL = 10; // every 10 rounds
 
 interface UseInterstitialReturn {
   shouldShow: boolean;
