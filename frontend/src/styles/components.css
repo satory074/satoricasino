@@ -1,0 +1,599 @@
+/* ============================================================
+   Shared components — buttons, pills, modals, toasts, badges,
+   hint bar, spinner. Consumes tokens only; no raw colors
+   (tints via color-mix over token colors).
+   Buttons are controls, not headings: body face, no uppercase,
+   no tracking — Japanese labels keep their natural rhythm.
+   ============================================================ */
+
+/* --- Generic buttons ---------------------------------------- */
+
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.mute-btn,
+.action-btn {
+  position: relative; /* notify-dot / shortcut chips anchor here */
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--gold-ink);
+  padding: 0.7rem 1.2rem;
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  box-shadow: var(--shadow-1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--gold-bright);
+  box-shadow: var(--shadow-1), 0 0 12px color-mix(in srgb, var(--gold) 45%, transparent);
+}
+
+.btn-secondary {
+  background: var(--surface-1);
+  color: var(--text-hi);
+  padding: 0.6rem 1rem;
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--line-gold);
+}
+
+.btn-danger {
+  background: transparent;
+  color: color-mix(in srgb, var(--red) 55%, var(--text-hi));
+  padding: 0.6rem 1rem;
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  border: 1px solid color-mix(in srgb, var(--red) 45%, transparent);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 16%, transparent);
+  color: var(--text-hi);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.7rem !important;
+  min-height: 36px !important;
+  font-size: var(--fs-xs) !important;
+}
+
+.error-msg {
+  color: color-mix(in srgb, var(--red) 45%, var(--text-hi));
+  text-align: center;
+  font-size: var(--fs-sm);
+  min-height: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.mute-btn {
+  background: transparent;
+  color: var(--text-mid);
+  padding: 0.4rem 0.55rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  border: 1px solid var(--line);
+  line-height: 1;
+}
+
+.mute-btn:hover:not(:disabled) {
+  color: var(--text-hi);
+  border-color: var(--line-gold);
+  background: var(--surface-hover);
+}
+
+/* --- Connection dot ------------------------------------------ */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-low);
+  display: inline-block;
+}
+
+.status-dot.connected {
+  background: var(--success);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--success) 60%, transparent);
+}
+
+.status-dot.disconnected {
+  background: var(--red);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--red) 60%, transparent);
+}
+
+/* --- Level badge ---------------------------------------------- */
+
+.level-badge {
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  color: var(--gold-ink);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r-pill);
+}
+
+/* --- Game action buttons (the bottom dock controls) ----------- */
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.85rem 1.5rem;
+  min-height: 50px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text-hi);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.12);
+}
+
+/* Each action keeps a distinct hue, but as a tint over the same
+   surface — harmonized, not carnival. */
+.btn-hit {
+  background: color-mix(in srgb, var(--success) 16%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--success) 50%, transparent);
+}
+
+.btn-stand {
+  background: color-mix(in srgb, var(--warn) 15%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+}
+
+.btn-double {
+  background: color-mix(in srgb, var(--info) 15%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--info) 50%, transparent);
+}
+
+.btn-deal {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border-color: var(--gold);
+  color: var(--gold-ink) !important;
+}
+
+.action-btn-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface-3) 65%, transparent);
+  border: 1px solid var(--line);
+  color: var(--text-mid);
+  font-size: 0.65rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  text-transform: uppercase; /* single Latin key letters only */
+}
+
+.action-btn.btn-deal .action-btn-shortcut {
+  background: color-mix(in srgb, var(--gold-ink) 18%, transparent);
+  color: var(--gold-ink);
+  border-color: color-mix(in srgb, var(--gold-ink) 35%, transparent);
+}
+
+/* CTA pulse: the "your move" beacon. */
+.action-btn.is-cta {
+  animation: cta-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cta-pulse {
+  0%,
+  100% {
+    box-shadow:
+      var(--shadow-1),
+      0 0 0 0 color-mix(in srgb, var(--gold) 40%, transparent);
+  }
+  50% {
+    box-shadow:
+      var(--shadow-1),
+      0 0 14px 3px color-mix(in srgb, var(--gold) 32%, transparent);
+  }
+}
+
+.action-btn[disabled],
+.action-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  filter: saturate(0.6);
+  cursor: not-allowed;
+}
+
+.action-hint {
+  width: 100%;
+  text-align: center;
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+}
+
+/* Disabled-action reason shown only on touch devices (no hover tooltip). */
+.action-hint--touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .action-hint--touch {
+    display: block;
+  }
+}
+
+/* --- Turn timer ring ------------------------------------------ */
+
+.turn-timer {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 36px;
+  height: 36px;
+}
+
+.turn-timer-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Modals ---------------------------------------------------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg-0) 75%, transparent);
+  backdrop-filter: blur(4px);
+  padding: var(--sp-4);
+}
+
+.modal-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--sp-7) var(--sp-8);
+  text-align: center;
+  max-width: 440px;
+  box-shadow: var(--shadow-2);
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  color: var(--gold-bright);
+  margin-bottom: 0.6rem;
+}
+
+.modal-amount {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 3rem);
+  font-weight: 800;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: var(--sp-4) 0 var(--sp-6);
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-msg {
+  color: var(--text-mid);
+  margin-bottom: var(--sp-5);
+}
+
+/* In-game rules modal — scrollable body, left-aligned prose. */
+.rules-modal {
+  max-width: 560px;
+  width: min(560px, 92vw);
+}
+
+.rules-body {
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: left;
+  margin: 0.5rem 0 1rem;
+  padding-right: 0.5rem;
+}
+
+.rules-section {
+  margin-bottom: var(--sp-4);
+}
+
+.rules-section h3 {
+  font-family: var(--font-display);
+  color: var(--gold);
+  font-size: var(--fs-lg);
+  margin-bottom: 0.35rem;
+}
+
+.rules-section p {
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Toasts ----------------------------------------------------- */
+
+.toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  pointer-events: none;
+  width: max-content;
+  max-width: min(92vw, 420px);
+}
+
+.toast {
+  pointer-events: auto;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-hi);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-2);
+  text-align: center;
+  animation: toast-in var(--t-med) ease;
+}
+
+.toast-error {
+  border-color: color-mix(in srgb, var(--red) 60%, transparent);
+  background: color-mix(in srgb, var(--red) 14%, var(--surface-2));
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Key hint bar (desktop keyboard dock) ------------------------ */
+
+.key-hint-bar {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.4rem 1rem;
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--text-mid);
+}
+
+.key-hint-bar .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.key-hint-bar .key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.35rem;
+  padding: 0 0.4rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  color: var(--gold-bright);
+  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  text-transform: uppercase; /* single Latin key letters */
+}
+
+.key-hint-bar .label {
+  color: var(--text-mid);
+}
+
+.key-hint-bar .hint.is-disabled {
+  opacity: 0.4;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .key-hint-bar {
+    display: none;
+  }
+}
+
+/* --- Streak badge (win-streak escalation: tier 1 → 3) ------------- */
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--r-pill);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.streak-badge.tier-1 {
+  background: color-mix(in srgb, var(--info) 22%, transparent);
+  color: color-mix(in srgb, var(--info) 40%, var(--text-hi));
+  border-color: color-mix(in srgb, var(--info) 55%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--info) 35%, transparent);
+}
+
+.streak-badge.tier-2 {
+  background: color-mix(in srgb, var(--red) 35%, transparent);
+  color: var(--text-hi);
+  border-color: color-mix(in srgb, var(--red) 70%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--red) 45%, transparent);
+  animation: streak-flicker 1.6s ease-in-out infinite;
+}
+
+.streak-badge.tier-3 {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--gold-ink);
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--gold) 70%, transparent),
+    0 0 32px color-mix(in srgb, var(--gold) 40%, transparent);
+  animation: streak-flicker 1.2s ease-in-out infinite;
+}
+
+@keyframes streak-flicker {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}
+
+/* --- Table heat badge (live social proof: this table is hot) ------ */
+
+.table-heat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--r-pill);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  background: color-mix(in srgb, var(--red) 18%, var(--surface-3));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  color: var(--gold-bright);
+}
+
+.table-heat-badge.hot {
+  animation: heat-pulse 1.4s ease-in-out infinite;
+}
+
+.table-heat-badge.ultra-hot {
+  background: linear-gradient(180deg, var(--gold-bright), var(--red));
+  color: var(--gold-ink);
+  border-color: var(--gold-bright);
+  animation: heat-pulse 0.9s ease-in-out infinite;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--red) 70%, transparent);
+}
+
+@keyframes heat-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* --- Notification dot --------------------------------------------- */
+
+.notify-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  background: var(--red);
+  border: 1px solid var(--bg-0);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: notify-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes notify-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 70%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+/* --- Loading spinner (CSS keyframes; keeps spinning in background
+   tabs where rAF is throttled) --------------------------------------- */
+
+.spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: var(--sp-9) var(--sp-4);
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+}
+
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border: 3px solid var(--surface-1);
+  border-top-color: var(--gold);
+  animation: spinner-spin 0.8s linear infinite;
+}
+
+.spinner--sm {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-width: 2px;
+}
+
+.spinner--md {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.spinner-label {
+  letter-spacing: 0.04em;
+}
+
+@keyframes spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -32,6 +32,7 @@
   .action-btn.is-cta,
   .player-box.is-current,
   .player-seat.is-current,
+  .toast,
   .notify-dot {
     animation: none !important;
     transition: none !important;
