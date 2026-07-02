@@ -95,6 +95,27 @@
   --t-med: 240ms;
   --t-slow: 400ms;
 
+  /* --- physical object colors (cards, chips, dice, bowl) --------
+     These are the fixed colors of real casino objects, not theme
+     surfaces — they stay put if the theme is ever re-skinned. */
+  --card-ivory: #f6f1e3;
+  --card-ivory-deep: #e9e1cb;
+  --card-ink: #23262e;
+  --card-red: #b3374a;
+  --chip-white: #f0efe9;
+  --chip-white-deep: #c4c2b8;
+  --chip-green: #66bb6a;
+  --chip-green-deep: #2e7d32;
+  --chip-black: #43403a;
+  --chip-black-deep: #14120f;
+  --chip-purple: #ab47bc;
+  --chip-purple-deep: #6a1b9a;
+  --dice-ivory: #f2ecdc;
+  --dice-ivory-deep: #ddd2b8;
+  --dice-pip: #2b251c;
+  --bowl-lacquer: #6e4526;
+  --bowl-lacquer-deep: #462a15;
+
   /* The whole app is a dark experience; declaring it lets Chrome's
      Auto Dark Mode (and Dark Reader's dark-theme detection) leave the
      carefully tuned palette alone. */

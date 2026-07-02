@@ -18,13 +18,6 @@ interface Props {
   onCardEvent?: () => void;
 }
 
-const RESULT_COLOR: Record<Result, string> = {
-  win: "#22c55e",
-  lose: "#666",
-  push: "#3aa9ff",
-  blackjack: "#f4c430",
-};
-
 export function PlayerBox({
   playerId,
   player,
@@ -81,17 +74,7 @@ export function PlayerBox({
         <motion.div
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
-          style={{
-            marginTop: "0.5rem",
-            display: "inline-block",
-            padding: "0.25rem 0.7rem",
-            borderRadius: 999,
-            background: RESULT_COLOR[result],
-            color: result === "lose" ? "#ddd" : "#1a1a1a",
-            fontWeight: 700,
-            fontSize: "0.75rem",
-            letterSpacing: "0.15em",
-          }}
+          className={`result-badge result-badge--${result}`}
         >
           {resultLabel}
         </motion.div>

@@ -15,6 +15,7 @@ import type {
   ChinchiroGameState,
   ChinchiroPhase,
 } from "../../shared/types/game";
+import { PhaseStepper } from "../../shared/components/PhaseStepper";
 import { ReactionBar } from "../../shared/components/ReactionBar";
 import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { BannerAd } from "../../shared/components/BannerAd";
@@ -387,13 +388,19 @@ export function ChinchiroGame({
     return (
       <div className="game-section">
         <div className="game-topbar">
-          <button className="btn-secondary" onClick={onLeave}>
-            {t("common.backToLobby")}
-          </button>
-          <div className="game-phase">{t("common.connecting")}</div>
-          <span
-            className={`status-dot ${connected ? "connected" : "disconnected"}`}
-          />
+          <div className="topbar-side topbar-left">
+            <button className="btn-secondary" onClick={onLeave}>
+              {t("common.backToLobby")}
+            </button>
+          </div>
+          <div className="phase-stepper phase-stepper--plain">
+            {t("common.connecting")}
+          </div>
+          <div className="topbar-side topbar-right">
+            <span
+              className={`status-dot ${connected ? "connected" : "disconnected"}`}
+            />
+          </div>
         </div>
         <div className="game-table">
           <Spinner label={t("common.connecting")} />
@@ -406,23 +413,31 @@ export function ChinchiroGame({
   return (
     <div className={`game-section${shaking ? " is-shaking" : ""}${isLastRoll ? " last-roll-mode" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
-        <button className="btn-secondary" onClick={onLeave}>
-          {t("common.backToLobby")}
-        </button>
-        <div className="game-phase">{t(`phase.chinchiro.${phase}`)}</div>
-        <TableHeatBadge heat={state.table_heat} />
-        <button
-          className="mute-btn help-btn"
-          onClick={() => { play("button_click"); setShowRules(true); }}
-          title={t("help.button")}
-          aria-label={t("help.button")}
-        >
-          ?
-        </button>
-        <span
-          className={`status-dot ${connected ? "connected" : "disconnected"}`}
-          title={connected ? t("common.connected") : t("common.reconnecting")}
+        <div className="topbar-side topbar-left">
+          <button className="btn-secondary" onClick={onLeave}>
+            {t("common.backToLobby")}
+          </button>
+        </div>
+        <PhaseStepper
+          gameType="chinchiro"
+          phase={phase}
+          steps={["betting", "banker_roll", "player_rolls", "resolution"]}
         />
+        <div className="topbar-side topbar-right">
+          <TableHeatBadge heat={state.table_heat} />
+          <button
+            className="mute-btn help-btn"
+            onClick={() => { play("button_click"); setShowRules(true); }}
+            title={t("help.button")}
+            aria-label={t("help.button")}
+          >
+            ?
+          </button>
+          <span
+            className={`status-dot ${connected ? "connected" : "disconnected"}`}
+            title={connected ? t("common.connected") : t("common.reconnecting")}
+          />
+        </div>
       </div>
 
       <div className="game-table chinchiro-table">
@@ -499,13 +514,7 @@ export function ChinchiroGame({
           </p>
         )}
         {phase === "banker_roll" && (
-          <p
-            style={{
-              color: "var(--gold)",
-              fontFamily: "var(--font-display)",
-              letterSpacing: "0.2em",
-            }}
-          >
+          <p className="action-hint action-hint--banker">
             {t("chinchiro.bankerRolling")}
           </p>
         )}

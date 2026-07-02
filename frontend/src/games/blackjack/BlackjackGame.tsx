@@ -11,6 +11,7 @@ import {
   type ResultKind,
 } from "../../shared/components/ResultOverlay";
 import type { GameState, Phase, Result } from "../../shared/types/game";
+import { PhaseStepper } from "../../shared/components/PhaseStepper";
 import { ReactionBar } from "../../shared/components/ReactionBar";
 import { ReactionFloat } from "../../shared/components/ReactionFloat";
 import { BannerAd } from "../../shared/components/BannerAd";
@@ -420,23 +421,31 @@ export function BlackjackGame({ tableId, onLeave, myCoins, onResolve, play, spec
   return (
     <div className={`game-section${shaking ? " is-shaking" : ""}${softShaking ? " is-shaking-soft" : ""}${tableThemeClass ? ` ${tableThemeClass}` : ""}`}>
       <div className="game-topbar">
-        <button className="btn-secondary" onClick={onLeave}>
-          {t("common.backToLobby")}
-        </button>
-        <div className="game-phase">{t(`phase.blackjack.${phase}`)}</div>
-        <TableHeatBadge heat={gameState?.table_heat} />
-        <button
-          className="mute-btn help-btn"
-          onClick={() => { play("button_click"); setShowRules(true); }}
-          title={t("help.button")}
-          aria-label={t("help.button")}
-        >
-          ?
-        </button>
-        <span
-          className={`status-dot ${connected ? "connected" : "disconnected"}`}
-          title={connected ? t("common.connected") : t("common.reconnecting")}
+        <div className="topbar-side topbar-left">
+          <button className="btn-secondary" onClick={onLeave}>
+            {t("common.backToLobby")}
+          </button>
+        </div>
+        <PhaseStepper
+          gameType="blackjack"
+          phase={phase}
+          steps={["betting", "player_turns", "dealer_turn", "resolution"]}
         />
+        <div className="topbar-side topbar-right">
+          <TableHeatBadge heat={gameState?.table_heat} />
+          <button
+            className="mute-btn help-btn"
+            onClick={() => { play("button_click"); setShowRules(true); }}
+            title={t("help.button")}
+            aria-label={t("help.button")}
+          >
+            ?
+          </button>
+          <span
+            className={`status-dot ${connected ? "connected" : "disconnected"}`}
+            title={connected ? t("common.connected") : t("common.reconnecting")}
+          />
+        </div>
       </div>
 
       <div className="game-table">

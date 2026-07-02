@@ -1,0 +1,682 @@
+/* ============================================================
+   Game shell + blackjack — the lamplight stage.
+   Layout contract (do not break):
+   - .game-section is the 3-row shell: .game-topbar /
+     .game-table (THE scroll region) / .game-actions dock sibling
+   - .players-area.has-current dims :not(.is-current) seats
+   - Card class names (.card/.card-back/.card-red/.card-black,
+     card-enter/card-face-enter) are load-bearing for cosmetics.
+   ============================================================ */
+
+.game-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- Topbar ------------------------------------------------------- */
+
+.game-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-side {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1;
+}
+
+.topbar-left {
+  justify-content: flex-start;
+}
+
+.topbar-right {
+  justify-content: flex-end;
+}
+
+/* --- Phase stepper -------------------------------------------------- */
+
+.phase-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-low);
+  white-space: nowrap;
+}
+
+.phase-stepper--plain {
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+}
+
+.phase-step {
+  position: relative;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  transition: color var(--t-med), background var(--t-med),
+    border-color var(--t-med);
+}
+
+.phase-step + .phase-step::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--sp-2) + 1px);
+  top: 50%;
+  width: calc(var(--sp-2) - 2px);
+  height: 1px;
+  background: var(--line);
+}
+
+.phase-step.is-done {
+  color: var(--text-mid);
+}
+
+.phase-step.is-active {
+  color: var(--gold-bright);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 45%, transparent);
+  font-weight: 700;
+}
+
+/* --- The stage (scroll region) --------------------------------------- */
+
+.game-table {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(0.75rem, 3vw, 1.5rem) clamp(0.5rem, 2vw, 1rem)
+    clamp(0.75rem, 2.5vw, 1.25rem);
+  gap: clamp(0.8rem, 2.5vw, 1.5rem);
+  position: relative;
+  /* Lamplight over felt: a warm pool of light on the table, fading into
+     the dark room at the edges. Cosmetic table themes re-skin this by
+     overriding the --stage-* tokens on .game-section. */
+  background:
+    radial-gradient(90% 55% at 50% 0%, var(--stage-lamp) 0%, transparent 72%),
+    radial-gradient(
+      150% 130% at 50% -10%,
+      var(--stage-felt) 0%,
+      var(--stage-felt-deep) 52%,
+      color-mix(in srgb, var(--stage-felt-deep) 45%, var(--bg-0)) 100%
+    );
+  /* Wooden rim under the topbar. */
+  border-top: 3px solid var(--stage-rim);
+  box-shadow: inset 0 1px 0 var(--stage-rim-hi);
+}
+
+/* Desktop: stage + side log column, so the table breathes and the log
+   stops pushing the seats around. (.game-log keeps its own internal
+   scroll — the one-scroller-per-view rule is intact.) */
+@media (min-width: 1024px) {
+  .game-table {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-auto-rows: min-content;
+    align-items: start;
+    justify-items: center;
+    column-gap: var(--sp-5);
+  }
+  .game-table > * {
+    grid-column: 1;
+  }
+  .game-table > .game-log-area {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    padding: 0 var(--sp-2) 0 0;
+  }
+  .game-table > .game-log-area .game-log {
+    max-height: min(56vh, 460px);
+  }
+}
+
+/* --- Dealer ------------------------------------------------------------ */
+
+.dealer-area {
+  text-align: center;
+  width: 100%;
+}
+
+.dealer-area h3 {
+  font-size: var(--fs-xs);
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: color-mix(in srgb, var(--text-hi) 62%, var(--stage-felt));
+  margin-bottom: 0.6rem;
+}
+
+.dealer-cards {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 110px;
+  perspective: 800px;
+}
+
+.dealer-value {
+  display: inline-block;
+  margin-top: 0.5rem;
+  background: color-mix(in srgb, var(--surface-3) 75%, transparent);
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Seats --------------------------------------------------------------- */
+
+.players-area {
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.player-box {
+  position: relative;
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  border: 2px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  min-width: min(200px, 100%);
+  text-align: center;
+  box-shadow: var(--shadow-1);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+/* My seat: quiet ivory marker (crimson reads as danger in this system). */
+.player-box.is-me {
+  border-color: color-mix(in srgb, var(--text-hi) 45%, transparent);
+}
+
+/* Active turn: the gold spotlight. */
+.player-box.is-current {
+  border-color: var(--gold);
+  animation: player-pulse 1.6s ease-in-out infinite;
+}
+
+.players-area.has-current .player-box:not(.is-current) {
+  filter: saturate(0.6) brightness(0.88);
+}
+
+.players-area.has-current .player-seat:not(.is-current) {
+  filter: saturate(0.6) brightness(0.88);
+}
+
+@keyframes player-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 color-mix(in srgb, var(--gold) 55%, transparent),
+      0 0 20px color-mix(in srgb, var(--gold) 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 22px color-mix(in srgb, var(--gold) 75%, transparent),
+      0 0 36px color-mix(in srgb, var(--gold) 35%, transparent);
+  }
+}
+
+.player-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--text-hi);
+  margin-bottom: 0.3rem;
+}
+
+.player-bet {
+  display: inline-block;
+  color: var(--gold-bright);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--surface-3) 75%, transparent);
+  padding: 0.15rem 0.65rem;
+  border-radius: var(--r-pill);
+  margin-bottom: 0.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-cards {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+  min-height: 90px;
+  align-items: center;
+  flex-wrap: wrap;
+  perspective: 800px;
+}
+
+.player-value {
+  margin-top: 0.4rem;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-value.busted {
+  color: color-mix(in srgb, var(--red) 60%, var(--text-hi));
+}
+
+.player-value.bj {
+  color: var(--gold-bright);
+}
+
+/* Per-seat result badge (win keeps its celebration; lose stays muted). */
+.result-badge {
+  margin-top: 0.5rem;
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+}
+
+.result-badge--win {
+  background: var(--success);
+  color: var(--gold-ink);
+}
+
+.result-badge--blackjack {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--gold-ink);
+}
+
+.result-badge--push {
+  background: color-mix(in srgb, var(--info) 40%, var(--surface-3));
+  color: var(--text-hi);
+}
+
+.result-badge--lose {
+  background: var(--surface-3);
+  color: var(--text-mid);
+}
+
+/* --- Cards ------------------------------------------------------------------ */
+
+.card-shell {
+  width: clamp(54px, 8vw, 84px);
+  height: clamp(76px, 11.2vw, 118px);
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  background: linear-gradient(180deg, var(--card-ivory), var(--card-ivory-deep));
+  border: 1px solid color-mix(in srgb, var(--card-ink) 20%, transparent);
+  padding: 0.3rem 0.4rem;
+  box-shadow: var(--shadow-1);
+  font-family: var(--font-display);
+}
+
+.card .top,
+.card .bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.card .top {
+  align-self: flex-start;
+}
+
+.card .bottom {
+  align-self: flex-end;
+  transform: rotate(180deg);
+}
+
+.card-rank {
+  font-size: clamp(0.85rem, 1.6vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.card-suit-sm {
+  width: clamp(9px, 1.2vw, 13px);
+  height: clamp(9px, 1.2vw, 13px);
+  display: block;
+}
+
+.card .center {
+  line-height: 0;
+}
+
+.card-suit-lg {
+  width: clamp(22px, 3.2vw, 34px);
+  height: clamp(22px, 3.2vw, 34px);
+  display: block;
+}
+
+.card-black {
+  color: var(--card-ink);
+}
+
+.card-red {
+  color: var(--card-red);
+}
+
+/* Card back: lacquer red with a woven gold lattice. Cosmetic skins
+   override `background` (with !important) — keep this a `background`
+   shorthand so they keep winning. */
+.card-back {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--gold) 26%, transparent) 7px 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--gold) 26%, transparent) 7px 8px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--red) 78%, black),
+      color-mix(in srgb, var(--red) 52%, black)
+    );
+  border-color: color-mix(in srgb, var(--gold) 60%, transparent);
+}
+
+.card-back::after {
+  content: "♠";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.6rem;
+  color: var(--gold);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes card-enter {
+  from {
+    transform: translate(160px, -110px) rotate(-12deg) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.card-enter {
+  animation: card-enter 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes card-face-enter {
+  from {
+    transform: rotateY(-90deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+.card-face-enter {
+  animation: card-face-enter 0.35s ease-out both;
+}
+
+.hand-shake {
+  animation: hand-shake 0.45s ease;
+}
+
+@keyframes hand-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* --- Bet area ------------------------------------------------------------------ */
+
+.bet-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: center;
+  width: 100%;
+  max-width: 460px;
+}
+
+/* Blackjack renders BetArea as a direct child of .game-section (it
+   replaces the dock for the betting phase) — center it and give it the
+   dock band so the bet controls read as the action row. */
+.game-section > .bet-area {
+  align-self: center;
+  flex-shrink: 0;
+  max-width: none;
+  padding: 0.7rem clamp(0.75rem, 3vw, 1.25rem) max(0.7rem, env(safe-area-inset-bottom));
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+  position: relative;
+  z-index: var(--z-dock);
+}
+
+.chip-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.chip {
+  width: clamp(48px, 6vw, 72px);
+  height: clamp(48px, 6vw, 72px);
+  border-radius: 50%;
+  border: 4px dashed color-mix(in srgb, var(--card-ivory) 85%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  position: relative;
+  transition: transform 0.15s;
+}
+
+.chip:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+
+.chip-10 {
+  background: radial-gradient(circle at 30% 30%, var(--chip-white), var(--chip-white-deep));
+  color: var(--card-ink);
+}
+.chip-50 {
+  background: radial-gradient(circle at 30% 30%, var(--chip-green), var(--chip-green-deep));
+  color: var(--card-ivory);
+}
+.chip-100 {
+  background: radial-gradient(circle at 30% 30%, var(--chip-black), var(--chip-black-deep));
+  color: var(--gold-bright);
+}
+.chip-500 {
+  background: radial-gradient(circle at 30% 30%, var(--chip-purple), var(--chip-purple-deep));
+  color: var(--card-ivory);
+}
+.chip-max {
+  background: radial-gradient(circle at 30% 30%, var(--gold-bright), var(--gold));
+  color: var(--gold-ink);
+}
+
+.bet-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--gold-bright);
+}
+
+.bet-display input {
+  width: 130px;
+  text-align: center;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--gold-bright);
+}
+
+.bet-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* --- Action dock (sibling of .game-table — never inside it) ---------------------- */
+
+.game-actions {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0.7rem clamp(0.75rem, 3vw, 1.25rem) max(0.7rem, env(safe-area-inset-bottom));
+  padding-left: max(clamp(0.75rem, 3vw, 1.25rem), env(safe-area-inset-left));
+  padding-right: max(clamp(0.75rem, 3vw, 1.25rem), env(safe-area-inset-right));
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+  position: relative;
+  z-index: var(--z-dock);
+}
+
+.action-hint--banker {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+}
+
+/* --- Game log ------------------------------------------------------------------- */
+
+.game-log-area {
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 0 1rem 1rem;
+}
+
+.game-log-area h4 {
+  font-size: var(--fs-xs);
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: color-mix(in srgb, var(--text-hi) 55%, var(--stage-felt));
+  margin-bottom: 0.4rem;
+}
+
+.game-log {
+  max-height: 130px;
+  overflow-y: auto;
+  font-size: var(--fs-xs);
+  color: var(--text-mid);
+  background: color-mix(in srgb, var(--surface-3) 82%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+.log-entry {
+  padding: 0.1rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Mobile tiers ------------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+  .player-box {
+    padding: 0.7rem 0.7rem 0.9rem;
+  }
+  /* Collapse the stepper to the active step only — acts as the phase label. */
+  .phase-step:not(.is-active) {
+    display: none;
+  }
+  .phase-step + .phase-step::before {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-topbar {
+    padding: 0.45rem 0.85rem;
+  }
+  .player-box {
+    min-width: 0;
+    flex: 1 1 calc(50% - 0.5rem);
+    max-width: 100%;
+  }
+  .card-shell {
+    /* Two-column player wrap at this width — cap cards so 5-card hands fit. */
+    width: clamp(46px, 12vw, 58px);
+    height: clamp(64px, 16.8vw, 81px);
+  }
+  .chip {
+    font-size: var(--fs-xs);
+  }
+  .chip-row {
+    gap: 0.5rem;
+  }
+  .game-log-area {
+    margin-top: 0.5rem;
+    max-height: 6rem;
+  }
+}
