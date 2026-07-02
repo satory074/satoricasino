@@ -42,10 +42,10 @@ export function Leaderboard({ open, onClose }: Props) {
   const switchMetric = (m: Metric) => setMetric(m);
 
   const medalColor = (i: number) => {
-    if (i === 0) return "#ffd700";
-    if (i === 1) return "#c0c0c0";
-    if (i === 2) return "#cd7f32";
-    return "var(--text-mute)";
+    if (i === 0) return "var(--gold-bright)";
+    if (i === 1) return "var(--chip-white-deep)";
+    if (i === 2) return "var(--stage-rim-hi)";
+    return "var(--text-mid)";
   };
 
   return (

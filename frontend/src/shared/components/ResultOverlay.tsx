@@ -86,9 +86,9 @@ function getTiming(kind: ResultKind, amount?: number | null): Timing {
 
 function getOrbColor(kind: ResultKind): string {
   if (POSITIVE_AMOUNT_KINDS.includes(kind)) return "var(--gold)";
-  if (kind === "push" || kind === "wakare") return "var(--neon)";
-  if (kind === "near_miss") return "var(--crimson)";
-  return "#888";
+  if (kind === "push" || kind === "wakare") return "var(--info)";
+  if (kind === "near_miss") return "var(--red)";
+  return "var(--text-low)";
 }
 
 function getTextClass(kind: ResultKind): string {

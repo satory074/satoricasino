@@ -46,6 +46,11 @@
     opacity: 0;
   }
 
+  .anticipation-orb {
+    animation: none !important;
+    opacity: 0.7;
+  }
+
   /* Spinner keeps spinning (it conveys loading state) but slows down. */
   .spinner {
     animation-duration: 1.6s;

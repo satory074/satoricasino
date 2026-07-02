@@ -1,0 +1,255 @@
+/* ============================================================
+   Cosmetic skins — card backs/faces, dice, table themes, and
+   their shop swatches. The class names here are a HARD CONTRACT
+   with shared/cosmetics.ts and with `equipped` data stored in
+   user Firestore docs — never rename them.
+   This file is (with tokens.css) the only place raw hex is
+   allowed: skins are fixed product colorways, not theme values.
+   Imported after game/chinchiro so the `!important` overrides
+   keep winning against the base card/die rules.
+   ============================================================ */
+
+/* === Card skins === */
+
+.skin-card-midnight {
+  --card-bg: linear-gradient(145deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%);
+  --card-border: #2d4a7a;
+}
+
+.skin-card-midnight.card-back {
+  background: linear-gradient(145deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%) !important;
+  border-color: #2d4a7a !important;
+}
+
+.skin-card-midnight.card-red,
+.skin-card-midnight.card-black {
+  background: linear-gradient(145deg, #0d1b2a 0%, #1b2838 100%) !important;
+  border-color: #2d4a7a !important;
+}
+
+/* Dark skin faces need light ink or the pips vanish. */
+.skin-card-midnight.card-black {
+  color: #b9c8e0;
+}
+
+.skin-card-midnight.card-red {
+  color: #e98a9a;
+}
+
+.skin-card-royal {
+  --card-bg: linear-gradient(145deg, #2d0a3e 0%, #4a1a6b 50%, #2d0a3e 100%);
+  --card-border: #7b3fa0;
+}
+
+.skin-card-royal.card-back {
+  background: linear-gradient(145deg, #2d0a3e 0%, #4a1a6b 50%, #2d0a3e 100%) !important;
+  border-color: #7b3fa0 !important;
+}
+
+.skin-card-royal.card-red,
+.skin-card-royal.card-black {
+  background: linear-gradient(145deg, #2d0a3e 0%, #3a1055 100%) !important;
+  border-color: #7b3fa0 !important;
+}
+
+.skin-card-royal.card-black {
+  color: #d7c2ea;
+}
+
+.skin-card-royal.card-red {
+  color: #f0a0c0;
+}
+
+.skin-card-sakura {
+  --card-bg: linear-gradient(145deg, #3a1028 0%, #5c1a3e 50%, #3a1028 100%);
+  --card-border: #e8a0c0;
+}
+
+.skin-card-sakura.card-back {
+  background: linear-gradient(145deg, #3a1028 0%, #5c1a3e 50%, #3a1028 100%) !important;
+  border-color: #e8a0c0 !important;
+}
+
+.skin-card-sakura.card-red,
+.skin-card-sakura.card-black {
+  background: linear-gradient(145deg, #3a1028 0%, #4a1232 100%) !important;
+  border-color: #e8a0c0 !important;
+}
+
+.skin-card-sakura.card-black {
+  color: #f0c8d8;
+}
+
+.skin-card-sakura.card-red {
+  color: #ff9fb8;
+}
+
+/* === Dice skins === */
+
+.skin-dice-jade.die {
+  background: linear-gradient(145deg, #1a4a3a 0%, #2d6b4a 100%) !important;
+  border-color: #4a9a6a !important;
+}
+
+.skin-dice-jade .die-pip-on {
+  background: #a0e8c0 !important;
+}
+
+.skin-dice-obsidian.die {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%) !important;
+  border-color: #555 !important;
+}
+
+.skin-dice-obsidian .die-pip-on {
+  background: #e0e0e0 !important;
+}
+
+.skin-dice-golden.die {
+  background: linear-gradient(145deg, #4a3a0a 0%, #6b5a1a 100%) !important;
+  border-color: #c4a030 !important;
+}
+
+.skin-dice-golden .die-pip-on {
+  background: #ffd84a !important;
+}
+
+/* === Table themes ===
+   Applied on .game-section; they re-light the stage by overriding the
+   --stage-* tokens the lamplight background consumes. Personal display
+   only (never broadcast). */
+
+.theme-crimson {
+  --stage-felt: #5a1512;
+  --stage-felt-deep: #2c0a08;
+  --stage-lamp: rgba(255, 158, 128, 0.12);
+}
+
+.theme-midnight {
+  --stage-felt: #14144a;
+  --stage-felt-deep: #08081f;
+  --stage-lamp: rgba(150, 170, 255, 0.11);
+}
+
+.theme-royal {
+  --stage-felt: #321363;
+  --stage-felt-deep: #170a2e;
+  --stage-lamp: rgba(196, 150, 255, 0.11);
+}
+
+.theme-veteran {
+  --stage-felt: #33330f;
+  --stage-felt-deep: #171708;
+  --stage-lamp: rgba(255, 224, 130, 0.13);
+}
+
+/* === Achievement reward skins === */
+
+.skin-card-champion {
+  --card-bg: linear-gradient(145deg, #3a2a0a 0%, #6b5a1a 50%, #3a2a0a 100%);
+  --card-border: #f4c430;
+}
+
+.skin-card-champion.card-back {
+  background: linear-gradient(145deg, #3a2a0a 0%, #6b5a1a 50%, #3a2a0a 100%) !important;
+  border-color: #f4c430 !important;
+}
+
+.skin-card-champion.card-red,
+.skin-card-champion.card-black {
+  background: linear-gradient(145deg, #3a2a0a 0%, #5a4a15 100%) !important;
+  border-color: #f4c430 !important;
+}
+
+.skin-card-champion.card-black {
+  color: #f0dfa0;
+}
+
+.skin-card-champion.card-red {
+  color: #ffb080;
+}
+
+.skin-dice-streak.die {
+  background: linear-gradient(145deg, #4a0a0a 0%, #6b2a0a 100%) !important;
+  border-color: #e05020 !important;
+}
+
+.skin-dice-streak .die-pip-on {
+  background: #ff8c00 !important;
+}
+
+/* === Shop swatches === */
+
+.shop-preview-swatch.skin-card-midnight {
+  background: linear-gradient(145deg, #0d1b2a 0%, #1b2838 100%);
+  border-color: #2d4a7a;
+}
+.shop-preview-swatch.skin-card-royal {
+  background: linear-gradient(145deg, #2d0a3e 0%, #4a1a6b 100%);
+  border-color: #7b3fa0;
+}
+.shop-preview-swatch.skin-card-sakura {
+  background: linear-gradient(145deg, #3a1028 0%, #5c1a3e 100%);
+  border-color: #e8a0c0;
+}
+.shop-preview-swatch.skin-dice-jade {
+  background: linear-gradient(145deg, #1a4a3a 0%, #2d6b4a 100%);
+  border-color: #4a9a6a;
+}
+.shop-preview-swatch.skin-dice-obsidian {
+  background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-color: #555;
+}
+.shop-preview-swatch.skin-dice-golden {
+  background: linear-gradient(145deg, #4a3a0a 0%, #6b5a1a 100%);
+  border-color: #c4a030;
+}
+.shop-preview-swatch.theme-crimson {
+  background: linear-gradient(145deg, #2c0a08 0%, #5a1512 100%);
+  border-color: #8a2020;
+}
+.shop-preview-swatch.theme-midnight {
+  background: linear-gradient(145deg, #08081f 0%, #14144a 100%);
+  border-color: #2020aa;
+}
+.shop-preview-swatch.theme-royal {
+  background: linear-gradient(145deg, #170a2e 0%, #321363 100%);
+  border-color: #6030a0;
+}
+.shop-preview-swatch.skin-card-champion {
+  background: linear-gradient(145deg, #3a2a0a 0%, #6b5a1a 100%);
+  border-color: #f4c430;
+}
+.shop-preview-swatch.skin-dice-streak {
+  background: linear-gradient(145deg, #4a0a0a 0%, #6b2a0a 100%);
+  border-color: #e05020;
+}
+.shop-preview-swatch.theme-veteran {
+  background: linear-gradient(145deg, #171708 0%, #33330f 100%);
+  border-color: #8a7a30;
+}
+
+/* === Shop preview scaling === */
+
+.shop-item-preview .card-shell {
+  transform: scale(0.6);
+  transform-origin: center;
+}
+
+.shop-item-preview .die {
+  transform: scale(0.85);
+  transform-origin: center;
+}
+
+.shop-item-preview .card-enter,
+.shop-item-preview .die-faceup {
+  animation: none;
+}
+
+.shop-item-preview .card-face-enter {
+  animation: none;
+}
+
+.shop-item-achievement {
+  font-size: var(--fs-xs);
+  color: var(--text-mid);
+}

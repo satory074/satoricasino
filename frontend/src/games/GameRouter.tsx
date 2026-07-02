@@ -63,7 +63,7 @@ export function GameRouter({ gameType, spectate, tableThemeClass, onContentReady
       );
     default:
       return (
-        <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-mute)" }}>
+        <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-mid)" }}>
           Unsupported game: {gameType}
         </div>
       );

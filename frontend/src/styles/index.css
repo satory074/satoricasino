@@ -1,13 +1,11 @@
 /* ============================================================
    CSS entry manifest — import order IS the cascade order.
-   tokens → base → (component/view layers) → legacy → motion.
-   `legacy.css` is the old theme.css being carved out phase by
-   phase; it disappears at the end of the redesign.
+   cosmetics.css must come after game/chinchiro (skin overrides);
+   motion.css (reduced-motion aggregate) always comes last.
    ============================================================ */
 
 @import "./tokens.css";
 @import "./base.css";
-@import "./legacy.css";
 @import "./components.css";
 @import "./auth.css";
 @import "./info.css";
@@ -15,4 +13,7 @@
 @import "./lobby.css";
 @import "./game.css";
 @import "./chinchiro.css";
+@import "./overlays.css";
+@import "./cosmetics.css";
+@import "./ads.css";
 @import "./motion.css";
