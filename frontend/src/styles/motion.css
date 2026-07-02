@@ -1,0 +1,52 @@
+/* ============================================================
+   Motion accessibility aggregate — imported LAST.
+   EVERY decorative animation introduced in any layer must be
+   re-listed here. If you add an `animation:` anywhere, add its
+   selector to this block in the same commit.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .result-backdrop.near-miss-flash,
+  .anticipation-orb.near-miss,
+  .game-section.is-shaking,
+  .game-section.is-shaking-soft,
+  .zone-rays,
+  .zone-pulse,
+  .sparkle,
+  .streak-badge.streak-flash,
+  .streak-badge.streak-flash::after,
+  .game-section.last-roll-mode .bowl-lg,
+  .dealer-cards.is-revealing,
+  .bet-chip-stack-item,
+  .bet-display.bet-display-bumped,
+  .table-heat-badge.hot,
+  .table-heat-badge.ultra-hot,
+  .amount-pop.amount-mega,
+  .coin-display.flash-up,
+  .coin-display.flash-down,
+  .reveal-enter,
+  .afterglow-fade,
+  .amount-pop,
+  .streak-badge.tier-2,
+  .streak-badge.tier-3,
+  .action-btn.is-cta,
+  .player-box.is-current,
+  .player-seat.is-current,
+  .notify-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .game-section.last-roll-mode .bowl-lg {
+    transform: none;
+  }
+
+  .sparkle {
+    opacity: 0;
+  }
+
+  /* Spinner keeps spinning (it conveys loading state) but slows down. */
+  .spinner {
+    animation-duration: 1.6s;
+  }
+}

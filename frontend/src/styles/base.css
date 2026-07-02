@@ -1,0 +1,147 @@
+/* ============================================================
+   Base layer — reset, app-shell lock, typography defaults,
+   focus ring, a11y utilities. No component styles here.
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  touch-action: manipulation;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--text-hi);
+  /* The den: warm charcoal with a faint overhead lamp glow.
+     Saturated felt green is reserved for the game stage. */
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(255, 208, 138, 0.06) 0%, transparent 60%),
+    var(--bg-0);
+  background-attachment: fixed;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+
+/* App shell contract: #root is locked to the viewport; exactly one
+   descendant per view scrolls (flex:1; min-height:0; overflow-y:auto). */
+#root {
+  position: relative;
+  z-index: 1;
+  min-height: 100svh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-hi);
+  line-height: 1.35;
+  /* No letter-spacing here: tracked-out type is a Latin-only trick
+     that breaks Japanese text rhythm. */
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: transform var(--t-fast) ease, opacity var(--t-med) ease,
+    box-shadow var(--t-med) ease, background var(--t-fast) ease,
+    border-color var(--t-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Global keyboard-focus ring (keyboard-only via :focus-visible). */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Visually hidden but exposed to assistive tech (aria-live announcements). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+input {
+  font-family: var(--font-body);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--text-hi);
+  font-size: var(--fs-md);
+  padding: 0.7rem 0.9rem;
+  outline: none;
+  transition: border-color var(--t-med), box-shadow var(--t-med);
+}
+
+input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.2);
+}
+
+a {
+  color: var(--gold-bright);
+}
+
+/* Coin / bet / payout figures: lining tabular numerals so amounts
+   align and count-ups don't jitter. */
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum";
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 164, 65, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,0 +1,11 @@
+/* ============================================================
+   CSS entry manifest — import order IS the cascade order.
+   tokens → base → (component/view layers) → legacy → motion.
+   `legacy.css` is the old theme.css being carved out phase by
+   phase; it disappears at the end of the redesign.
+   ============================================================ */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./legacy.css";
+@import "./motion.css";

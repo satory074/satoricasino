@@ -1,0 +1,97 @@
+/* ============================================================
+   SatoriCasino design tokens — 「夜の上質な遊技場」
+   The ONLY file (besides cosmetics.css) allowed to contain raw
+   color values. Everything else consumes these custom properties.
+
+   Naming model:
+   - Chrome  (--bg-*, --surface-*): the den — warm charcoal shell
+     around the games. Never green.
+   - Stage   (--stage-*): the table itself — felt + lamplight +
+     wooden rim. Saturated green lives here and only here.
+   - Accents (--gold*, --red, ...): gold ≤ ~15% of any screen,
+     used as line/text/small fill — never large surfaces.
+   ============================================================ */
+
+:root {
+  /* --- chrome: warm charcoal ------------------------------- */
+  --bg-0: #171310; /* app backdrop */
+  --bg-1: #1f1a15; /* bands: header, action dock, bars */
+  --surface-1: #2a231b; /* rows, cards, buttons */
+  --surface-2: #362d22; /* raised: modals, menus, popovers */
+  --surface-3: #120f0c; /* sunken: inputs, logs, wells */
+  --surface-hover: rgba(242, 195, 110, 0.08);
+
+  /* --- stage: felt under lamplight -------------------------- */
+  --stage-felt: #20604a;
+  --stage-felt-deep: #143c2e;
+  --stage-lamp: rgba(255, 208, 138, 0.14); /* radial light pool */
+  --stage-rim: #5a3d22; /* wooden rim */
+  --stage-rim-hi: #83592f;
+
+  /* --- accents ---------------------------------------------- */
+  --gold: #d9a441;
+  --gold-bright: #f0c25c;
+  --gold-ink: #241905; /* text on gold fills */
+  --red: #c2453f; /* lacquer red: destructive, tension. Never for net-loss stats. */
+  --success: #55b078;
+  --info: #7aa7d8;
+  --warn: #d99a41;
+
+  /* --- text (contrast-checked on chrome surfaces) ----------- */
+  --text-hi: #f5eedd;
+  --text-mid: #cfc3ab; /* body copy, ≥4.5:1 on all surfaces */
+  --text-low: #a2937b; /* decorative / large text only */
+
+  /* --- lines / shadows --------------------------------------- */
+  --line: rgba(245, 238, 221, 0.14);
+  --line-gold: rgba(217, 164, 65, 0.55);
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* --- radii (three, no more) -------------------------------- */
+  --r-sm: 6px; /* chips, inputs, small controls */
+  --r-card: 12px; /* cards, panels, modals */
+  --r-pill: 999px;
+
+  /* --- spacing (4px scale) ----------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+
+  /* --- type scale (~1.2 ratio, fluid) ------------------------ */
+  --fs-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
+  --fs-sm: clamp(0.875rem, 0.85rem + 0.15vw, 0.9375rem);
+  --fs-md: clamp(1rem, 0.97rem + 0.2vw, 1.0625rem);
+  --fs-lg: clamp(1.15rem, 1.1rem + 0.35vw, 1.3rem);
+  --fs-xl: clamp(1.4rem, 1.3rem + 0.7vw, 1.7rem);
+  --fs-2xl: clamp(1.8rem, 1.55rem + 1.6vw, 2.5rem);
+
+  /* --- fonts -------------------------------------------------- */
+  /* Display covers JA + Latin — headings finally render in a real
+     face for Japanese users (Cinzel was Latin-only). */
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho",
+    serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    system-ui, sans-serif;
+  --font-logo: "Cinzel", "Shippori Mincho B1", serif; /* logotype ONLY */
+
+  /* --- z ladder ----------------------------------------------- */
+  --z-dock: 5;
+  --z-header: 50;
+  --z-modal: 100;
+  --z-overlay: 200;
+  --z-toast: 300;
+  --z-interstitial: 1100;
+
+  /* --- motion -------------------------------------------------- */
+  --t-fast: 120ms;
+  --t-med: 240ms;
+  --t-slow: 400ms;
+}
