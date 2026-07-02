@@ -1,8 +1,11 @@
 # SatoriCasino トンマナ (Tone & Manner)
 
-SatoriCasino のビジュアル・モーション・音響・コピーを貫く統一原則をまとめる。視覚や音はすでに `theme.css` と `sounds.ts` に実装されており、コピーは `i18n/locales/ja.ts` に蓄積されているが、それらの「なぜ」と「どう揃えるか」を一枚にした文書がなかった。新ゲーム追加時(CLAUDE.md「Adding a new game」)や新コンポーネント実装時の判断基準として、まずここを参照する。
+> **⚠️ 2026-07 リデザインによる更新**: 視覚言語(パレット・タイポグラフィ・シェイプ・サーフェス)の具体値は [`lamplit-den-redesign.md`](./lamplit-den-redesign.md) が最新。本書の §3〜§4 の具体値(Cinzel/Inter、--felt-* パレット、8px/pill の 2 radius 規則など)は旧システムの記録で、現行実装は `frontend/src/styles/tokens.css` を単一の真実とする。情報設計(L1〜L4)・モーション・コピー・責任あるゲーミングの原則は引き続き有効。
+
+SatoriCasino のビジュアル・モーション・音響・コピーを貫く統一原則をまとめる。視覚や音は `frontend/src/styles/`(トークン駆動レイヤードCSS)と `sounds.ts` に実装されており、コピーは `i18n/locales/ja.ts` に蓄積されているが、それらの「なぜ」と「どう揃えるか」を一枚にした文書がなかった。新ゲーム追加時(CLAUDE.md「Adding a new game」)や新コンポーネント実装時の判断基準として、まずここを参照する。
 
 姉妹ノート:
+- [`lamplit-den-redesign.md`](./lamplit-den-redesign.md) — 2026-07 全面リデザイン(現行の視覚言語・トークン・CSS レイヤー構成)
 - [`excitement-effects.md`](./excitement-effects.md) — 興奮レイヤー(near-miss / zone / tier-up / count-up)の実装根拠
 - [`ui-ux-clarity.md`](./ui-ux-clarity.md) — 「次に何を押せばいいか」を明示する UI 規約
 - [`responsible-gaming-pass.md`](./responsible-gaming-pass.md) — 2026-06 のダークパターン是正 & A11y/信頼性パスの記録

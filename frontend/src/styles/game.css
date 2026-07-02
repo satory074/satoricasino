@@ -653,6 +653,14 @@
   .phase-step + .phase-step::before {
     display: none;
   }
+  /* Keep the back button on one line; sides shrink to content. */
+  .topbar-side {
+    flex: 0 0 auto;
+  }
+  .game-topbar .btn-secondary {
+    white-space: nowrap;
+    padding: 0.5rem 0.7rem;
+  }
 }
 
 @media (max-width: 480px) {

@@ -42,6 +42,7 @@
 }
 
 .wallet-chip {
+  position: relative; /* notify-dot anchor */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -648,6 +649,7 @@
 /* --- Shop chrome (skins themselves live in cosmetics.css) --------------------- */
 
 .shop-card {
+  width: min(520px, 92vw);
   max-width: 520px;
   max-height: 80vh;
   overflow-y: auto;
