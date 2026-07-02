@@ -254,12 +254,6 @@ export function Lobby({
     });
   };
 
-  const logout = () => {
-    play("button_click");
-    clearAuth();
-    onLogout();
-  };
-
   const filteredTables = selectedGame
     ? tables.filter((tbl) => (tbl.game_type ?? "blackjack") === selectedGame)
     : [];
@@ -267,83 +261,82 @@ export function Lobby({
     ? t(`games.${selectedGame}.label`)
     : "";
 
+  const today = new Date().toISOString().slice(0, 10);
+  const bonusClaimable = profile?.last_daily_bonus?.slice(0, 10) !== today;
+  const adWatches =
+    profile?.last_ad_date?.slice(0, 10) === today
+      ? (profile?.ad_watches_today ?? 0)
+      : 0;
+  const adRemaining = AD_REWARD_DAILY_CAP - adWatches;
+  const showBailout = profile != null && profile.coins < 100;
+
   return (
     <div className="lobby-section">
-      <div className="lobby-actions">
-        <button className="btn-secondary" style={{ position: "relative" }} onClick={claimDailyBonus}>
-          {t("lobby.dailyBonus")}
-          {(() => {
-            const today = new Date().toISOString().slice(0, 10);
-            const last = profile?.last_daily_bonus?.slice(0, 10);
-            return last !== today ? <span className="notify-dot" /> : null;
-          })()}
-        </button>
-        <button className="btn-secondary" style={{ position: "relative" }} onClick={claimBailout}>
-          {t("lobby.bailout")}
-          {profile?.coins !== undefined && profile.coins < 100 && (
-            <span className="notify-dot" />
-          )}
-        </button>
-        <button
-          className="btn-secondary"
-          onClick={() => {
-            play("button_click");
-            setShowLeaderboard(true);
-          }}
-        >
-          {t("leaderboard.title")}
-        </button>
-        <button
-          className="btn-secondary"
-          onClick={() => {
-            play("button_click");
-            setShowAchievements(true);
-          }}
-        >
-          {t("achievements.title")}
-        </button>
-        <button
-          className="btn-secondary"
-          onClick={() => {
-            play("button_click");
-            setShowShop(true);
-          }}
-        >
-          {t("shop.title")}
-        </button>
-        {(() => {
-          const today = new Date().toISOString().slice(0, 10);
-          const watches = profile?.last_ad_date?.slice(0, 10) === today
-            ? (profile?.ad_watches_today ?? 0)
-            : 0;
-          const remaining = AD_REWARD_DAILY_CAP - watches;
-          return (
-            <button
-              className="btn-secondary"
-              style={{ position: "relative" }}
-              disabled={remaining <= 0}
-              onClick={() => startAdSession("reward_ad", 0)}
-            >
-              {t("ads.watchForCoins")}
-              {remaining > 0 && <span className="notify-dot" />}
-              <span style={{ display: "block", fontSize: "0.7rem", opacity: 0.7 }}>
-                {remaining > 0
-                  ? t("ads.remaining", { n: remaining })
-                  : t("ads.dailyCap")}
-              </span>
+      <div className="lobby-topline">
+        <div className="wallet-strip">
+          <button className="wallet-chip" onClick={claimDailyBonus}>
+            <span className="wallet-chip-label">{t("lobby.dailyBonus")}</span>
+            <span className="wallet-chip-sub">
+              {bonusClaimable
+                ? t("lobby.bonusReady")
+                : t("lobby.bonusClaimed")}
+            </span>
+            {bonusClaimable && <span className="notify-dot" />}
+          </button>
+          {showBailout && (
+            <button className="wallet-chip" onClick={claimBailout}>
+              <span className="wallet-chip-label">{t("lobby.bailout")}</span>
+              <span className="wallet-chip-sub">{t("lobby.bailoutSub")}</span>
             </button>
-          );
-        })()}
-        <button className="btn-danger" onClick={logout}>
-          {t("lobby.logout")}
-        </button>
+          )}
+          <button
+            className="wallet-chip"
+            disabled={adRemaining <= 0}
+            onClick={() => startAdSession("reward_ad", 0)}
+          >
+            <span className="wallet-chip-label">{t("ads.watchForCoins")}</span>
+            <span className="wallet-chip-sub">
+              {adRemaining > 0
+                ? t("ads.remaining", { n: adRemaining })
+                : t("ads.dailyCap")}
+            </span>
+          </button>
+        </div>
+        <nav className="lobby-nav" aria-label={t("lobby.navLabel")}>
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              play("button_click");
+              setShowLeaderboard(true);
+            }}
+          >
+            {t("leaderboard.title")}
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              play("button_click");
+              setShowAchievements(true);
+            }}
+          >
+            {t("achievements.title")}
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              play("button_click");
+              setShowShop(true);
+            }}
+          >
+            {t("shop.title")}
+          </button>
+        </nav>
       </div>
 
       {selectedGame === null ? (
         <>
           {showOnboarding && (
             <div className="onboarding-banner" role="note">
-              <span className="onboarding-banner-icon" aria-hidden="true">👋</span>
               <div className="onboarding-banner-body">
                 <div className="onboarding-banner-title">{t("lobby.onboarding.title")}</div>
                 <div className="onboarding-banner-text">{t("lobby.onboarding.text")}</div>
@@ -359,15 +352,16 @@ export function Lobby({
           )}
 
           <h3>{t("lobby.chooseGame")}</h3>
-          <div className="lobby-guide">
-            <span className="lobby-guide-icon" aria-hidden="true">👇</span>
-            <span>{t("lobby.guide.pickGame")}</span>
-          </div>
           <div className="game-grid">
             {SUPPORTED_GAMES.map((g) => {
-              const tableCount = tables.filter(
+              const gameTables = tables.filter(
                 (tbl) => (tbl.game_type ?? "blackjack") === g.value,
-              ).length;
+              );
+              const tableCount = gameTables.length;
+              const livePlayers = gameTables.reduce(
+                (sum, tbl) => sum + tbl.player_count,
+                0,
+              );
               return (
                 <button
                   key={g.value}
@@ -375,19 +369,23 @@ export function Lobby({
                   onClick={() => pickGame(g.value)}
                   type="button"
                 >
-                  {tables.some(
-                    (tbl) =>
-                      (tbl.game_type ?? "blackjack") === g.value &&
-                      tbl.player_count > 0,
-                  ) && <span className="notify-dot" />}
-                  <div className="game-card-icon">{g.icon}</div>
+                  <div className="game-card-icon" aria-hidden="true">
+                    {g.icon}
+                  </div>
                   <div className="game-card-title">
                     {t(`games.${g.value}.label`)}
                   </div>
                   <div className="game-card-tagline">
                     {t(`games.${g.value}.tagline`)}
                   </div>
-                  <div className="game-card-meta">{t("lobby.tablesOpen", { n: tableCount })}</div>
+                  <div className="game-card-meta">
+                    <span>{t("lobby.tablesOpen", { n: tableCount })}</span>
+                    {livePlayers > 0 && (
+                      <span className="game-card-live">
+                        {t("lobby.playersLive", { n: livePlayers })}
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -427,13 +425,13 @@ export function Lobby({
                         <span>{t("stats.netProfit")}</span>
                         {/* Positive gets the gold/green nudge; negative stays neutral
                             (no red loss-shaming on a free-coin game). */}
-                        <span style={{ color: net >= 0 ? "var(--success)" : "var(--text-mute)" }}>
+                        <span className={net >= 0 ? "stat-positive" : "stat-neutral"}>
                           {net.toLocaleString()}
                         </span>
                       </div>
                       <div className="stats-card-row">
                         <span>{t("stats.biggestWin")}</span>
-                        <span style={{ color: "var(--gold)" }}>{gs.biggest_win.toLocaleString()}</span>
+                        <span className="stat-gold">{gs.biggest_win.toLocaleString()}</span>
                       </div>
                       {(profile.best_streaks?.[g.value] ?? 0) > 0 && (
                         <div className="stats-card-row">
@@ -456,10 +454,6 @@ export function Lobby({
             {t("lobby.backToGames")}
           </button>
           <h3>{t("lobby.tablesTitle", { game: selectedGameLabel })}</h3>
-          <div className="lobby-guide">
-            <span className="lobby-guide-icon" aria-hidden="true">👆</span>
-            <span>{t("lobby.guide.pickTable")}</span>
-          </div>
           {!tablesLoaded ? (
             <Spinner label={t("lobby.loadingTables")} />
           ) : filteredTables.length === 0 ? (
@@ -521,13 +515,24 @@ export function Lobby({
                         {t("lobby.watch")}
                       </button>
                     )}
-                    <span
-                      className={`table-join-cue${isFull ? " is-full" : ""}`}
+                    {/* Real button for pointer users; the row itself is the
+                        accessible/keyboard control, so keep this out of the
+                        tab order and a11y tree to avoid double stops. */}
+                    <button
+                      type="button"
+                      className="btn-primary table-join-btn"
+                      disabled={isFull}
+                      tabIndex={-1}
                       aria-hidden="true"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isFull) return;
+                        play("button_click");
+                        onJoinTable(tbl.table_id, gameType);
+                      }}
                     >
                       {isFull ? t("lobby.full") : t("lobby.join")}
-                      {!isFull && tbl.player_count > 0 && <span className="notify-dot" />}
-                    </span>
+                    </button>
                   </div>
                 </div>
               );
@@ -588,8 +593,7 @@ export function Lobby({
               <div className="modal-msg">{bonus.msg}</div>
               {bonus.canWatchAd && (
                 <button
-                  className="btn-secondary"
-                  style={{ marginBottom: "0.5rem" }}
+                  className="btn-secondary modal-secondary-action"
                   onClick={() =>
                     startAdSession(
                       bonus.isBailout ? "bailout_upgrade" : "daily_bonus_double",

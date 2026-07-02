@@ -6,7 +6,7 @@ import { InfoPage } from "./info/InfoPage";
 import { useAudio } from "./shared/audio/useAudio";
 import { clearAuth, getDisplayName, getToken } from "./shared/api/api";
 import { StreakBadge } from "./shared/components/StreakBadge";
-import { LangToggle } from "./shared/components/LangToggle";
+import { UserMenu } from "./shared/components/UserMenu";
 import { InterstitialAd } from "./shared/components/InterstitialAd";
 import { SideAds } from "./shared/components/SideAds";
 import { ToastHost } from "./shared/components/Toast";
@@ -266,12 +266,9 @@ export default function App() {
       <header className="app-header">
         <div className="app-logo">SatoriCasino</div>
         <div className="user-info">
-          {profile?.level && profile.level > 1 && (
-            <span className="level-badge" title={t("header.xpLabel", { xp: profile.xp ?? 0 })}>
-              {t("xp.level", { n: profile.level })}
-            </span>
+          {view === "game" && (
+            <StreakBadge streak={streaks[tableGameType] ?? 0} />
           )}
-          <span className="user-name">{getDisplayName() ?? "—"}</span>
           <span
             className={clsx(
               "coin-display",
@@ -280,36 +277,21 @@ export default function App() {
             )}
             title={t("header.coinsLabel")}
           >
-            <span style={{ color: "var(--gold)" }}>◉</span>
-            <span>{shownCoins.toLocaleString()}</span>
-          </span>
-          {profile && (
-            <span className="user-stats">
-              {profile.wins}W / {profile.losses}L / {profile.draws}D
+            <span className="coin-icon" aria-hidden="true">
+              ◉
             </span>
-          )}
-          {view === "game" && (
-            <StreakBadge streak={streaks[tableGameType] ?? 0} />
-          )}
-          <button
-            className="mute-btn audio-mute"
-            onClick={toggleMute}
-            title={muted ? t("header.unmute") : t("header.mute")}
-            aria-label={muted ? t("header.unmute") : t("header.mute")}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
-          <button
-            className="mute-btn audio-bgm"
-            onClick={toggleBgm}
-            title={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
-            aria-label={bgmOn ? t("header.bgmOff") : t("header.bgmOn")}
-          >
-            {bgmOn ? "♪" : "♩"}
-          </button>
-          <span className="lang-toggle">
-            <LangToggle />
+            <span className="num">{shownCoins.toLocaleString()}</span>
           </span>
+          <UserMenu
+            displayName={getDisplayName() ?? "—"}
+            profile={profile}
+            muted={muted}
+            bgmOn={bgmOn}
+            toggleMute={toggleMute}
+            toggleBgm={toggleBgm}
+            onLogout={onLogout}
+            playClick={playClick}
+          />
         </div>
       </header>
 

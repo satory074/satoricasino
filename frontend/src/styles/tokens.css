@@ -94,4 +94,31 @@
   --t-fast: 120ms;
   --t-med: 240ms;
   --t-slow: 400ms;
+
+  /* The whole app is a dark experience; declaring it lets Chrome's
+     Auto Dark Mode (and Dark Reader's dark-theme detection) leave the
+     carefully tuned palette alone. */
+  color-scheme: dark;
+
+  /* --- LEGACY ALIASES — old theme.css variable names mapped onto the
+     new system so unmigrated legacy.css sections render coherently.
+     Delete together with legacy.css at the end of the redesign. ------ */
+  --felt-dark: var(--stage-felt-deep);
+  --felt-mid: var(--stage-felt);
+  --felt-light: var(--stage-felt);
+  --gold-soft: var(--gold);
+  --crimson: var(--red);
+  --crimson-dark: color-mix(in srgb, var(--red) 70%, black);
+  --neon: var(--info);
+  --cream: var(--text-hi);
+  --ink: var(--gold-ink);
+  --text: var(--text-hi);
+  --text-mute: var(--text-mid);
+  --danger: var(--red);
+  --border-subtle: var(--line);
+  --border-strong: var(--line-gold);
+  --shadow-card: var(--shadow-1);
+  --shadow-soft: var(--shadow-2);
+  --radius-card: var(--r-card);
+  --radius-pill: var(--r-pill);
 }

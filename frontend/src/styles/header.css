@@ -1,0 +1,224 @@
+/* ============================================================
+   App header — logo, coin balance, user menu. One quiet band;
+   identity/audio/language/logout live inside the menu.
+   ============================================================ */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: max(0.6rem, env(safe-area-inset-top));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+  padding-bottom: 0.6rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+}
+
+.app-logo {
+  font-family: var(--font-logo);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.12em;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  white-space: nowrap;
+}
+
+.user-info {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* --- Coin balance ------------------------------------------------ */
+
+.coin-display {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--r-pill);
+  color: var(--gold-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.coin-icon {
+  color: var(--gold);
+}
+
+.coin-display.flash-up {
+  animation: coin-flash-up 0.6s ease;
+}
+
+.coin-display.flash-down {
+  animation: coin-flash-down 0.4s ease;
+}
+
+@keyframes coin-flash-up {
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--gold) 12%, transparent);
+  }
+  40% {
+    background: color-mix(in srgb, var(--success) 45%, transparent);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes coin-flash-down {
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--gold) 12%, transparent);
+  }
+  40% {
+    background: color-mix(in srgb, var(--red) 35%, transparent);
+  }
+}
+
+/* --- User menu ---------------------------------------------------- */
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  color: var(--text-hi);
+  padding: 0.3rem 0.85rem 0.3rem 0.35rem;
+  min-height: 44px;
+  font-size: var(--fs-sm);
+}
+
+.user-menu-btn:hover {
+  border-color: var(--line-gold);
+  background: var(--surface-hover);
+}
+
+.user-menu-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--gold) 18%, var(--surface-3));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  color: var(--gold-bright);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  flex-shrink: 0;
+}
+
+.user-menu-name {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Backdrop + panel are siblings inside the header's stacking context,
+   so the fixed backdrop covers the page but stays below the panel. */
+.user-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: transparent;
+}
+
+.user-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  min-width: 240px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-2);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.user-menu-head {
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--sp-1);
+}
+
+.user-menu-who {
+  font-weight: 700;
+  color: var(--text-hi);
+  font-size: var(--fs-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: 0.35rem;
+}
+
+.user-menu-record {
+  color: var(--text-mid);
+  font-size: var(--fs-xs);
+}
+
+.user-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: 44px;
+}
+
+.user-menu-row-label {
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+}
+
+.user-menu-logout {
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding-top: max(0.45rem, env(safe-area-inset-top));
+    padding-right: max(0.85rem, env(safe-area-inset-right));
+    padding-bottom: 0.45rem;
+    padding-left: max(0.85rem, env(safe-area-inset-left));
+  }
+  .app-logo {
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+  }
+  .user-menu-name {
+    display: none;
+  }
+  .user-menu-btn {
+    padding-right: 0.35rem;
+  }
+}

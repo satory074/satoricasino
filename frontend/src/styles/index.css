@@ -11,4 +11,6 @@
 @import "./components.css";
 @import "./auth.css";
 @import "./info.css";
+@import "./header.css";
+@import "./lobby.css";
 @import "./motion.css";
