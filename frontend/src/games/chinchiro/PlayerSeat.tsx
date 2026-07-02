@@ -47,9 +47,11 @@ export function PlayerSeat({
       <TurnTimer totalSec={turnTotalSec} resetKey={turnTimerKey} active={isCurrent} />
       <div className="player-name">
         {displayName}
-        {isMe && " (You)"}
+        {isMe && ` ${t("leaderboard.you")}`}
       </div>
-      <div className="player-bet">{bet > 0 ? `Bet ${bet}` : "—"}</div>
+      <div className="player-bet">
+        {bet > 0 ? `${t("betArea.bet")} ${bet}` : "—"}
+      </div>
       <Bowl dice={latest} rollKey={`${displayName}-${rolls.length}`} size="sm" skinClass={skinClass} />
       {showHand && <HandLabel hand={hand} size="md" />}
       <div className="roll-counter">
@@ -57,7 +59,7 @@ export function PlayerSeat({
       </div>
       {payout != null && (
         <div className={clsx("payout-pill", payout > 0 ? "win" : payout < 0 ? "lose" : "push")}>
-          {payout > 0 ? `+${payout}` : payout < 0 ? `${payout}` : "PUSH"}
+          {payout > 0 ? `+${payout}` : payout < 0 ? `${payout}` : t("results.push")}
         </div>
       )}
     </div>

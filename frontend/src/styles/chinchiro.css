@@ -1,0 +1,333 @@
+/* ============================================================
+   Chinchiro — lacquer bowl, ivory dice, banker banner, seats.
+   Class contract: .die / .die-grid / .die-pip / .die-pip-on and
+   .bowl-lg / .bowl-sm are load-bearing (dice skins, last-roll
+   zoom target). Don't rename.
+   ============================================================ */
+
+.chinchiro-table {
+  gap: var(--sp-4);
+}
+
+/* --- The bowl: warm lacquer interior so ivory dice actually read ---- */
+
+.bowl {
+  background: radial-gradient(
+    ellipse at 50% 28%,
+    var(--bowl-lacquer) 0%,
+    var(--bowl-lacquer-deep) 62%,
+    color-mix(in srgb, var(--bowl-lacquer-deep) 60%, black) 100%
+  );
+  border: 3px solid var(--stage-rim-hi);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 12px 26px rgba(0, 0, 0, 0.55),
+    inset 0 -6px 16px color-mix(in srgb, var(--gold) 10%, transparent),
+    0 8px 24px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.bowl-lg {
+  width: clamp(170px, 48vw, 210px);
+  height: clamp(170px, 48vw, 210px);
+  padding: 1rem;
+}
+
+.bowl-sm {
+  width: clamp(125px, 38vw, 170px);
+  height: clamp(125px, 38vw, 170px);
+  padding: 0.75rem;
+}
+
+.bowl-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  perspective: 600px;
+}
+
+/* --- Dice: ivory bodies, dark pips ----------------------------------- */
+
+.die {
+  width: clamp(38px, 11vw, 50px);
+  height: clamp(38px, 11vw, 50px);
+  background: linear-gradient(180deg, var(--dice-ivory), var(--dice-ivory-deep));
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 9px;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  transform-style: preserve-3d;
+}
+
+.bowl-sm .die {
+  width: clamp(28px, 8vw, 36px);
+  height: clamp(28px, 8vw, 36px);
+  border-radius: 7px;
+}
+
+.die-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 80%;
+  height: 80%;
+  gap: 2px;
+}
+
+.die-pip {
+  display: block;
+  align-self: center;
+  justify-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.bowl-sm .die-pip {
+  width: 6px;
+  height: 6px;
+}
+
+.die-pip-on {
+  background: var(--dice-pip);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.die-faceup {
+  animation: die-tumble 0.85s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.die-rolling {
+  animation: die-shake 0.4s linear infinite;
+  background: linear-gradient(
+    180deg,
+    var(--dice-ivory-deep),
+    color-mix(in srgb, var(--dice-ivory-deep) 70%, var(--bowl-lacquer))
+  );
+}
+
+@keyframes die-tumble {
+  0% {
+    transform: translateY(-160px) translateX(40px) rotateX(0deg) rotateY(0deg) rotateZ(-30deg);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-50px) translateX(20px) rotateX(540deg) rotateY(360deg) rotateZ(180deg);
+    opacity: 1;
+  }
+  55% {
+    transform: translateY(0) translateX(0) rotateX(900deg) rotateY(720deg) rotateZ(360deg);
+  }
+  70% {
+    transform: translateY(-12px) translateX(-4px) rotateX(940deg) rotateY(740deg) rotateZ(370deg);
+  }
+  85% {
+    transform: translateY(0) translateX(0) rotateX(900deg) rotateY(720deg) rotateZ(360deg);
+  }
+  100% {
+    transform: translateY(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  }
+}
+
+@keyframes die-shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-3px, -2px) rotate(-8deg);
+  }
+  50% {
+    transform: translate(2px, -3px) rotate(6deg);
+  }
+  75% {
+    transform: translate(-2px, 2px) rotate(-4deg);
+  }
+}
+
+/* --- Banker banner ------------------------------------------------------ */
+
+.banker-area {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: var(--sp-2) var(--sp-4) var(--sp-4);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--surface-3) 55%, transparent);
+  border: 1px solid var(--line);
+  border-top: 3px solid color-mix(in srgb, var(--red) 65%, transparent);
+  min-width: min(280px, 100%);
+  width: 100%;
+  max-width: 360px;
+}
+
+.banker-area h3 {
+  font-size: var(--fs-xs);
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--gold-bright);
+}
+
+.banker-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Tablet+ : bowl beside the meta column — the banker banner stays
+   compact so player seats fit above the fold. */
+@media (min-width: 768px) {
+  .banker-area {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: var(--sp-6);
+    max-width: 560px;
+    padding: var(--sp-3) var(--sp-6);
+  }
+  .banker-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* --- Seats ----------------------------------------------------------------- */
+
+.player-seat {
+  position: relative;
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  border: 2px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--sp-4) var(--sp-3);
+  min-width: min(200px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-1);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+.player-seat.is-me {
+  border-color: color-mix(in srgb, var(--text-hi) 45%, transparent);
+}
+
+.player-seat.is-current {
+  border-color: var(--gold);
+  animation: player-pulse 1.6s ease-in-out infinite;
+}
+
+.roll-counter {
+  font-size: var(--fs-xs);
+  color: var(--text-mid);
+}
+
+/* Payout pill: wins celebrate, losses stay matter-of-fact. */
+.payout-pill {
+  display: inline-block;
+  padding: 0.25rem 0.85rem;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+}
+
+.payout-pill.win {
+  background: linear-gradient(
+    180deg,
+    var(--success),
+    color-mix(in srgb, var(--success) 65%, black)
+  );
+  color: var(--card-ivory);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--success) 45%, transparent);
+}
+
+.payout-pill.lose {
+  background: var(--surface-3);
+  color: var(--text-mid);
+}
+
+.payout-pill.push {
+  background: color-mix(in srgb, var(--info) 40%, var(--surface-3));
+  color: var(--text-hi);
+}
+
+/* --- Hand labels -------------------------------------------------------------- */
+
+.hand-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-hi);
+  padding: 0.3rem 0.9rem;
+  background: color-mix(in srgb, var(--surface-3) 78%, transparent);
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--gold) 25%, transparent);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.hand-label.lg {
+  font-size: var(--fs-lg);
+}
+
+.hand-label.md {
+  font-size: var(--fs-sm);
+}
+
+.hand-detail {
+  font-size: 0.85em;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Jackpot hand: full gold ceremony. */
+.hand-pinzoro {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--gold-ink);
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--gold) 50%, transparent),
+    0 0 34px color-mix(in srgb, var(--gold) 25%, transparent);
+}
+
+.hand-arashi {
+  background: color-mix(in srgb, var(--red) 55%, var(--surface-3));
+  color: var(--text-hi);
+  border-color: color-mix(in srgb, var(--red) 75%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--red) 35%, transparent);
+}
+
+.hand-shigoro {
+  background: color-mix(in srgb, var(--info) 35%, var(--surface-3));
+  color: var(--text-hi);
+  border-color: color-mix(in srgb, var(--info) 55%, transparent);
+}
+
+/* Losing hands stay plain — no drama on a bad roll. */
+.hand-hifumi {
+  background: var(--surface-3);
+  color: var(--text-mid);
+  border-color: var(--line);
+}
+
+.hand-menashi {
+  background: var(--surface-3);
+  color: var(--text-low);
+  border-color: var(--line);
+}

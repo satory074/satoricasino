@@ -15,18 +15,20 @@ export function BankerArea({ rolls, hand, showHand }: Props) {
   const latest = rolls.length > 0 ? rolls[rolls.length - 1] : null;
   return (
     <div className="banker-area">
-      <h3>{t("chinchiro.bankerLabel")}</h3>
       <Bowl
         dice={latest}
         rollKey={`banker-${rolls.length}`}
         size="lg"
       />
-      {showHand && <HandLabel hand={hand} size="lg" />}
-      {rolls.length > 0 && (
-        <div className="roll-counter">
-          {t("chinchiro.rollCount", { n: rolls.length })}
-        </div>
-      )}
+      <div className="banker-meta">
+        <h3>{t("chinchiro.bankerLabel")}</h3>
+        {showHand && <HandLabel hand={hand} size="lg" />}
+        {rolls.length > 0 && (
+          <div className="roll-counter">
+            {t("chinchiro.rollCount", { n: rolls.length })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
