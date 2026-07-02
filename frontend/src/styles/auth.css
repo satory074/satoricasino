@@ -1,0 +1,237 @@
+/* ============================================================
+   Auth view — public landing (crawlable publisher content) +
+   login card. First appearance of the lamplight motif.
+   NO ad slot may ever exist on this view (AdSense 11112688).
+   ============================================================ */
+
+.auth-section {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* "safe center" keeps the column centered when it fits, but anchors to
+     the top (instead of clipping it) once the landing copy overflows. */
+  justify-content: safe center;
+  gap: var(--sp-7);
+  padding: var(--sp-7) var(--sp-6);
+  /* Lamplight pool over the entrance. */
+  background: radial-gradient(
+    58% 34% at 50% 0%,
+    var(--stage-lamp) 0%,
+    transparent 100%
+  );
+}
+
+/* Landing/marketing block above the login card. Gives the root URL real,
+   crawlable publisher content (AdSense minimum-content requirement)
+   without rendering any ad on the auth view. */
+.auth-landing {
+  width: 100%;
+  max-width: 640px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.auth-landing-title {
+  font-family: var(--font-logo);
+  font-weight: 700;
+  font-size: clamp(2rem, 7vw, 3rem);
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  margin: 0;
+}
+
+.auth-landing-sub {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 3.4vw, 1.25rem);
+  color: var(--text-hi);
+  margin: 0;
+}
+
+.auth-landing-intro {
+  font-size: var(--fs-sm);
+  line-height: 1.8;
+  color: var(--text-mid);
+  margin: 0;
+  max-width: 560px;
+}
+
+.auth-landing-disclaimer {
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--text-mid);
+  margin: 0;
+  max-width: 560px;
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--gold) 5%, transparent);
+}
+
+.auth-landing-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+  width: 100%;
+  margin-top: var(--sp-2);
+}
+
+.auth-landing-feature {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--sp-4);
+  text-align: left;
+}
+
+.auth-landing-feature h2 {
+  font-size: var(--fs-md);
+  color: var(--gold-bright);
+  margin: 0 0 0.4rem;
+}
+
+.auth-landing-feature p {
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+  color: var(--text-mid);
+  margin: 0;
+}
+
+.auth-landing-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  font-size: var(--fs-sm);
+  margin-top: var(--sp-1);
+}
+
+.auth-landing-links-label {
+  color: var(--text-mid);
+}
+
+.auth-landing-links a {
+  color: var(--gold-bright);
+  text-decoration: none;
+  border-bottom: 1px dashed color-mix(in srgb, var(--gold) 40%, transparent);
+  padding-bottom: 1px;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+
+.auth-landing-links a:hover {
+  color: var(--text-hi);
+  border-bottom-color: var(--gold);
+}
+
+/* --- Login card ------------------------------------------------ */
+
+.auth-card {
+  width: 380px;
+  max-width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--sp-8) var(--sp-6);
+  box-shadow: var(--shadow-2);
+}
+
+.auth-logo {
+  font-family: var(--font-logo);
+  font-weight: 700;
+  font-size: 2rem;
+  text-align: center;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.12em;
+}
+
+.auth-tagline {
+  text-align: center;
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-6);
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  margin-bottom: var(--sp-5);
+}
+
+.auth-tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.55rem;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--text-mid);
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--r-sm) - 2px);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.auth-tab.active {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--gold-ink);
+  box-shadow: var(--shadow-1);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* --- Crawlable footer links (legal pages, policy 11112688) ------- */
+
+.auth-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.2rem;
+  font-size: var(--fs-xs);
+  color: var(--text-mid);
+  text-align: center;
+  max-width: 480px;
+}
+
+.auth-footer a {
+  color: var(--text-mid);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  padding-bottom: 1px;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+
+.auth-footer a:hover {
+  color: var(--gold-bright);
+  border-bottom-color: color-mix(in srgb, var(--gold) 40%, transparent);
+}
+
+@media (max-width: 480px) {
+  .auth-landing-features {
+    grid-template-columns: 1fr;
+  }
+  .auth-footer {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .auth-card {
+    padding: var(--sp-6) var(--sp-5);
+  }
+}

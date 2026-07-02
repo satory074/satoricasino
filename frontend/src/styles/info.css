@@ -1,0 +1,147 @@
+/* ============================================================
+   Info pages (Privacy / Terms / About / Responsible Gaming /
+   guides / FAQ / glossary). Public, crawlable, ad-free.
+   Single-scroll-region rule: only .info-section scrolls.
+   ============================================================ */
+
+.info-section {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) clamp(1rem, 4vw, 2rem);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-1);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.info-home-link {
+  font-family: var(--font-logo);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.14em;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-decoration: none;
+}
+
+.info-back-btn {
+  background: var(--surface-1);
+  color: var(--text-hi);
+  padding: 0.45rem 0.9rem;
+  min-height: 40px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.info-back-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-gold);
+}
+
+.info-content {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 4vw, 3rem) var(--sp-9);
+  font-family: var(--font-body);
+  line-height: 1.9;
+}
+
+.info-content h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-2xl);
+  color: var(--gold-bright);
+  margin: 0 0 0.5rem;
+}
+
+.info-meta {
+  color: var(--text-low);
+  font-size: var(--fs-xs);
+  margin: 0 0 var(--sp-6);
+}
+
+.info-intro {
+  font-size: var(--fs-md);
+  color: var(--text-hi);
+  margin: 0 0 var(--sp-7);
+  padding-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--line);
+}
+
+.info-section-block {
+  margin: 0 0 var(--sp-7);
+}
+
+.info-section-block h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--text-hi);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 25%, transparent);
+}
+
+.info-section-block p {
+  margin: 0 0 0.85rem;
+  color: var(--text-mid);
+  font-size: var(--fs-sm);
+}
+
+.info-section-block p:last-child {
+  margin-bottom: 0;
+}
+
+.info-footer {
+  margin-top: var(--sp-9);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--line);
+}
+
+.info-footer h3 {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  color: var(--text-low);
+  margin: 0 0 0.75rem;
+}
+
+.info-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.info-nav-list a {
+  color: var(--text-hi);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  border-bottom: 1px dashed color-mix(in srgb, var(--gold) 25%, transparent);
+  padding-bottom: 1px;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+
+.info-nav-list a:hover {
+  color: var(--gold-bright);
+  border-bottom-color: var(--gold);
+}

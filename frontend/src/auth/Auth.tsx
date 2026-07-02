@@ -154,8 +154,11 @@ export function Auth({ onAuthed, playClick, onNavigate }: Props) {
         <div className="auth-logo">SatoriCasino</div>
         <div className="auth-tagline">{t("auth.tagline")}</div>
 
-        <div className="auth-tabs">
-          <div
+        <div className="auth-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "login"}
             className={clsx("auth-tab", tab === "login" && "active")}
             onClick={() => {
               playClick();
@@ -164,8 +167,11 @@ export function Auth({ onAuthed, playClick, onNavigate }: Props) {
             }}
           >
             {t("auth.login")}
-          </div>
-          <div
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "register"}
             className={clsx("auth-tab", tab === "register" && "active")}
             onClick={() => {
               playClick();
@@ -174,7 +180,7 @@ export function Auth({ onAuthed, playClick, onNavigate }: Props) {
             }}
           >
             {t("auth.register")}
-          </div>
+          </button>
         </div>
 
         <form className="auth-form" onSubmit={submit}>

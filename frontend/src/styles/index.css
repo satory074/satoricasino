@@ -9,4 +9,6 @@
 @import "./base.css";
 @import "./legacy.css";
 @import "./components.css";
+@import "./auth.css";
+@import "./info.css";
 @import "./motion.css";
